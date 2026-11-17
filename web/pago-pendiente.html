@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pago pendiente · The White Hilux</title>
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap result">
+  <p class="eyebrow">Pago en proceso</p>
+  <h1>Tu pago está pendiente</h1>
+  <p>Mercado Pago todavía está procesando el pago del pedido <code id="order">—</code>. Cuando se apruebe te llegará un correo de confirmación. No necesitas volver a pagar.</p>
+  <div><a class="btn secondary" href="index.html">Volver a la tienda</a></div>
+</main>
+<div id="site-footer"></div>
+<script src="data/catalog.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/mockups.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var last = null; try { last = localStorage.getItem('twh-last-order'); } catch (e) {}
+  document.getElementById('order').textContent = q.get('external_reference') || last || '—';
+  TWH.Cart.clear();
+})();
+</script>
+</body>
+</html>

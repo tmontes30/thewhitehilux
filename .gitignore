@@ -1,0 +1,17 @@
+# Fotos de referencia, de terceros o con personas: NO van al repo público
+ideas/
+Modelos foto/
+fotos-originales/
+disenos/configurador/bases/
+disenos/configurador/twh-coleccion*.json
+
+# Dependencias, secretos y archivos generados
+node_modules/
+.env
+.env.*
+*.local
+functions/shared/
+firebase-debug*.log
+firestore-debug.log
+ui-debug.log
+.firebase/

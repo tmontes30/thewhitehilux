@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrito · The White Hilux</title>
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="wrap"><div class="crumbs"><a href="index.html">Tienda</a> › Carrito</div></main>
+<main class="wrap cart" id="cart">
+  <div class="panel">
+    <h1>Carrito</h1>
+    <div class="lines" id="lines"></div>
+    <div class="empty-cart" id="empty" hidden>
+      <p>Tu carrito está vacío.</p>
+      <a class="btn primary" href="index.html">Ver productos</a>
+    </div>
+  </div>
+
+  <form class="panel" id="checkout" novalidate hidden>
+    <h2>Datos de entrega</h2>
+    <div class="field"><label for="name">Nombre y apellido</label><input id="name" name="name" autocomplete="name" required></div>
+    <div class="row2">
+      <div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="phone">Teléfono / WhatsApp</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+56 9 1234 5678" required></div>
+    </div>
+
+    <div class="field" role="radiogroup" aria-label="Forma de entrega">
+      <label class="radio"><input type="radio" name="method" id="m-despacho" value="despacho" checked><span>Despacho a domicilio<small id="ship-hint">RM y regiones</small></span></label>
+      <label class="radio"><input type="radio" name="method" id="m-retiro" value="retiro"><span>Retiro coordinado en Santiago<small>Gratis · te escribimos para coordinar</small></span></label>
+    </div>
+
+    <div id="address-fields">
+      <div class="row2">
+        <div class="field"><label for="region">Región</label><select id="region" name="region" autocomplete="address-level1"><option value="">Elige…</option></select></div>
+        <div class="field"><label for="comuna">Comuna</label><input id="comuna" name="comuna" autocomplete="address-level2"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="address">Dirección (calle, número, depto.)</label><input id="address" name="address" autocomplete="street-address"></div>
+    </div>
+    <div class="field"><label for="notes">Notas (opcional)</label><textarea id="notes" name="notes" maxlength="300" placeholder="Ej: dejar en conserjería"></textarea></div>
+
+    <div class="totals">
+      <div><span>Subtotal</span><span id="t-sub">$0</span></div>
+      <div><span id="t-ship-label">Envío</span><span id="t-ship">$0</span></div>
+      <div class="grand"><span>Total</span><span id="t-total">$0</span></div>
+    </div>
+    <p class="eta" id="eta"></p>
+    <p class="msg-err" id="err" role="alert" hidden></p>
+    <button class="btn primary" type="submit" id="pay">Pagar con Mercado Pago</button>
+    <p class="secure">Te llevamos a Mercado Pago para pagar de forma segura. No guardamos datos de tarjetas.</p>
+  </form>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="data/catalog.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/mockups.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var DRAFT = 'twh-checkout';
+  var data;
+
+  function lineFor(it) {
+    var p = data.products.filter(function (x) { return x.id === it.id; })[0];
+    return p ? { item: it, p: p } : null;
+  }
+
+  function shippingFor(subtotal) {
+    var c = data.config;
+    var method = $('m-retiro').checked ? 'retiro' : 'despacho';
+    if (method === 'retiro') return { label: c.shipping.retiro.label, cost: 0 };
+    var region = $('region').value;
+    var zone = region === 'Región Metropolitana' ? 'rm' : 'regiones';
+    var free = c.freeShippingFrom && subtotal >= c.freeShippingFrom && (c.freeShippingZones || ['rm', 'regiones']).indexOf(zone) >= 0;
+    if (!region) return { label: 'Envío (elige tu región)', cost: null, free: free };
+    return { label: c.shipping[zone].label, cost: free ? 0 : c.shipping[zone].price, free: free };
+  }
+
+  function render() {
+    var items = TWH.Cart.items();
+    var rows = items.map(lineFor);
+    // limpia productos que ya no existen
+    if (rows.some(function (r) { return !r; })) {
+      for (var k = items.length - 1; k >= 0; k--) { if (!lineFor(items[k])) TWH.Cart.remove(k); }
+      return render();
+    }
+    $('empty').hidden = items.length > 0;
+    $('checkout').hidden = items.length === 0;
+    var subtotal = 0, problems = 0;
+    var C = TWH.core;
+    $('lines').innerHTML = rows.map(function (r, i) {
+      var t = r.p.price * r.item.qty; subtotal += t;
+      var have = C.stockOf(r.p, r.item.color, r.item.size);
+      var warn = r.p.status !== 'disponible' ? 'Todavía no está a la venta: quítalo para seguir.' :
+        (have === 0 ? 'Se agotó: quítalo para seguir.' : (have != null && have < r.item.qty ? 'Solo quedan ' + have + ': baja la cantidad.' : ''));
+      if (warn) problems++;
+      var dsg = r.p.designs && r.item.design ? (r.p.designs.filter(function (x) { return x.id === r.item.design; })[0] || {}).name : '';
+      var sub = [dsg, r.item.size !== 'Única' ? 'Talla ' + r.item.size : '', r.item.color ? data.config.colors[r.item.color] : ''].filter(Boolean).join(' · ');
+      var img = r.p.designs && r.item.design ? TWHMock.mock({ shape: 'sticker', logo: r.item.design }, '', r.p.name) : TWH.picture(r.p, 0, r.item.color);
+      return '<div class="line"><a class="pic" href="producto.html?id=' + encodeURIComponent(r.p.id) + '">' + img + '</a>' +
+        '<div><h3>' + TWH.esc(r.p.name) + '</h3><p class="sub">' + TWH.esc(sub) + '</p>' + (warn ? '<p class="line-warn">' + warn + '</p>' : '') +
+        '<div class="qty"><button type="button" data-act="minus" data-i="' + i + '" aria-label="Quitar uno">−</button><span>' + r.item.qty + '</span><button type="button" data-act="plus" data-i="' + i + '" aria-label="Agregar uno">+</button></div></div>' +
+        '<div class="right"><span class="lt">' + TWH.money(t) + '</span><button type="button" class="linkbtn" data-act="remove" data-i="' + i + '">Quitar</button></div></div>';
+    }).join('');
+
+    var ship = shippingFor(subtotal);
+    $('t-sub').textContent = TWH.money(subtotal);
+    $('t-ship-label').textContent = ship.label;
+    $('t-ship').textContent = ship.cost == null ? '—' : (ship.cost === 0 ? 'Gratis' : TWH.money(ship.cost));
+    $('t-total').textContent = TWH.money(subtotal + (ship.cost || 0));
+    var c = data.config;
+    $('ship-hint').textContent = 'RM ' + TWH.money(c.shipping.rm.price) + ' · regiones ' + TWH.money(c.shipping.regiones.price) +
+      (c.freeShippingFrom ? ' · gratis en RM sobre ' + TWH.money(c.freeShippingFrom) : '');
+    $('address-fields').hidden = $('m-retiro').checked;
+    var zone = $('m-retiro').checked || $('region').value === 'Región Metropolitana' ? 'rm' : ($('region').value ? 'regiones' : '');
+    var n = zone ? C.deliveryDaysFor(zone, data.settings) : 0;
+    $('eta').textContent = zone ? (($('m-retiro').checked ? 'Listo para retiro en ' : 'Entrega estimada en ') + n + (n === 1 ? ' día hábil' : ' días hábiles') + ' desde que se confirma el pago.') : '';
+    $('pay').disabled = problems > 0;
+  }
+
+  $('lines').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b) return;
+    var i = Number(b.getAttribute('data-i'));
+    var it = TWH.Cart.items()[i]; if (!it) return;
+    var act = b.getAttribute('data-act');
+    if (act === 'minus') { if (it.qty <= 1) TWH.Cart.remove(i); else TWH.Cart.setQty(i, it.qty - 1); }
+    if (act === 'plus') {
+      var p = data.products.filter(function (x) { return x.id === it.id; })[0];
+      var have = p ? TWH.core.stockOf(p, it.color, it.size) : null;
+      if (have == null || it.qty < have) TWH.Cart.setQty(i, it.qty + 1);
+    }
+    if (act === 'remove') TWH.Cart.remove(i);
+    render();
+  });
+
+  // Recordar datos del formulario en este navegador
+  var FIELDS = ['name', 'email', 'phone', 'region', 'comuna', 'address', 'notes'];
+  function saveDraft() {
+    var d = {}; FIELDS.forEach(function (f) { d[f] = $(f).value; });
+    d.method = $('m-retiro').checked ? 'retiro' : 'despacho';
+    try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {}
+  }
+  function loadDraft() {
+    try {
+      var d = JSON.parse(localStorage.getItem(DRAFT) || '{}');
+      FIELDS.forEach(function (f) { if (d[f]) $(f).value = d[f]; });
+      if (d.method === 'retiro') $('m-retiro').checked = true;
+    } catch (e) {}
+  }
+
+  function showErr(msg) { $('err').textContent = msg; $('err').hidden = false; }
+
+  $('checkout').addEventListener('input', function () { saveDraft(); render(); });
+  $('checkout').addEventListener('change', function () { saveDraft(); render(); });
+
+  $('checkout').addEventListener('submit', function (e) {
+    e.preventDefault();
+    $('err').hidden = true;
+    var method = $('m-retiro').checked ? 'retiro' : 'despacho';
+    var name = $('name').value.trim(), email = $('email').value.trim(), phone = $('phone').value.trim();
+    if (name.length < 3) return showErr('Escribe tu nombre completo.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return showErr('Revisa tu correo: no parece válido.');
+    if (phone.replace(/\D/g, '').length < 8) return showErr('Escribe un teléfono de al menos 8 dígitos.');
+    if (method === 'despacho') {
+      if (!$('region').value) return showErr('Elige tu región.');
+      if ($('comuna').value.trim().length < 2) return showErr('Escribe tu comuna.');
+      if ($('address').value.trim().length < 5) return showErr('Escribe tu dirección con número.');
+    }
+    var payload = {
+      items: TWH.Cart.items(),
+      customer: { name: name, email: email, phone: phone },
+      shipping: { method: method, region: $('region').value, comuna: $('comuna').value, address: $('address').value, notes: $('notes').value }
+    };
+    if (location.protocol === 'file:') {
+      return showErr('Estás viendo la tienda desde tu computador. El pago con Mercado Pago funciona en la tienda publicada (thewhitehilux.cavedevz.com).');
+    }
+    var btn = $('pay');
+    btn.disabled = true; btn.textContent = 'Conectando con Mercado Pago…';
+    fetch(window.TWH_FIREBASE.apiBase + '/crearPreferencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.j.init_point) throw new Error(res.j.error || 'No pudimos iniciar el pago.');
+        try { localStorage.setItem('twh-last-order', res.j.order_id); } catch (e) {}
+        location.href = res.j.init_point;
+      })
+      .catch(function (err) {
+        showErr(err.message || 'No pudimos iniciar el pago. Intenta de nuevo.');
+        btn.disabled = false; btn.textContent = 'Pagar con Mercado Pago';
+      });
+  });
+
+  TWH.loadData().then(function (d) {
+    data = d;
+    d.config.regions.forEach(function (r) { var o = document.createElement('option'); o.value = r; o.textContent = r; $('region').appendChild(o); });
+    loadDraft();
+    render();
+  }).catch(function () { showErr('No pudimos cargar la tienda. Recarga la página.'); });
+})();
+</script>
+</body>
+</html>

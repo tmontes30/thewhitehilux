@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel TWH</title>
+<link rel="icon" href="../assets/logos/cl-shop.svg">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="../index.html" title="Ver la tienda"><img src="../assets/logos/logo-shop.svg" alt="The White Hilux"><span>Panel</span></a>
+    <nav class="tabs" id="tabs" hidden>
+      <button type="button" data-tab="pedidos" aria-pressed="true">Pedidos <span class="count" id="count-alert" hidden></span></button>
+      <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
+      <button type="button" data-tab="ajustes" aria-pressed="false">Ajustes</button>
+    </nav>
+    <div class="who" id="who" hidden><span id="who-email"></span><button type="button" class="link" id="logout">Salir</button></div>
+  </div>
+  <div class="stripes"></div>
+</header>
+
+<main class="wrap">
+  <section class="login" id="login">
+    <img src="../assets/logos/cl-shop-claro.svg" alt="">
+    <h1>Panel de la tienda</h1>
+    <p id="login-msg">Entra con tu cuenta de Google para ver pedidos y editar productos.</p>
+    <button type="button" class="btn primary" id="login-btn">Entrar con Google</button>
+  </section>
+
+  <!-- PEDIDOS -->
+  <section id="tab-pedidos" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="alert" id="alert" hidden></div>
+    <div class="toolbar">
+      <div class="filters" id="order-filters"></div>
+      <input type="search" id="order-search" placeholder="Buscar por N°, nombre, comuna…" aria-label="Buscar pedidos">
+      <button type="button" class="btn ghost" id="export">Exportar CSV</button>
+    </div>
+    <div id="orders"></div>
+  </section>
+
+  <!-- PRODUCTOS -->
+  <section id="tab-productos" hidden>
+    <div class="toolbar">
+      <div class="filters" id="prod-filters"></div>
+      <p class="hint">Los cambios se ven en la tienda al recargarla. El stock baja solo cuando se confirma un pago.</p>
+    </div>
+    <div id="products"></div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section id="tab-ajustes" hidden>
+    <form class="card settings" id="settings">
+      <h2>Promesa de entrega</h2>
+      <p class="hint">Días hábiles desde que se confirma el pago (sin sábados, domingos ni feriados). Se muestra en la ficha y el carrito, y fija la fecha límite de cada pedido.</p>
+      <div class="grid3">
+        <label>Región Metropolitana y retiro<input type="number" id="s-rm" min="0" max="60" required></label>
+        <label>Regiones<input type="number" id="s-reg" min="0" max="60" required></label>
+        <label>Avisar cuando falten (días)<input type="number" id="s-alert" min="0" max="30" required></label>
+      </div>
+      <label>Feriados (uno por línea, AAAA-MM-DD)<textarea id="s-holidays" rows="8"></textarea></label>
+      <div class="actions"><button class="btn primary" type="submit">Guardar ajustes</button><span class="saved" id="s-saved" hidden>Guardado ✓</span></div>
+    </form>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="../data/catalog.js"></script>
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/core.js"></script>
+<script type="module" src="admin.js"></script>
+</body>
+</html>

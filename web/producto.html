@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Producto · The White Hilux</title>
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="wrap">
+  <div class="crumbs" id="crumbs"><a href="index.html">Tienda</a></div>
+  <div id="root"></div>
+</main>
+
+<div id="site-footer"></div>
+<script src="data/catalog.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/mockups.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+(function () {
+  var SIZE_GUIDES = {
+    polera: [['S', 48, 70], ['M', 51, 72], ['L', 54, 74], ['XL', 57, 76], ['XXL', 60, 78]],
+    poleron: [['S', 54, 66], ['M', 57, 69], ['L', 60, 72], ['XL', 63, 74], ['XXL', 66, 76]]
+  };
+  var PERK = {
+    truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>'
+  };
+  var id = new URLSearchParams(location.search).get('id');
+  var root = document.getElementById('root');
+
+  TWH.loadData().then(function (d) {
+    var p = d.products.filter(function (x) { return x.id === id; })[0];
+    if (!p) {
+      root.innerHTML = '<div class="result"><h1>No encontramos ese producto</h1><p>Puede que ya no esté disponible.</p><a class="btn primary" href="index.html">Ver la tienda</a></div>';
+      return;
+    }
+    document.title = p.name + ' · The White Hilux';
+    var cats = d.config.categories, cfg = d.config;
+    document.getElementById('crumbs').innerHTML = '<a href="index.html">Tienda</a> › <a href="index.html?cat=' + p.type + '">' + cats[p.type] + '</a> › ' + TWH.esc(p.name);
+    var st = { color: p.colors[0] || '', size: p.sizes.length === 1 ? p.sizes[0] : '', view: 0, design: p.designs ? p.designs[0].id : '' };
+    var dq = new URLSearchParams(location.search).get('d');
+    if (p.designs && dq && p.designs.some(function (x) { return x.id === dq; })) st.design = dq;
+    if (p.designs) p.views = [{ shape: 'sticker', logo: st.design }];
+    var n = 0;
+    var guide = p.sizeGuide && SIZE_GUIDES[p.sizeGuide];
+    var C = TWH.core, set = d.settings;
+    var soon = p.status === 'proximamente';
+    function left(size) { var n = C.stockOf(p, st.color, size); return n == null ? Infinity : n; }
+    function inCart(size) {
+      return TWH.Cart.items().filter(function (x) { return x.id === p.id && x.size === size && (x.color || '') === (st.color || ''); })
+        .reduce(function (s2, x) { return s2 + x.qty; }, 0);
+    }
+    if (st.size && left(st.size) === 0) st.size = '';
+    var tag = soon ? '<span class="tag-pre">PRÓXIMAMENTE</span>' : (C.isSoldOut(p) ? '<span class="tag-pre tag-out">AGOTADO</span>' : '');
+    var days = function (n) { return n + (n === 1 ? ' día hábil' : ' días hábiles'); };
+
+    root.innerHTML =
+      '<section class="pdp">' +
+        '<div class="gallery"><div class="thumbs" id="thumbs"></div><div class="main-pic" id="main"></div></div>' +
+        '<div class="buy">' +
+          '<p class="cond">' + tag + '<span>Nuevo</span></p>' +
+          '<h1>' + TWH.esc(p.name) + '</h1>' +
+          '<p class="price">' + TWH.money(p.price) + '</p>' +
+          '<p class="fees">Paga en cuotas con Mercado Pago</p>' +
+          (p.designs ? '<div><p class="opt-label">Diseño: <b id="design-name"></b></p><div class="choices" id="designs"></div></div>' : '') +
+          (p.colors.length ? '<div><p class="opt-label">Color: <b id="color-name"></b></p><div class="choices" id="colors"></div></div>' : '') +
+          (p.sizes.length > 1 ? '<div><p class="opt-label">Talla: <b id="size-name">Elige una talla</b></p><div class="choices" id="sizes"></div></div>' : '') +
+          '<p class="stock" id="stock"></p>' +
+          '<div class="qty-row" id="qty-row"><label for="qty">Cantidad:</label><select id="qty"></select></div>' +
+          '<p class="msg-err" id="err" hidden></p>' +
+          '<button type="button" class="btn primary" id="buy-now">Comprar ahora</button>' +
+          '<button type="button" class="btn secondary" id="add">Agregar al carrito</button>' +
+          '<p class="added" id="added" hidden>Agregado al carrito. <a href="carrito.html">Ver carrito</a></p>' +
+          '<div class="perks">' +
+            '<div class="perk">' + PERK.truck + '<span>' + 'Envío a todo Chile desde ' + TWH.money(cfg.shipping.rm.price) + ' · <b>gratis en RM</b> sobre ' + TWH.money(cfg.freeShippingFrom) + '</span></div>' +
+            '<div class="perk">' + PERK.box + '<span><b>Entrega en ' + days(set.deliveryDaysRM) + '</b> en RM y ' + days(set.deliveryDaysRegiones) + ' a regiones, desde que se confirma el pago</span></div>' +
+            '<div class="perk">' + PERK.shield + '<span><b>Compra protegida</b> con Mercado Pago</span></div>' +
+            '<div class="perk">' + PERK.box + '<span>Vendido y despachado por The White Hilux</span></div>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
+      '<section class="section-card"><h2>Características principales</h2><table class="specs"><tbody>' +
+        p.features.map(function (f) { return '<tr><th>' + TWH.esc(f[0]) + '</th><td>' + TWH.esc(f[1]) + '</td></tr>'; }).join('') +
+        (p.colors.length ? '<tr><th>Colores</th><td>' + p.colors.map(function (c) { return cfg.colors[c]; }).join(', ') + '</td></tr>' : '') +
+        '<tr><th>Tallas</th><td>' + p.sizes.join(', ') + '</td></tr>' +
+      '</tbody></table>' +
+      (guide ? '<h2 style="margin-top:24px">Guía de tallas (cm)</h2><table class="specs"><tbody><tr><th>Talla</th><td><b>Ancho × Largo</b></td></tr>' +
+        guide.map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + r[1] + ' × ' + r[2] + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      '</section>' +
+      '<section class="section-card"><h2>Descripción</h2><p class="desc">' + TWH.esc(p.desc) + '</p></section>' +
+      '<section class="related"><h2>También te puede gustar</h2><div class="grid wide">' +
+      d.products.filter(function (x) { return x.id !== p.id; }).slice(0, 4).map(function (x) {
+        return '<a class="item" href="producto.html?id=' + encodeURIComponent(x.id) + '"><div class="pic">' + (x.status === 'proximamente' ? '<span class="tag-pre">PRÓXIMAMENTE</span>' : (C.isSoldOut(x) ? '<span class="tag-pre tag-out">AGOTADO</span>' : '')) + '<div class="main">' + TWH.picture(x, 0) + '</div></div>' +
+          '<div class="body"><span class="title">' + TWH.esc(x.name) + '</span><span class="price">' + TWH.money(x.price) + '</span></div></a>';
+      }).join('') + '</div></section>';
+
+    function render() {
+      n = TWH.pictureCount(p, st.color);
+      if (st.view >= n) st.view = 0;
+      var ds = document.getElementById('designs');
+      if (ds) {
+        p.views = [{ shape: 'sticker', logo: st.design }];
+        ds.innerHTML = '';
+        p.designs.forEach(function (dd) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'color-choice'; b.title = dd.name; b.setAttribute('aria-label', dd.name);
+          b.setAttribute('aria-pressed', dd.id === st.design ? 'true' : 'false');
+          b.innerHTML = '<img src="assets/logos/' + dd.id + '-claro.svg" alt="">';
+          b.addEventListener('click', function () { st.design = dd.id; st.view = 0; render(); });
+          ds.appendChild(b);
+        });
+        document.getElementById('design-name').textContent = p.designs.filter(function (dd) { return dd.id === st.design; })[0].name;
+      }
+      document.getElementById('main').innerHTML = TWH.picture(p, st.view, st.color);
+      var th = document.getElementById('thumbs');
+      th.innerHTML = '';
+      for (var i = 0; i < n; i++) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'thumb'; b.setAttribute('aria-label', 'Foto ' + (i + 1));
+        b.setAttribute('aria-pressed', i === st.view ? 'true' : 'false');
+        b.innerHTML = TWH.picture(p, i, st.color);
+        (function (k) { b.addEventListener('mouseenter', function () { st.view = k; render(); }); b.addEventListener('click', function () { st.view = k; render(); }); })(i);
+        th.appendChild(b);
+      }
+      var cs = document.getElementById('colors');
+      if (cs) {
+        cs.innerHTML = '';
+        p.colors.forEach(function (c) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'color-choice'; b.title = cfg.colors[c];
+          b.setAttribute('aria-label', cfg.colors[c]);
+          b.setAttribute('aria-pressed', c === st.color ? 'true' : 'false');
+          b.innerHTML = TWH.picture(p, 0, c);
+          b.addEventListener('click', function () { st.color = c; render(); });
+          cs.appendChild(b);
+        });
+        document.getElementById('color-name').textContent = cfg.colors[st.color];
+      }
+      var ss = document.getElementById('sizes');
+      if (ss) {
+        ss.innerHTML = '';
+        p.sizes.forEach(function (s) {
+          var b = document.createElement('button');
+          var out = left(s) === 0;
+          b.type = 'button'; b.className = 'choice' + (out ? ' out' : ''); b.textContent = s;
+          b.setAttribute('aria-pressed', s === st.size ? 'true' : 'false');
+          if (out) { b.disabled = true; b.title = 'Agotado'; b.setAttribute('aria-label', 'Talla ' + s + ', agotada'); }
+          b.addEventListener('click', function () { st.size = s; document.getElementById('err').hidden = true; render(); });
+          ss.appendChild(b);
+        });
+        document.getElementById('size-name').textContent = st.size || 'Elige una talla';
+      }
+      // Stock, cantidad y botones
+      var colorOut = C.isSoldOut(p, st.color ? st.color : undefined);
+      var stockEl = document.getElementById('stock');
+      stockEl.className = 'stock' + (soon || colorOut ? ' none' : '');
+      stockEl.textContent = soon ? 'Próximamente · todavía no está a la venta' : (colorOut ? 'Agotado' + (p.colors.length > 1 ? ' en ' + cfg.colors[st.color].toLowerCase() : '') : 'Stock disponible');
+      var max = Math.min(6, st.size ? left(st.size) - inCart(st.size) : 6);
+      var qs = document.getElementById('qty'), prev = Number(qs.value) || 1;
+      qs.innerHTML = '';
+      for (var q = 1; q <= Math.max(1, max); q++) { var o = document.createElement('option'); o.value = q; o.textContent = q + (q === 1 ? ' unidad' : ' unidades'); qs.appendChild(o); }
+      qs.value = String(Math.min(prev, Math.max(1, max)));
+      var blocked = soon || colorOut;
+      document.getElementById('qty-row').hidden = blocked;
+      document.getElementById('add').disabled = blocked;
+      document.getElementById('buy-now').disabled = blocked;
+      document.getElementById('buy-now').textContent = soon ? 'Próximamente' : (colorOut ? 'Agotado' : 'Comprar ahora');
+      document.getElementById('add').hidden = blocked;
+    }
+    render();
+
+    function add() {
+      var err = document.getElementById('err');
+      if (soon) return false;
+      if (!st.size) { err.textContent = 'Elige una talla para continuar.'; err.hidden = false; return false; }
+      var qty = Number(document.getElementById('qty').value);
+      if (inCart(st.size) + qty > left(st.size)) { err.textContent = 'Ya tienes en el carrito todas las unidades disponibles de esta talla.'; err.hidden = false; return false; }
+      TWH.Cart.add({ id: p.id, size: st.size, color: st.color, design: st.design, qty: qty });
+      render();
+      return true;
+    }
+    document.getElementById('add').addEventListener('click', function () { if (add()) document.getElementById('added').hidden = false; });
+    document.getElementById('buy-now').addEventListener('click', function () { if (add()) location.href = 'carrito.html'; });
+  });
+})();
+</script>
+</body>
+</html>

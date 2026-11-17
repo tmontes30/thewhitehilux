@@ -1,0 +1,127 @@
+// Pasa una colección del configurador a la tienda: genera las fotos y reemplaza poleras, polerones y jockeys del catálogo.
+// Uso: node disenos/configurador/aplicar.js [ruta/a/twh-coleccion.json]
+//      (sin ruta usa disenos/configurador/twh-coleccion.json)
+const fs = require('fs');
+const path = require('path');
+const { execFileSync } = require('child_process');
+const P = require('./posiciones.js');
+
+const HERE = __dirname;
+const ROOT = path.join(HERE, '..', '..');
+const LOGOS = path.join(ROOT, 'web', 'assets', 'logos');
+const OUT = path.join(ROOT, 'web', 'assets', 'img', 'productos');
+const CATALOG = path.join(ROOT, 'web', 'data', 'catalog.js');
+const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => fs.existsSync(p));
+
+const file = process.argv[2] || path.join(HERE, 'twh-coleccion.json');
+const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+const items = raw.productos || raw;
+global.window = {}; require('./datos.js'); const LMETA = {}; window.TWH_CFG.logos.forEach((l) => { LMETA[l.id] = l; });
+
+// ---------- ids únicos a partir del nombre ----------
+const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+const used = new Set();
+items.forEach((d) => {
+  let id = slug(d.nombre || d.tipo) || d.tipo, k = 2;
+  while (used.has(id)) id = slug(d.nombre) + '-' + k++;
+  used.add(id); d._id = id;
+});
+
+// ---------- fotos ----------
+const dataUri = (p, mime) => `data:${mime};base64,` + fs.readFileSync(p).toString('base64');
+function renderView(d, viewKey, outFile) {
+  const V = P.VIEWS[viewKey], [W, H] = V.size;
+  const layers = P.placementsFor(d, viewKey).filter((p) => LMETA[p.logo]).map((p) => {
+    const r = P.rect(LMETA[p.logo], viewKey, p);
+    return { r, parche: !!p.parche, src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, p.logo + (p.claro ? '-claro' : '') + '.svg'), 'utf8')) };
+  });
+  const html = `<!doctype html><body style="margin:0;overflow:hidden"><canvas id="c" width="${W}" height="${H}"></canvas><script>
+const L = ${JSON.stringify(layers)}, W = ${W}, H = ${H};
+const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = s; });
+(async () => {
+  const x = document.getElementById('c').getContext('2d');
+  x.drawImage(await load(${JSON.stringify(dataUri(path.join(HERE, 'bases', V.img), 'image/png'))}), 0, 0);
+  for (const l of L) {
+    const r = l.r;
+    if (l.parche) {
+      const pad = r.cWidth * 0.2;
+      const px = (r.cLeft - pad) / 100 * W, py = (r.cTop / 100 * H) - pad / 100 * W, pw = (r.cWidth + 2 * pad) / 100 * W, ph = r.cHeight / 100 * H + 2 * pad / 100 * W;
+      x.save(); x.shadowColor = 'rgba(0,0,0,.4)'; x.shadowBlur = 3; x.shadowOffsetY = 1; x.fillStyle = '#E9E4D6'; x.fillRect(px, py, pw, ph); x.restore();
+      x.strokeStyle = 'rgba(60,55,45,.4)'; x.setLineDash([2, 2]); x.strokeRect(px + 3, py + 3, pw - 6, ph - 6); x.setLineDash([]);
+    }
+    x.globalAlpha = 0.93;
+    x.drawImage(await load(l.src), r.left / 100 * W, r.top / 100 * H, r.width / 100 * W, r.height / 100 * H);
+    x.globalAlpha = 1;
+  }
+  document.title = 'listo';
+})();
+<\/script></body>`;
+  const tmp = path.join(HERE, '_tmp-aplicar.html');
+  fs.writeFileSync(tmp, html);
+  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000', `--window-size=${W},${H}`,
+    '--screenshot=' + path.join(OUT, outFile), 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
+  fs.unlinkSync(tmp);
+}
+
+const nameOf = (id) => (LMETA[id] ? LMETA[id].name : id);
+const q = (s) => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+const arr = (a) => '[' + a.map(q).join(', ') + ']';
+const entries = [];
+const keep = new Set();
+
+for (const d of items) {
+  const colores = d.tipo === 'polera' ? (d.colores && d.colores.length ? d.colores : ['negro']) : ['negro'];
+  const byColor = {};
+  for (const c of colores) {
+    byColor[c] = P.viewsFor(d, c).map((v) => {
+      const kind = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
+      const out = `${d._id}-${c}-${kind}.png`;
+      renderView(d, v, out); keep.add(out);
+      return 'assets/img/productos/' + out;
+    });
+  }
+  console.log('ok', d._id);
+
+  let views, desc, features, sizes = ['S', 'M', 'L', 'XL', 'XXL'], guide = q(d.tipo);
+  if (d.tipo === 'jockey') {
+    views = `[{ shape: 'cap', logo: ${q(d.jockey.logo)} }]`;
+    desc = `Jockey negro de 5 paneles con ${nameOf(d.jockey.logo)} ${d.jockey.estilo === 'parche' ? 'en parche tejido' : 'bordado'} al frente. Cierre ajustable.`;
+    features = `[['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', ${q(d.jockey.estilo === 'parche' ? 'Parche tejido' : 'Bordado')}], ['Cierre', 'Ajustable'], ['Talla', 'Única']]`;
+    sizes = ['Única']; guide = 'null';
+  } else {
+    const fr = d.frente ? `{ shape: '${d.tipo === 'polera' ? 'tee-front' : 'hoodie-front'}', logo: ${q(d.frente.logo)} }` : null;
+    const bk = d.espalda ? `{ shape: '${d.tipo === 'polera' ? 'tee-back' : 'hoodie-back'}', logo: ${q(d.espalda.logo)} }` : null;
+    views = '[' + [bk, fr].filter(Boolean).join(', ') + ']';
+    const partes = [];
+    if (d.espalda) partes.push(`${nameOf(d.espalda.logo)} en la espalda`);
+    if (d.frente) partes.push(`${nameOf(d.frente.logo)} ${d.frente.pos === 'centro' ? 'al centro del pecho' : 'chico en el pecho'}`);
+    desc = `${d.tipo === 'polera' ? 'Polera' : 'Polerón con capucha'} con ${partes.join(' y ') || 'diseño TWH'}.`;
+    const est = d.espalda && d.frente ? 'DTF espalda y pecho' : d.espalda ? 'DTF espalda' : 'DTF pecho';
+    features = d.tipo === 'polera'
+      ? `[['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', ${q(est)}]]`
+      : `[['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', ${q(est)}]]`;
+  }
+  entries.push(`      {
+        id: ${q(d._id)}, name: ${q(d.nombre)}, type: ${q(d.tipo)}, price: ${P.PRICES[d.tipo]},
+        sizes: ${arr(sizes)}, colors: ${arr(colores)},
+        views: ${views},
+        images: [], imagesByColor: { ${Object.entries(byColor).map(([c, l]) => c + ': ' + arr(l)).join(', ')} }, sizeGuide: ${guide}, active: true,
+        desc: ${q(desc)},
+        features: ${features}
+      },
+`);
+}
+
+// ---------- catálogo: reemplaza poleras, polerones y jockeys (los stickers no se tocan) ----------
+let cat = fs.readFileSync(CATALOG, 'utf8');
+const a = cat.indexOf('    products: [\n'), b = cat.indexOf("      {\n        id: 'sticker-twh'");
+if (a < 0 || b < 0) throw new Error('No encontré la lista de productos en catalog.js');
+const order = { polera: 0, poleron: 1, jockey: 2 };
+const sorted = entries.map((e, i) => [order[items[i].tipo], i, e]).sort((x, y) => x[0] - y[0] || x[1] - y[1]).map((x) => x[2]);
+cat = cat.slice(0, a + '    products: [\n'.length) + sorted.join('') + cat.slice(b);
+fs.writeFileSync(CATALOG, cat);
+
+// fotos viejas que ya no usa ningún producto
+let removed = 0;
+for (const f of fs.readdirSync(OUT)) if (f.endsWith('.png') && !keep.has(f)) { fs.unlinkSync(path.join(OUT, f)); removed++; }
+console.log(`Listo: ${items.length} productos en la tienda, ${keep.size} fotos generadas, ${removed} fotos viejas borradas.`);

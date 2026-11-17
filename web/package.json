@@ -1,0 +1,12 @@
+{
+  "name": "thewhitehilux-tienda",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Tienda The White Hilux: sitio estático (GitHub Pages) + Firebase (Firestore, Auth, Functions con Mercado Pago)",
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

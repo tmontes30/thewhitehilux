@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWH · Configurador de colección</title>
+<style>
+  :root { --bg: #EEEEEC; --card: #fff; --ink: #1B1C1A; --muted: #6B706C; --line: #E1E1DD; --accent: #E39B2D; --blue: #2968C8; --red: #C8382A; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 'Segoe UI', system-ui, Arial, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  header { background: var(--ink); color: #F2F0E8; padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; }
+  header img { height: 34px; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  header .sp { flex: 1; }
+  header .help { font-size: 12.5px; color: rgba(242,240,232,.75); max-width: 520px; }
+  .btn { border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 700; cursor: pointer; background: #fff; color: var(--ink); }
+  .btn.accent { background: var(--accent); color: var(--ink); }
+  .btn.blue { background: var(--blue); color: #fff; }
+  .btn.ghost { background: transparent; color: inherit; box-shadow: inset 0 0 0 1.5px currentColor; }
+  .btn.small { padding: 6px 10px; font-size: 12.5px; }
+  .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 16px; padding: 16px; align-items: start; }
+  @media (max-width: 1200px) { .layout { grid-template-columns: 340px minmax(0, 1fr); } .coll { grid-column: 1 / -1; } }
+  .panel { background: var(--card); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+  .group { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+  .group:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .row label { font-weight: 600; min-width: 70px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: #fff; padding: 7px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  input[type=text] { width: 100%; border: 1px solid #C9C9C4; border-radius: 8px; padding: 9px 10px; }
+  .picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 236px; overflow-y: auto; padding: 2px; }
+  .tile { aspect-ratio: 1; border-radius: 6px; border: 2px solid transparent; background: #1B1C1A; cursor: pointer; padding: 3px; display: grid; place-items: center; color: #aaa; font-size: 11px; }
+  .tile img { width: 100%; height: 100%; object-fit: contain; }
+  .tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .tile:hover { border-color: #888; }
+  .picked { font-size: 12.5px; color: var(--muted); margin: -4px 0 8px; }
+  .picked b { color: var(--ink); }
+  input[type=range] { flex: 1; }
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .view { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .view .cap { padding: 8px 12px; font-size: 12.5px; color: var(--muted); }
+  .stage { position: relative; width: 100%; }
+  .stage > img.base { width: 100%; display: block; }
+  .stage .lg { position: absolute; pointer-events: none; }
+  .stage .patch { position: absolute; background: #E9E4D6; box-shadow: 0 1px 3px rgba(0,0,0,.4); outline: 1px dashed rgba(60,55,45,.4); outline-offset: -3px; }
+  .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .preview-head h2 { margin: 0; font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+  .preview-head .price { font-size: 18px; color: var(--muted); }
+  .coll .item { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
+  .coll .item:hover { background: #F5F5F2; }
+  .coll .item.sel { border-color: var(--accent); background: #FFF8EC; }
+  .coll .thumb { width: 56px; height: 56px; border-radius: 6px; overflow: hidden; background: #ddd; }
+  .coll .thumb .stage { width: 56px; }
+  .coll .name { font-weight: 600; font-size: 13px; }
+  .coll .sub { font-size: 12px; color: var(--muted); }
+  .coll .list { display: grid; gap: 2px; max-height: 58vh; overflow-y: auto; margin: 8px 0; }
+  .coll .cat { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 10px 0 2px 8px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .ok { color: #0A8A4A; font-weight: 600; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <img src="../../web/assets/logos/logo-shop.svg" alt="The White Hilux">
+  <h1>Configurador de colección</h1>
+  <span class="sp"></span>
+  <span class="help">Arma cada prenda, agrégala a tu colección y al final descarga el archivo. Lo que ves aquí es exactamente cómo saldrán las fotos de la tienda.</span>
+  <button class="btn accent" id="dl">Descargar colección</button>
+</header>
+
+<div class="layout">
+  <!-- Editor -->
+  <section class="panel" id="editor">
+    <div class="group">
+      <h2>Producto</h2>
+      <div class="row"><div class="seg" id="tipo">
+        <button data-v="polera">Polera</button><button data-v="poleron">Polerón</button><button data-v="jockey">Jockey</button>
+      </div></div>
+      <div class="row"><input type="text" id="nombre" placeholder="Nombre del producto"></div>
+      <div class="row" id="colores-row"><label>Colores</label>
+        <label><input type="checkbox" id="c-negro"> Negro</label>
+        <label><input type="checkbox" id="c-blanco"> Blanco</label>
+      </div>
+    </div>
+
+    <div class="group" id="g-frente">
+      <h2>Frente</h2>
+      <p class="picked" id="frente-name"></p>
+      <div class="picker" id="pick-frente"></div>
+      <div class="row" style="margin-top:10px"><label>Posición</label><div class="seg" id="f-pos"><button data-v="pecho">Pecho izq.</button><button data-v="centro">Centro</button></div></div>
+      <div class="row"><label>Tamaño</label><div class="seg" id="f-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
+    </div>
+
+    <div class="group" id="g-espalda">
+      <h2>Espalda</h2>
+      <p class="picked" id="espalda-name"></p>
+      <div class="picker" id="pick-espalda"></div>
+      <div class="row" style="margin-top:10px"><label>Tamaño</label><div class="seg" id="e-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
+      <div class="row"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1"><span id="e-alto-v"></span></div>
+    </div>
+
+    <div class="group" id="g-jockey">
+      <h2>Logo del jockey</h2>
+      <p class="picked" id="jockey-name"></p>
+      <div class="picker" id="pick-jockey"></div>
+      <div class="row" style="margin-top:10px"><label>Estilo</label><div class="seg" id="j-est"><button data-v="bordado">Bordado</button><button data-v="parche">Parche tejido</button></div></div>
+      <div class="row"><label>Tamaño</label><div class="seg" id="j-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
+    </div>
+  </section>
+
+  <!-- Vista previa -->
+  <section>
+    <div class="preview-head">
+      <div><h2 id="pv-name"></h2><span class="price" id="pv-price"></span></div>
+      <div class="seg" id="pv-color"></div>
+    </div>
+    <div class="views" id="views"></div>
+  </section>
+
+  <!-- Colección -->
+  <aside class="panel coll">
+    <h2>Mi colección (<span id="count">0</span>)</h2>
+    <div class="actions">
+      <button class="btn blue small" data-new="polera">+ Polera</button>
+      <button class="btn blue small" data-new="poleron">+ Polerón</button>
+      <button class="btn blue small" data-new="jockey">+ Jockey</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="actions">
+      <button class="btn small ghost" id="dup">Duplicar</button>
+      <button class="btn small ghost" id="del" style="color:var(--red)">Eliminar</button>
+      <button class="btn small ghost" id="load">Cargar archivo</button>
+      <button class="btn small ghost" id="reset">Volver a la tienda actual</button>
+      <input type="file" id="file" accept=".json" class="hidden">
+    </div>
+    <p class="note" id="msg">Tus cambios se guardan solos en este navegador.</p>
+  </aside>
+</div>
+
+<script src="posiciones.js"></script>
+<script src="datos.js"></script>
+<script>
+(function () {
+  var P = TWHPos, CFG = TWH_CFG, KEY = 'twh-cfg-coleccion';
+  var LOGOS = {}; CFG.logos.forEach(function (l) { LOGOS[l.id] = l; });
+  var LOGO_DIR = '../../web/assets/logos/', BASE_DIR = 'bases/';
+  var TIPOS = { polera: 'Polera', poleron: 'Polerón', jockey: 'Jockey' };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function load() { try { var v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v) && v.length) return v; } catch (e) {} return JSON.parse(JSON.stringify(CFG.seed)); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(coll)); } catch (e) {} }
+  var coll = load(), cur = 0, color = 'negro';
+
+  function nameOf(id) { return id && LOGOS[id] ? LOGOS[id].name : ''; }
+  function autoName(d) {
+    if (d.tipo === 'jockey') return 'Jockey 5 Paneles ' + nameOf(d.jockey && d.jockey.logo) + (d.jockey && d.jockey.estilo === 'parche' ? ' Parche Tejido' : ' Bordado');
+    var main = d.espalda ? nameOf(d.espalda.logo) : nameOf(d.frente && d.frente.logo);
+    return (d.tipo === 'polera' ? 'Polera ' : 'Polerón Canguro ') + (d.espalda ? '' : 'Básico ') + main;
+  }
+  function blank(tipo) {
+    var d = { id: tipo + '-' + Date.now().toString(36), tipo: tipo, colores: P.COLORS[tipo].slice() };
+    if (tipo === 'jockey') d.jockey = { logo: 'logo-header', estilo: 'parche', tam: 'm' };
+    else { d.frente = { logo: 'logo-header', pos: 'pecho', tam: 'm' }; d.espalda = tipo === 'polera' ? { logo: 'race-dept', tam: 'm', alto: 0 } : null; }
+    d.nombre = autoName(d);
+    return d;
+  }
+
+  // ---------- Dibujo ----------
+  function stage(d, viewKey) {
+    var V = P.VIEWS[viewKey];
+    var html = '<div class="stage"><img class="base" src="' + BASE_DIR + V.img + '" alt="">';
+    P.placementsFor(d, viewKey).forEach(function (p) {
+      var m = LOGOS[p.logo]; if (!m) return;
+      var r = P.rect(m, viewKey, p);
+      if (p.parche) {
+        var pad = r.cWidth * 0.2;
+        html += '<div class="patch" style="left:' + (r.cLeft - pad) + '%;top:' + (r.cTop - pad * V.size[0] / V.size[1]) + '%;width:' + (r.cWidth + 2 * pad) + '%;height:' + (r.cHeight + 2 * pad * V.size[0] / V.size[1]) + '%"></div>';
+      }
+      html += '<img class="lg" src="' + LOGO_DIR + p.logo + (p.claro ? '-claro' : '') + '.svg" style="left:' + r.left + '%;top:' + r.top + '%;width:' + r.width + '%;height:' + r.height + '%;opacity:.93">';
+    });
+    return html + '</div>';
+  }
+  var VIEW_LABEL = { frente: 'Frente', 'frente-2': 'Frente (otra pose)', espalda: 'Espalda' };
+
+  function picker(el, selected, allowNone, onPick) {
+    var h = allowNone ? '<button class="tile" data-id="" aria-pressed="' + (!selected) + '" title="Sin logo">Ninguno</button>' : '';
+    CFG.logos.forEach(function (l) { h += '<button class="tile" data-id="' + l.id + '" title="' + l.name + '" aria-pressed="' + (l.id === selected) + '"><img src="' + LOGO_DIR + l.id + '.svg" alt="' + l.name + '" loading="lazy"></button>'; });
+    el.innerHTML = h;
+    el.onclick = function (e) { var b = e.target.closest('.tile'); if (b) onPick(b.getAttribute('data-id') || null); };
+  }
+  function seg(el, value, onPick) {
+    el.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === value ? 'true' : 'false'); });
+    el.onclick = function (e) { var b = e.target.closest('button'); if (b) onPick(b.getAttribute('data-v')); };
+  }
+
+  function update(fn) { var d = coll[cur]; var auto = d.nombre === autoName(d); fn(d); if (auto || !d.nombre) d.nombre = autoName(d); save(); render(); }
+
+  function render() {
+    if (!coll.length) coll.push(blank('polera'));
+    if (cur >= coll.length) cur = coll.length - 1;
+    var d = coll[cur];
+    if (d.colores.indexOf(color) < 0) color = d.colores[0] || 'negro';
+
+    seg($('tipo'), d.tipo, function (t) { if (t === d.tipo) return; var n = blank(t); n.id = d.id; coll[cur] = n; save(); render(); });
+    $('nombre').value = d.nombre;
+    $('colores-row').classList.toggle('hidden', d.tipo !== 'polera');
+    $('c-negro').checked = d.colores.indexOf('negro') >= 0; $('c-blanco').checked = d.colores.indexOf('blanco') >= 0;
+
+    var ropa = d.tipo !== 'jockey';
+    $('g-frente').classList.toggle('hidden', !ropa); $('g-espalda').classList.toggle('hidden', !ropa); $('g-jockey').classList.toggle('hidden', ropa);
+    if (ropa) {
+      $('frente-name').innerHTML = 'Elegido: <b>' + (d.frente ? nameOf(d.frente.logo) : 'sin logo') + '</b>';
+      $('espalda-name').innerHTML = 'Elegido: <b>' + (d.espalda ? nameOf(d.espalda.logo) : 'espalda lisa') + '</b>';
+      picker($('pick-frente'), d.frente && d.frente.logo, true, function (id) { update(function (x) { x.frente = id ? Object.assign({ pos: 'pecho', tam: 'm' }, x.frente || {}, { logo: id }) : null; }); });
+      picker($('pick-espalda'), d.espalda && d.espalda.logo, true, function (id) { update(function (x) { x.espalda = id ? Object.assign({ tam: 'm', alto: 0 }, x.espalda || {}, { logo: id }) : null; }); });
+      seg($('f-pos'), d.frente && d.frente.pos, function (v) { update(function (x) { if (x.frente) x.frente.pos = v; }); });
+      seg($('f-tam'), d.frente && d.frente.tam, function (v) { update(function (x) { if (x.frente) x.frente.tam = v; }); });
+      seg($('e-tam'), d.espalda && d.espalda.tam, function (v) { update(function (x) { if (x.espalda) x.espalda.tam = v; }); });
+      $('e-alto').value = d.espalda ? d.espalda.alto || 0 : 0;
+      $('e-alto-v').textContent = d.espalda ? ((d.espalda.alto > 0 ? 'más abajo ' : d.espalda.alto < 0 ? 'más arriba ' : 'normal ') + (d.espalda.alto ? Math.abs(d.espalda.alto) : '')) : '';
+    } else {
+      $('jockey-name').innerHTML = 'Elegido: <b>' + nameOf(d.jockey.logo) + '</b>';
+      picker($('pick-jockey'), d.jockey.logo, false, function (id) { update(function (x) { x.jockey.logo = id; }); });
+      seg($('j-est'), d.jockey.estilo, function (v) { update(function (x) { x.jockey.estilo = v; }); });
+      seg($('j-tam'), d.jockey.tam, function (v) { update(function (x) { x.jockey.tam = v; }); });
+    }
+
+    // vista previa
+    $('pv-name').textContent = d.nombre;
+    $('pv-price').textContent = '$' + P.PRICES[d.tipo].toLocaleString('es-CL');
+    $('pv-color').innerHTML = d.colores.map(function (c) { return '<button data-v="' + c + '" aria-pressed="' + (c === color) + '">' + (c === 'negro' ? 'Negro' : 'Blanco') + '</button>'; }).join('');
+    $('pv-color').onclick = function (e) { var b = e.target.closest('button'); if (b) { color = b.getAttribute('data-v'); render(); } };
+    $('views').innerHTML = P.viewsFor(d, color).map(function (v) {
+      var k = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
+      return '<div class="view">' + stage(d, v) + '<div class="cap">' + (VIEW_LABEL[k] || 'Jockey') + '</div></div>';
+    }).join('');
+
+    // colección
+    $('count').textContent = coll.length;
+    var html = '';
+    ['polera', 'poleron', 'jockey'].forEach(function (t) {
+      var items = coll.map(function (x, i) { return [x, i]; }).filter(function (p) { return p[0].tipo === t; });
+      if (!items.length) return;
+      html += '<div class="cat">' + TIPOS[t] + 's (' + items.length + ')</div>';
+      items.forEach(function (p) {
+        var x = p[0], i = p[1], v = P.viewsFor(x, x.colores[0] || 'negro')[0];
+        var sub = x.tipo === 'jockey' ? (x.jockey.estilo === 'parche' ? 'Parche' : 'Bordado') : ((x.frente ? 'Frente: ' + nameOf(x.frente.logo) : 'Sin frente') + ' · ' + (x.espalda ? 'Espalda: ' + nameOf(x.espalda.logo) : 'Espalda lisa'));
+        html += '<div class="item' + (i === cur ? ' sel' : '') + '" data-i="' + i + '"><div class="thumb">' + stage(x, v) + '</div><div><div class="name">' + x.nombre + '</div><div class="sub">' + sub + (x.tipo === 'polera' ? ' · ' + x.colores.join(' y ') : '') + '</div></div></div>';
+      });
+    });
+    $('list').innerHTML = html;
+  }
+
+  // ---------- Eventos ----------
+  $('list').onclick = function (e) { var it = e.target.closest('.item'); if (it) { cur = +it.getAttribute('data-i'); render(); } };
+  $('nombre').oninput = function () { coll[cur].nombre = this.value; save(); $('pv-name').textContent = this.value; };
+  $('nombre').onchange = function () { render(); };
+  ['negro', 'blanco'].forEach(function (c) {
+    $('c-' + c).onchange = function () {
+      var d = coll[cur], s = d.colores.filter(function (x) { return x !== c; });
+      if (this.checked) s.push(c);
+      if (!s.length) { this.checked = true; return; }
+      d.colores = ['negro', 'blanco'].filter(function (x) { return s.indexOf(x) >= 0; }); save(); render();
+    };
+  });
+  $('e-alto').oninput = function () { var v = +this.value; update(function (x) { if (x.espalda) x.espalda.alto = v; }); };
+  document.querySelectorAll('[data-new]').forEach(function (b) { b.onclick = function () { coll.push(blank(b.getAttribute('data-new'))); cur = coll.length - 1; save(); render(); }; });
+  $('dup').onclick = function () { var c = JSON.parse(JSON.stringify(coll[cur])); c.id = c.tipo + '-' + Date.now().toString(36); c.nombre += ' (copia)'; coll.splice(cur + 1, 0, c); cur++; save(); render(); };
+  $('del').onclick = function () { coll.splice(cur, 1); save(); render(); };
+  $('reset').onclick = function () { coll = JSON.parse(JSON.stringify(CFG.seed)); cur = 0; save(); render(); msg('Colección reiniciada con los productos de la tienda actual.'); };
+  $('load').onclick = function () { $('file').click(); };
+  $('file').onchange = function () {
+    var f = this.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { try { var v = JSON.parse(r.result); coll = v.productos || v; cur = 0; save(); render(); msg('Archivo cargado.'); } catch (e) { msg('Ese archivo no es una colección válida.'); } };
+    r.readAsText(f);
+  };
+  $('dl').onclick = function () {
+    var data = { generado: new Date().toISOString(), productos: coll };
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+    a.download = 'twh-coleccion.json'; document.body.appendChild(a); a.click(); a.remove();
+    msg('<span class="ok">Descargado twh-coleccion.json.</span> Déjalo en la carpeta disenos/configurador y avísame para pasarlo a la tienda.');
+  };
+  function msg(t) { $('msg').innerHTML = t; }
+  render();
+})();
+</script>
+</body>
+</html>

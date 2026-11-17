@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The White Hilux · Tienda off road</title>
+<meta name="description" content="Poleras, polerones, jockeys y stickers off road. Diseñados en Chile por @the.whitehilux.">
+<link rel="icon" href="assets/logos/logo-header.svg">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<section class="hero photo-bg" id="hero">
+  <div class="wrap hero-in">
+    <div>
+      <img class="hero-mark" src="assets/logos/cl-shop.svg" alt="The White Hilux CL Shop">
+      <h1>Merch off road</h1>
+      <p>Poleras, polerones, jockeys y stickers para los amantes del off road, el 4x4 y las camionetas.</p>
+      <div class="ctas">
+        <a class="btn accent" href="#productos">Ver colección</a>
+        <a class="btn ghost" href="index.html?cat=poleron#productos">Polerones</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div id="home-extras">
+    <div class="perks-strip">
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg><p><b>Envío a todo Chile</b><span id="perk-ship">Gratis en RM sobre $40.000</span></p></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><p><b>Compra protegida</b><span>Pagas con Mercado Pago</span></p></div>
+      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg><p><b>Atención directa</b><span>Escríbenos a @the.whitehilux</span></p></div>
+    </div>
+    <div class="cat-tiles" id="cat-tiles"></div>
+  </div>
+
+  <div class="crumbs" id="crumbs"></div>
+  <div class="list-layout" id="productos">
+    <aside class="filters" id="filters" aria-label="Filtros"></aside>
+    <section>
+      <div class="toolbar">
+        <div><h1 id="list-title">Toda la colección</h1><p class="count" id="list-count"></p></div>
+        <label for="sort">Ordenar por
+          <select id="sort">
+            <option value="rel">Más relevantes</option>
+            <option value="asc">Menor precio</option>
+            <option value="desc">Mayor precio</option>
+          </select>
+        </label>
+      </div>
+      <div class="active-filters" id="active"></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty-list" id="empty" hidden>No encontramos productos con esos filtros. <a href="index.html#productos">Ver toda la colección</a></div>
+    </section>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="data/catalog.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/mockups.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+TWH.loadData().then(function (d) {
+  var cfg = d.config, cats = cfg.categories;
+  var q = new URLSearchParams(location.search);
+  var f = { cat: q.get('cat'), q: (q.get('q') || '').trim(), price: q.get('price'), color: q.get('color'), estado: q.get('estado') };
+  var C = TWH.core;
+  var ESTADOS = { disponible: 'Disponibles', proximamente: 'Próximamente' };
+  function tagFor(p) {
+    if (p.status === 'proximamente') return '<span class="tag-pre">PRÓXIMAMENTE</span>';
+    if (C.isSoldOut(p)) return '<span class="tag-pre tag-out">AGOTADO</span>';
+    return '';
+  }
+  var PRICES = { low: ['Hasta $15.000', 0, 15000], mid: ['$15.000 a $25.000', 15000, 25000], high: ['Más de $25.000', 25000, 1e9] };
+  var filtered = !!(f.cat || f.q || f.price || f.color || f.estado);
+
+  // Banner y accesos solo en la portada sin filtros
+  document.getElementById('hero').hidden = filtered;
+  document.getElementById('home-extras').hidden = filtered;
+  if (cfg.freeShippingFrom) document.getElementById('perk-ship').textContent = 'Gratis en RM sobre ' + TWH.money(cfg.freeShippingFrom);
+
+  function url(change) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(change).forEach(function (k) { if (change[k]) p.set(k, change[k]); else p.delete(k); });
+    var s = p.toString();
+    return 'index.html' + (s ? '?' + s : '') + '#productos';
+  }
+
+  function match(p, skip) {
+    if (skip !== 'cat' && f.cat && p.type !== f.cat) return false;
+    if (f.q && (p.name + ' ' + p.desc).toLowerCase().indexOf(f.q.toLowerCase()) < 0) return false;
+    if (skip !== 'price' && f.price && PRICES[f.price] && !(p.price >= PRICES[f.price][1] && p.price < PRICES[f.price][2])) return false;
+    if (skip !== 'color' && f.color && p.colors.indexOf(f.color) < 0) return false;
+    if (skip !== 'estado' && f.estado && ESTADOS[f.estado] && p.status !== f.estado) return false;
+    return true;
+  }
+
+  // Accesos por categoría
+  document.getElementById('cat-tiles').innerHTML = Object.keys(cats).map(function (k) {
+    var ps = d.products.filter(function (p) { return p.type === k; });
+    if (!ps.length) return '';
+    var from = Math.min.apply(null, ps.map(function (p) { return p.price; }));
+    return '<a class="cat-tile" href="' + url({ cat: k }) + '"><div class="pic">' + TWH.picture(ps[0], 0) + '</div><div><b>' + cats[k] + '</b><span>Desde ' + TWH.money(from) + '</span></div></a>';
+  }).join('');
+
+  // Filtros
+  var html = '<div class="group"><h3>Categoría</h3><a href="' + url({ cat: '' }) + '"' + (!f.cat ? ' aria-current="true"' : '') + '>Todas <span>' + d.products.filter(function (p) { return match(p, 'cat'); }).length + '</span></a>' +
+    Object.keys(cats).map(function (k) {
+      var n = d.products.filter(function (p) { return p.type === k && match(p, 'cat'); }).reduce(function (s, p) { return s + (p.designs ? p.designs.length : 1); }, 0);
+      return n ? '<a href="' + url({ cat: k }) + '"' + (f.cat === k ? ' aria-current="true"' : '') + '>' + cats[k] + ' <span>' + n + '</span></a>' : '';
+    }).join('') + '</div>';
+  html += '<div class="group"><h3>Precio</h3>' + Object.keys(PRICES).map(function (k) {
+    var n = d.products.filter(function (p) { return match(p, 'price') && p.price >= PRICES[k][1] && p.price < PRICES[k][2]; }).length;
+    return n ? '<a href="' + url({ price: f.price === k ? '' : k }) + '"' + (f.price === k ? ' aria-current="true"' : '') + '>' + PRICES[k][0] + ' <span>' + n + '</span></a>' : '';
+  }).join('') + '</div>';
+  html += '<div class="group"><h3>Color</h3><div class="dots-filter">' + Object.keys(cfg.colors).map(function (c) {
+    var g = TWHMock.GARMENTS[c];
+    return '<a href="' + url({ color: f.color === c ? '' : c }) + '" title="' + cfg.colors[c] + '" aria-label="' + cfg.colors[c] + '"' + (f.color === c ? ' aria-current="true"' : '') + ' style="background:' + g.g + '"></a>';
+  }).join('') + '</div></div>';
+  if (d.products.some(function (p) { return p.status === 'proximamente'; })) {
+    html += '<div class="group"><h3>Disponibilidad</h3>' + Object.keys(ESTADOS).map(function (k) {
+      var n = d.products.filter(function (p) { return match(p, 'estado') && p.status === k; }).length;
+      return n ? '<a href="' + url({ estado: f.estado === k ? '' : k }) + '"' + (f.estado === k ? ' aria-current="true"' : '') + '>' + ESTADOS[k] + ' <span>' + n + '</span></a>' : '';
+    }).join('') + '</div>';
+  }
+  document.getElementById('filters').innerHTML = html;
+
+  // Filtros activos
+  var chips = [];
+  if (f.q) chips.push(['“' + f.q + '”', { q: '' }]);
+  if (f.cat) chips.push([cats[f.cat], { cat: '' }]);
+  if (f.price && PRICES[f.price]) chips.push([PRICES[f.price][0], { price: '' }]);
+  if (f.color) chips.push([cfg.colors[f.color], { color: '' }]);
+  if (f.estado && ESTADOS[f.estado]) chips.push([ESTADOS[f.estado], { estado: '' }]);
+  document.getElementById('active').innerHTML = chips.map(function (c) { return '<a class="chip" href="' + url(c[1]) + '">' + TWH.esc(c[0]) + ' ✕</a>'; }).join('') +
+    (chips.length > 1 ? '<a class="chip" href="index.html#productos">Limpiar filtros</a>' : '');
+
+  var title = f.q ? 'Resultados para “' + f.q + '”' : (f.cat ? cats[f.cat] : (f.estado && ESTADOS[f.estado] ? ESTADOS[f.estado] : 'Toda la colección'));
+  document.getElementById('list-title').textContent = title;
+  document.getElementById('crumbs').innerHTML = filtered ? '<a href="index.html">Inicio</a> › ' + TWH.esc(title) : '';
+
+  function render() {
+    var list = [];
+    d.products.filter(function (p) { return match(p); }).forEach(function (p) {
+      if (p.designs && f.cat === 'stickers') p.designs.forEach(function (dd) { list.push(Object.assign({}, p, { name: 'Sticker ' + dd.name + ' · Vinilo 10 cm', views: [{ shape: 'sticker', logo: dd.id }], _design: dd.id })); });
+      else list.push(p);
+    });
+    var sort = document.getElementById('sort').value;
+    // Lo que se puede comprar primero; próximamente y agotados al final
+    var rank = function (p) { return p.status === 'proximamente' ? 2 : (C.isSoldOut(p) ? 1 : 0); };
+    list.sort(function (a, b) { return rank(a) - rank(b); });
+    if (sort === 'asc') list.sort(function (a, b) { return rank(a) - rank(b) || a.price - b.price; });
+    if (sort === 'desc') list.sort(function (a, b) { return rank(a) - rank(b) || b.price - a.price; });
+    document.getElementById('list-count').textContent = list.length + (list.length === 1 ? ' producto' : ' productos');
+    document.getElementById('empty').hidden = list.length > 0;
+    var free = cfg.freeShippingFrom;
+    document.getElementById('grid').innerHTML = list.map(function (p) {
+      var color = f.color && p.colors.indexOf(f.color) >= 0 ? f.color : p.colors[0];
+      var alt = TWH.pictureCount(p, color) > 1;
+      var dots = p.colors.map(function (c) { return '<span class="cdot" title="' + cfg.colors[c] + '" style="background:' + TWHMock.GARMENTS[c].g + '"></span>'; }).join('');
+      return '<a class="item" href="producto.html?id=' + encodeURIComponent(p.id) + (p._design ? '&d=' + p._design : '') + '">' +
+        '<div class="pic">' + tagFor(p) +
+        (alt ? '<div class="alt">' + TWH.picture(p, 1, color) + '</div>' : '') +
+        '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +
+        '<div class="body"><span class="title">' + TWH.esc(p.name) + '</span>' +
+        '<span class="price">' + TWH.money(p.price) + '</span>' +
+        '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">Envío a todo Chile</span>') +
+        '<span class="cdots">' + dots + '</span></div></div></a>';
+    }).join('');
+  }
+  document.getElementById('sort').addEventListener('change', render);
+  render();
+});
+</script>
+</body>
+</html>

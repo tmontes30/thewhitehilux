@@ -1,0 +1,27 @@
+rules_version = '2';
+// Tienda The White Hilux
+//  - tienda/catalogo: precios, estados, stock y ajustes. Lo lee cualquiera (la tienda); solo el admin lo edita.
+//  - pedidos/*: solo el admin los ve y edita. Los crean las funciones (Admin SDK, no pasan por estas reglas).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['tmontes30@gmail.com'];
+    }
+
+    match /tienda/catalogo {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pedidos/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
