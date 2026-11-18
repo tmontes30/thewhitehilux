@@ -1,6 +1,7 @@
 // Arma y valida un pedido en el servidor.
-// Los precios SIEMPRE salen del catálogo del servidor (catalog.js + lo editado en el panel), nunca del navegador.
-// Si el producto controla stock (p.stock), se valida que alcance para cada talla/color.
+// Los precios SIEMPRE salen del catálogo del servidor (catalog.js + lo editado en el panel, con ofertas aplicadas),
+// nunca del navegador. Si el producto controla stock (p.stock), se valida que alcance para cada talla/color.
+// Los códigos de descuento (cupones) se validan aquí y se reparten entre las líneas a las que aplican.
 
 class OrderError extends Error {
   constructor(message) {
@@ -10,15 +11,67 @@ class OrderError extends Error {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const COLOR_CODE = { negro: 'NEG', blanco: 'BLA' };
 
 function str(v, max) {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
 }
 
-function buildOrder(body, products, config) {
-  if (!body || typeof body !== 'object') throw new OrderError('Pedido vacío.');
-  const { items, customer = {}, shipping = {} } = body;
+function lineSku(p, color, size, design) {
+  if (!p.sku) return '';
+  return [p.sku, color ? COLOR_CODE[color] || color.slice(0, 3).toUpperCase() : '', size === 'Única' || !size ? 'U' : size,
+    design ? design.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) : ''].filter(Boolean).join('-');
+}
 
+// Normaliza un código escrito por el cliente: TWH10, twh-10 → TWH10
+function couponCode(s) {
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+}
+
+// Descuento de un cupón sobre las líneas. coupon = { code, kind: 'percent'|'amount', value, scope, targets, minSubtotal,
+// from, to, active, maxUses, uses }. Devuelve { amount, label } o lanza OrderError con un mensaje para el cliente.
+function couponDiscount(coupon, lines, products, today) {
+  const bad = (m) => { throw new OrderError(m); };
+  if (!coupon || coupon.active === false) bad('Ese código no existe o ya no está vigente.');
+  if ((coupon.from && today < coupon.from) || (coupon.to && today > coupon.to)) bad('Ese código no está vigente.');
+  if (coupon.maxUses && (coupon.uses || 0) >= coupon.maxUses) bad('Ese código ya se usó el máximo de veces.');
+  const subtotal = lines.reduce((s, l) => s + l.total, 0);
+  if (coupon.minSubtotal && subtotal < coupon.minSubtotal) {
+    bad(`Ese código es para compras desde $${Number(coupon.minSubtotal).toLocaleString('es-CL')}.`);
+  }
+  const applies = (l) => {
+    const p = products.find((x) => x.id === l.id) || {};
+    if (coupon.scope === 'category') return (coupon.targets || []).includes(p.type);
+    if (coupon.scope === 'products') return (coupon.targets || []).includes(p.id);
+    return true;
+  };
+  const eligible = lines.filter(applies).reduce((s, l) => s + l.total, 0);
+  if (!eligible) bad('Ese código no aplica a los productos de tu carrito.');
+  const v = Number(coupon.value) || 0;
+  const amount = Math.min(eligible, coupon.kind === 'amount' ? Math.round(v) : Math.round((eligible * Math.min(v, 100)) / 100));
+  if (amount <= 0) bad('Ese código no aplica a los productos de tu carrito.');
+  return { amount, applies, label: coupon.kind === 'amount' ? `-$${Math.round(v).toLocaleString('es-CL')}` : `-${v}%` };
+}
+
+// Reparte un monto entre las líneas elegibles en pesos enteros (proporcional, sin perder ni sobrar un peso)
+function allocate(lines, amount, applies) {
+  const elig = lines.filter(applies);
+  const base = elig.reduce((s, l) => s + l.total, 0);
+  let given = 0;
+  const parts = elig.map((l) => {
+    const exact = (amount * l.total) / base;
+    const n = Math.floor(exact);
+    given += n;
+    return { l, n, rest: exact - n };
+  });
+  parts.sort((a, b) => b.rest - a.rest);
+  for (let i = 0; given < amount; i = (i + 1) % parts.length, given++) parts[i].n++;
+  lines.forEach((l) => { l.discount = 0; });
+  parts.forEach((x) => { x.l.discount = Math.min(x.n, x.l.total); });
+}
+
+// Productos del carrito con precios, stock y cupón (sin datos del cliente). Lo usan buildOrder y la vista previa del cupón.
+function priceCart(items, products, config, opts = {}) {
   if (!Array.isArray(items) || items.length === 0) throw new OrderError('El carrito está vacío.');
   if (items.length > 30) throw new OrderError('Demasiadas líneas en el carrito.');
 
@@ -46,15 +99,21 @@ function buildOrder(body, products, config) {
     }
     return {
       id: product.id,
+      sku: lineSku(product, color, size, design),
       name: product.name,
+      type: product.type,
       size,
       color,
       color_name: color ? config.colors[color] || color : '',
       design,
       design_name: designName,
       qty,
+      list_price: product.compareAt || product.price,
       unit_price: product.price,
+      offer: product.offer ? product.offer.name || 'Oferta' : '',
       total: product.price * qty,
+      discount: 0,
+      net: product.price * qty,
     };
   });
 
@@ -74,6 +133,23 @@ function buildOrder(body, products, config) {
       throw new OrderError(have === 0 ? `Se agotó ${what}. Quítalo del carrito para seguir.` : `Solo quedan ${have} de ${what}. Ajusta la cantidad en el carrito.`);
     }
   });
+
+  const subtotal = lines.reduce((s, l) => s + l.total, 0);
+  let discount = null;
+  if (opts.couponCode) {
+    const c = couponDiscount(opts.coupon, lines, products, opts.today || '');
+    allocate(lines, c.amount, c.applies);
+    lines.forEach((l) => { l.net = l.total - l.discount; });
+    discount = { code: couponCode(opts.couponCode), amount: c.amount, label: c.label };
+  }
+  return { lines, subtotal, discount, discounted: subtotal - (discount ? discount.amount : 0) };
+}
+
+// opts = { couponCode, coupon, today } (el servidor busca el cupón y lo pasa aquí)
+function buildOrder(body, products, config, opts = {}) {
+  if (!body || typeof body !== 'object') throw new OrderError('Pedido vacío.');
+  const { customer = {}, shipping = {} } = body;
+  const cart = priceCart(body.items, products, config, opts);
 
   // Cliente
   const name = str(customer.name, 80);
@@ -100,15 +176,16 @@ function buildOrder(body, products, config) {
   }
   const notes = str(shipping.notes, 300);
 
-  const subtotal = lines.reduce((s, l) => s + l.total, 0);
+  // Envío gratis según lo que se paga por productos (ya con descuento)
   const zoneCfg = config.shipping[zone];
   const freeZones = config.freeShippingZones || ['rm', 'regiones'];
-  const freeShipping = freeZones.includes(zone) && config.freeShippingFrom && subtotal >= config.freeShippingFrom;
+  const freeShipping = freeZones.includes(zone) && config.freeShippingFrom && cart.discounted >= config.freeShippingFrom;
   const shippingCost = freeShipping ? 0 : zoneCfg.price;
 
   return {
-    lines,
-    subtotal,
+    lines: cart.lines,
+    subtotal: cart.subtotal,
+    discount: cart.discount,
     shipping: {
       method,
       zone,
@@ -121,7 +198,7 @@ function buildOrder(body, products, config) {
       notes,
     },
     customer: { name, email, phone },
-    total: subtotal + shippingCost,
+    total: cart.discounted + shippingCost,
   };
 }
 
@@ -131,25 +208,23 @@ function newOrderId() {
   return `TWH-${t}-${r}`;
 }
 
-// Líneas para Mercado Pago (CLP no usa decimales)
+// Ítems para Mercado Pago (montos enteros en CLP). Con descuento, el total de una línea puede no dividirse exacto
+// por la cantidad: se separa en dos ítems (ej. 2 a $9.995 y 1 a $9.996) para que la suma cuadre al peso.
 function toMercadoPagoItems(order) {
-  const items = order.lines.map((l) => ({
-    id: `${l.id}:${l.size}${l.color ? ':' + l.color : ''}${l.design ? ':' + l.design : ''}`,
-    title: [l.name, l.design_name, l.size !== 'Única' ? `Talla ${l.size}` : '', l.color_name].filter(Boolean).join(' · '),
-    quantity: l.qty,
-    unit_price: l.unit_price,
-    currency_id: 'CLP',
-  }));
+  const items = [];
+  order.lines.forEach((l) => {
+    const total = l.net != null ? l.net : l.total;
+    const unit = Math.floor(total / l.qty);
+    const extra = total - unit * l.qty;
+    const title = [l.name, l.design_name, l.size !== 'Única' ? `Talla ${l.size}` : '', l.color_name].filter(Boolean).join(' · ');
+    const code = (l.sku || l.id).slice(0, 30);
+    if (l.qty - extra > 0) items.push({ code, title, quantity: l.qty - extra, unit_price: unit });
+    if (extra > 0) items.push({ code, title, quantity: extra, unit_price: unit + 1 });
+  });
   if (order.shipping.cost > 0) {
-    items.push({
-      id: 'envio',
-      title: order.shipping.zone_label,
-      quantity: 1,
-      unit_price: order.shipping.cost,
-      currency_id: 'CLP',
-    });
+    items.push({ code: 'envio', title: order.shipping.zone_label, quantity: 1, unit_price: order.shipping.cost });
   }
   return items;
 }
 
-module.exports = { buildOrder, newOrderId, toMercadoPagoItems, OrderError };
+module.exports = { buildOrder, priceCart, couponCode, newOrderId, toMercadoPagoItems, OrderError };

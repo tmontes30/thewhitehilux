@@ -66,6 +66,29 @@ async function post(items, shipping = rm, cust = customer) {
   assert.strictEqual((await post([{ id: polera.id, size: 'M', color: 'negro', qty: 1 }])).status, 400);
   console.log('✔ talla agotada después de la venta');
 
+  // 6) Código de descuento: vista previa, pedido con descuento y conteo de usos al pagar
+  await db.doc('cupones/TWH10').set({ code: 'TWH10', name: 'Prueba', kind: 'percent', value: 10, scope: 'all', targets: [], active: true, uses: 0, createdAt: new Date().toISOString() });
+  const pv = await (await fetch(`${API}/validarCupon`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coupon: 'twh10', items: [{ id: polera.id, size: 'L', color: 'negro', qty: 1 }] }) })).json();
+  assert.strictEqual(pv.amount, Math.round(polera.price * 0.1), JSON.stringify(pv));
+  const bad = await fetch(`${API}/validarCupon`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coupon: 'NOEXISTE', items: [{ id: polera.id, size: 'L', color: 'negro', qty: 1 }] }) });
+  assert.strictEqual(bad.status, 400);
+  const dc = await (await fetch(`${API}/crearPreferencia`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ id: polera.id, size: 'L', color: 'negro', qty: 1 }], coupon: 'TWH10', customer, shipping: rm }) })).json();
+  await fetch(`${API}/simularPago?id=${dc.order_id}`);
+  const dco = (await db.doc('pedidos/' + dc.order_id).get()).data();
+  assert.strictEqual(dco.discount.amount, pv.amount);
+  assert.strictEqual((await db.doc('cupones/TWH10').get()).data().uses, 1);
+  console.log('✔ código TWH10: -' + pv.amount + ', uso contado');
+
+  // 7) Oferta automática: el servidor cobra el precio rebajado
+  await db.doc('tienda/catalogo').update({ 'offers.ofjk': { name: 'Semana del jockey', kind: 'percent', value: 25, scope: 'category', targets: ['jockey'], active: true, from: '', to: '', createdAt: new Date().toISOString() } });
+  const jk2 = base.products.filter((p) => p.type === 'jockey')[1];
+  const of = await post([{ id: jk2.id, size: 'Única', color: 'negro', qty: 1 }]);
+  const ofo = (await db.doc('pedidos/' + of.body.order_id).get()).data();
+  assert.strictEqual(ofo.lines[0].list_price, jk2.price);
+  assert.ok(ofo.lines[0].unit_price < jk2.price);
+  await fetch(`${API}/simularPago?id=${of.body.order_id}`);
+  console.log('✔ oferta: jockey a', ofo.lines[0].unit_price, 'en vez de', jk2.price, '· SKU', ofo.lines[0].sku);
+
   // Datos de ejemplo para el panel: un pedido regional pagado, uno atrasado, uno pendiente
   const b = await post([{ id: polera.id, size: 'L', color: 'negro', qty: 1 }, { id: 'sticker-twh', size: 'Única', design: 'race-dept', qty: 3 }],
     { method: 'despacho', region: 'Biobío', comuna: 'Concepción', address: 'O\'Higgins 820', notes: 'Dejar en conserjería' },

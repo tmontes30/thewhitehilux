@@ -250,6 +250,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .radio { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 12px; cursor: pointer; }
 .radio:has(input:checked) { border-color: var(--blue); background: #F7FAFF; }
 .radio small { display: block; color: var(--muted); }
+.field .radio input { width: auto; flex: none; margin: 3px 0 0; padding: 0; box-shadow: none; }
 .totals { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
 .totals div { display: flex; justify-content: space-between; gap: 12px; }
 .totals .grand { font-size: 20px; font-weight: 700; }
@@ -286,3 +287,41 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .line-warn { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 4px; }
 .eta { font-size: 13.5px; color: var(--green); font-weight: 600; margin: 10px 0 0; }
 .eta:empty { display: none; }
+
+/* ---------- Escala en computador: la tienda se ve como al 70-80% de zoom ---------- */
+@media (min-width: 1100px) { html { zoom: .78; } .wrap, .about-hero .wrap { max-width: 1440px; } .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1600px) { html { zoom: .72; } .wrap, .about-hero .wrap { max-width: 1760px; } .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+/* ---------- Portada más compacta (sin título grande) ---------- */
+.hero.photo-bg .hero-in { min-height: 340px; padding-block: 36px 56px; }
+.hero.photo-bg .hero-mark { width: 190px; margin-bottom: 6px; }
+.hero.photo-bg p { margin-top: 10px; }
+
+/* ---------- Ofertas ---------- */
+.price-old { display: block; font-size: 13px; color: var(--muted); text-decoration: line-through; line-height: 1.1; }
+.off { font-style: normal; font-size: 14px; font-weight: 600; color: var(--green); margin-left: 4px; vertical-align: middle; }
+.buy .price-box .price-old { font-size: 15px; }
+.buy .price .off { font-size: 18px; }
+.offer-name { font-size: 13px; color: var(--green); font-weight: 600; margin-top: -6px; }
+.tag-pre.tag-sale { background: var(--green); color: #fff; }
+
+/* ---------- Botón flotante de WhatsApp ---------- */
+.wa-float { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 58px; height: 58px; border-radius: 50%; background: #25D366; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.25); transition: transform .15s; }
+.wa-float:hover { transform: scale(1.07); }
+.wa-float svg { width: 32px; height: 32px; }
+@media (max-width: 760px) { .wa-float { right: 14px; bottom: 14px; width: 52px; height: 52px; } .wa-float svg { width: 28px; height: 28px; } }
+
+/* ---------- Nosotros: historia ---------- */
+.story { max-width: 760px; }
+.story p { font-size: 16.5px; line-height: 1.7; color: var(--text); }
+.story p + p { margin-top: 14px; }
+
+/* ---------- Carrito: código de descuento ---------- */
+.coupon { display: flex; gap: 8px; margin-top: 4px; }
+.coupon input { flex: 1; min-width: 0; text-transform: uppercase; }
+.coupon .btn { width: auto; padding: 10px 16px; }
+.coupon-ok { color: var(--green); font-size: 13.5px; font-weight: 600; margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.coupon-ok button { background: none; border: 0; color: var(--blue); cursor: pointer; padding: 0; font-size: 13px; }
+.coupon-err { color: var(--red); font-size: 13px; margin-top: 6px; }
+.totals .disc { color: var(--green); }
+.line .was { color: var(--muted); text-decoration: line-through; font-size: 12.5px; display: block; }

@@ -18,7 +18,7 @@ const { MercadoPagoConfig, Order, Payment, WebhookSignatureValidator } = require
 
 const base = require('./shared/catalog.js');
 const core = require('./shared/core.js');
-const { buildOrder, newOrderId, OrderError } = require('./shared/order.js');
+const { buildOrder, priceCart, couponCode, newOrderId, toMercadoPagoItems, OrderError } = require('./shared/order.js');
 const { orderHtml, alertHtml, sendEmail } = require('./shared/email.js');
 
 admin.initializeApp();
@@ -37,6 +37,7 @@ const RESEND_FROM = defineString('RESEND_FROM', { default: 'The White Hilux <onb
 const EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const CATALOG = db.doc('tienda/catalogo');
 const ORDERS = db.collection('pedidos');
+const COUPONS = db.collection('cupones');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
 
 const secret = (s) => {
@@ -50,18 +51,23 @@ async function loadCatalog(tx) {
   return { snap, data: core.mergeCatalog(base, snap.exists ? snap.data() : null) };
 }
 
+// Cupón por código (colección privada cupones/{CODIGO})
+async function findCoupon(raw) {
+  const code = couponCode(raw);
+  if (!code) return { code: '', coupon: null };
+  const snap = await COUPONS.doc(code).get();
+  return { code, coupon: snap.exists ? snap.data() : null };
+}
+
 // Cuerpo de la order de Mercado Pago (CLP sin decimales, montos como texto; el envío va como un ítem más)
 function mpOrderBody(orderId, order, siteUrl) {
   const [firstName, ...rest] = order.customer.name.split(/\s+/);
-  const items = order.lines.map((l) => ({
-    external_code: `${l.size}${l.color ? '-' + l.color : ''}${l.design ? '-' + l.design : ''}-${l.id}`.slice(0, 30), // máx. 30
-    title: [l.name, l.design_name, l.size !== 'Única' ? `Talla ${l.size}` : '', l.color_name].filter(Boolean).join(' · ').slice(0, 150),
-    quantity: l.qty,
-    unit_price: String(Math.round(l.unit_price)),
+  const items = toMercadoPagoItems(order).map((i) => ({
+    external_code: i.code.slice(0, 30), // máx. 30
+    title: i.title.slice(0, 150),
+    quantity: i.quantity,
+    unit_price: String(i.unit_price),
   }));
-  if (order.shipping.cost > 0) {
-    items.push({ external_code: 'envio', title: order.shipping.zone_label, quantity: 1, unit_price: String(Math.round(order.shipping.cost)) });
-  }
   const payer = { email: order.customer.email, first_name: firstName };
   if (rest.length) payer.last_name = rest.join(' ');
   return {
@@ -99,7 +105,8 @@ exports.crearPreferencia = onRequest(
     const { data } = await loadCatalog();
     let order;
     try {
-      order = buildOrder(body, data.products, data.config);
+      const { code, coupon } = await findCoupon(body && body.coupon);
+      order = buildOrder(body, data.products, data.config, { couponCode: code, coupon, today: core.todayCL() });
     } catch (err) {
       if (err instanceof OrderError) return res.status(400).json({ error: err.message });
       throw err;
@@ -118,6 +125,7 @@ exports.crearPreferencia = onRequest(
       shipping: order.shipping,
       lines: order.lines,
       subtotal: order.subtotal,
+      discount: order.discount || null,
       total: order.total,
     });
 
@@ -138,6 +146,25 @@ exports.crearPreferencia = onRequest(
       logger.error('[mercadopago] error al crear la order', (err && err.message) || err, err && err.errors ? JSON.stringify(err.errors) : '');
       await ORDERS.doc(orderId).delete().catch(() => {});
       return res.status(502).json({ error: 'No pudimos conectar con Mercado Pago. Intenta de nuevo en unos minutos.' });
+    }
+  }
+);
+
+// ---------- validarCupon (vista previa del descuento en el carrito) ----------
+exports.validarCupon = onRequest(
+  { cors: [/thewhitehilux\.cavedevz\.com$/, /tmontes30\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/] },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' });
+    const body = (typeof req.body === 'string' ? safeJson(req.body) : req.body) || {};
+    try {
+      const { data } = await loadCatalog();
+      const { code, coupon } = await findCoupon(body.coupon);
+      if (!code) return res.status(400).json({ error: 'Escribe un código.' });
+      const cart = priceCart(body.items, data.products, data.config, { couponCode: code, coupon, today: core.todayCL() });
+      return res.json({ ok: true, code, label: cart.discount.label, amount: cart.discount.amount, subtotal: cart.subtotal });
+    } catch (err) {
+      if (err instanceof OrderError) return res.status(400).json({ error: err.message });
+      throw err;
     }
   }
 );
@@ -186,6 +213,9 @@ async function confirmPaid(orderId, payment) {
       paidAmount: Number(payment.transaction_amount) || order.total,
       stockShortage: shortages,
     };
+    if (order.discount && order.discount.code) {
+      tx.set(COUPONS.doc(order.discount.code), { uses: FieldValue.increment(1), lastUsed: paidDate }, { merge: true });
+    }
     tx.update(ref, patch);
     return { paid: true, order: { ...order, ...patch } };
   });

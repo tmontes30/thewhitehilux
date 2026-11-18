@@ -66,7 +66,7 @@
         '<div class="buy">' +
           '<p class="cond">' + tag + '<span>Nuevo</span></p>' +
           '<h1>' + TWH.esc(p.name) + '</h1>' +
-          '<p class="price">' + TWH.money(p.price) + '</p>' +
+          '<p class="price-box">' + TWH.priceHtml(p) + '</p>' + (p.offer && p.offer.name ? '<p class="offer-name">' + TWH.esc(p.offer.name) + '</p>' : '') +
           '<p class="fees">Paga en cuotas con Mercado Pago</p>' +
           (p.designs ? '<div><p class="opt-label">Diseño: <b id="design-name"></b></p><div class="choices" id="designs"></div></div>' : '') +
           (p.colors.length ? '<div><p class="opt-label">Color: <b id="color-name"></b></p><div class="choices" id="colors"></div></div>' : '') +
@@ -97,7 +97,7 @@
       '<section class="related"><h2>También te puede gustar</h2><div class="grid wide">' +
       d.products.filter(function (x) { return x.id !== p.id; }).slice(0, 4).map(function (x) {
         return '<a class="item" href="producto.html?id=' + encodeURIComponent(x.id) + '"><div class="pic">' + (x.status === 'proximamente' ? '<span class="tag-pre">PRÓXIMAMENTE</span>' : (C.isSoldOut(x) ? '<span class="tag-pre tag-out">AGOTADO</span>' : '')) + '<div class="main">' + TWH.picture(x, 0) + '</div></div>' +
-          '<div class="body"><span class="title">' + TWH.esc(x.name) + '</span><span class="price">' + TWH.money(x.price) + '</span></div></a>';
+          '<div class="body"><span class="title">' + TWH.esc(x.name) + '</span>' + TWH.priceHtml(x) + '</div></a>';
       }).join('') + '</div></section>';
 
     function render() {

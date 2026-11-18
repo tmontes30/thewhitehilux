@@ -31,6 +31,12 @@ Lo editado en el panel **pisa** a `catalog.js`. Si Firestore no responde (o abre
 - **Productos y stock**: precio, nombre, descripción, estado (se guarda al tiro). "Controlar stock por talla" activa la grilla color × talla; "+ Registrar llegada" suma lo que llegó (ej. M +2, L +4).
 - El stock baja solo cuando Mercado Pago confirma el pago. Si cancelas un pedido pagado, el panel pregunta si devolver las unidades. Si marcas a mano un pedido como pagado (transferencia), fija la promesa y pregunta si descontar stock.
 
+## Descuentos, SKU y ventas (panel)
+- **Descuentos → Ofertas**: bajan el precio solas (precio tachado + % OFF). Se guardan en `tienda/catalogo.offers`; `core.js` aplica la mejor oferta vigente (porcentaje redondeado a $10). Si hay dos, gana la más barata para el cliente.
+- **Descuentos → Códigos**: colección privada `cupones/{CODIGO}` (solo el admin la lee). El carrito los valida con la función `validarCupon`; `crearPreferencia` los vuelve a validar y reparte el descuento al peso entre las líneas (`lib/order.js`). El uso se cuenta cuando el pago se confirma. El envío gratis se calcula con el monto ya descontado.
+- **SKU**: base por producto (editable en Productos; si no, se genera del nombre) + sufijo por variante: `POL-4X4RT-NEG-M`, `JCK-5PPT-NEG-U`, `STK-X-U-RACEDEPT`. Cada línea de pedido guarda su SKU. "Descargar inventario por SKU" baja un CSV con stock, precios, valor de inventario y vendidas en 30 días.
+- **Ventas**: KPIs por período (vs. período anterior), gráfico por día, más vendidos, stock bajo de lo que se vende, ventas por SKU (CSV), por categoría, por región y descuentos usados. Cuenta pedidos pagados por fecha de pago.
+
 ## Flujo de compra
 1. `carrito.html` → `crearPreferencia`: recalcula precios con catálogo + panel, valida stock y estado, guarda el pedido como *pago pendiente* y crea una **order** de Mercado Pago (`POST /v1/orders`); el cliente paga en su `checkout_url`.
 2. Mercado Pago → `webhook`: si el pago está aprobado, en una transacción marca *pagado*, fija la **promesa** (días hábiles según zona) y descuenta stock. Es idempotente (un aviso repetido no descuenta ni manda correos dos veces). Manda correo al dueño y al cliente si hay Resend.

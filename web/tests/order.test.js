@@ -48,7 +48,7 @@ test('agrega el envío como línea en Mercado Pago', () => {
   const o = buildOrder({ items: [{ id: POLERA_BLANCA, size: 'L', color: 'blanco', qty: 1 }], customer, shipping: rm }, products, config);
   const items = toMercadoPagoItems(o);
   assert.strictEqual(items.length, 2);
-  assert.deepStrictEqual(items[1], { id: 'envio', title: 'Despacho Región Metropolitana', quantity: 1, unit_price: 3990, currency_id: 'CLP' });
+  assert.deepStrictEqual(items[1], { code: 'envio', title: 'Despacho Región Metropolitana', quantity: 1, unit_price: 3990 });
   assert.match(items[0].title, /Talla L · Blanco/);
 });
 

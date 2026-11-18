@@ -20,6 +20,8 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 
 - `data/catalog.js`: catálogo **base** (fotos, tallas, colores, envíos, diseños de stickers). Lo leen las páginas y el servidor.
 - Precio, nombre, descripción, estado y stock se editan en el **panel** (Firestore `tienda/catalogo`) y pisan a catalog.js. `assets/js/core.js` hace la mezcla, el stock y los días hábiles (lo comparten tienda, panel y funciones).
+- Descuentos: ofertas automáticas en `tienda/catalogo.offers` (precio tachado) y códigos en la colección privada `cupones/*` (función `validarCupon`). SKU por variante: base del producto + color + talla (`core.js` `variantSku`). Pestaña Ventas del panel con reportes por SKU.
+- Botón flotante de WhatsApp: número en `config.whatsapp` de catalog.js. En computador la tienda usa `zoom` (.78 / .72) para verse como al 70-80%.
 - Pedidos en Firestore `pedidos/*`. Promesa de entrega = días hábiles desde el pago (RM 3, regiones 7, editable en Ajustes). El stock se descuenta solo al aprobarse el pago.
 - Páginas: `index.html` (portada + listado con filtros), `producto.html` (ficha estilo Mercado Libre), `carrito.html`, `nosotros.html` (galería de las Hilux), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`.
 - `functions/index.js`: pago con Mercado Pago Checkout Pro y webhook idempotente. `lib/order.js` recalcula precios y valida stock en el servidor.

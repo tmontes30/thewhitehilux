@@ -14,7 +14,9 @@
     <a class="brand" href="../index.html" title="Ver la tienda"><img src="../assets/logos/logo-shop.svg" alt="The White Hilux"><span>Panel</span></a>
     <nav class="tabs" id="tabs" hidden>
       <button type="button" data-tab="pedidos" aria-pressed="true">Pedidos <span class="count" id="count-alert" hidden></span></button>
+      <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
+      <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
       <button type="button" data-tab="ajustes" aria-pressed="false">Ajustes</button>
     </nav>
     <div class="who" id="who" hidden><span id="who-email"></span><button type="button" class="link" id="logout">Salir</button></div>
@@ -46,9 +48,58 @@
   <section id="tab-productos" hidden>
     <div class="toolbar">
       <div class="filters" id="prod-filters"></div>
-      <p class="hint">Los cambios se ven en la tienda al recargarla. El stock baja solo cuando se confirma un pago.</p>
+      <button type="button" class="btn ghost" id="export-stock">Descargar inventario por SKU (CSV)</button>
     </div>
+    <p class="hint" style="margin:-4px 0 12px">Los cambios se ven en la tienda al recargarla. El stock baja solo cuando se confirma un pago.</p>
     <div id="products"></div>
+  </section>
+
+  <!-- VENTAS -->
+  <section id="tab-ventas" hidden>
+    <div class="toolbar">
+      <div class="filters" id="sales-period"></div>
+      <span class="range" id="sales-range" hidden>
+        <input type="date" id="sales-from" aria-label="Desde"> a <input type="date" id="sales-to" aria-label="Hasta">
+      </span>
+      <button type="button" class="btn ghost" id="export-sales">Descargar ventas por SKU (CSV)</button>
+    </div>
+    <div class="stats" id="sales-kpis"></div>
+    <div class="card"><h2 class="card-title">Ventas por día</h2><div id="sales-chart"></div></div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Más vendidos</h2><div id="sales-top"></div></div>
+      <div class="card"><h2 class="card-title">Ojo con el stock</h2><p class="hint" style="margin-bottom:8px">Variantes que se están vendiendo y les quedan 2 unidades o menos.</p><div id="sales-low"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Ventas por SKU</h2><input type="search" id="sku-search" placeholder="Buscar SKU o producto…" aria-label="Buscar SKU"></div>
+      <div class="table-wrap"><table class="data" id="sales-sku"></table></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Por categoría</h2><div class="table-wrap"><table class="data" id="sales-cat"></table></div></div>
+      <div class="card"><h2 class="card-title">Por región</h2><div class="table-wrap"><table class="data" id="sales-region"></table></div></div>
+    </div>
+    <div class="card"><h2 class="card-title">Descuentos usados</h2><div class="table-wrap"><table class="data" id="sales-disc"></table></div></div>
+    <p class="hint">Cuenta los pedidos pagados (pagado, preparando, despachado y entregado) según la fecha de pago. No incluye cancelados ni pagos pendientes.</p>
+  </section>
+
+  <!-- DESCUENTOS -->
+  <section id="tab-descuentos" hidden>
+    <div class="disc-intro">
+      <div class="card disc-type">
+        <h2>🏷️ Ofertas en la tienda</h2>
+        <p class="hint">Bajan el precio solas: el cliente ve el precio tachado y el % OFF. Ideal para liquidaciones o un fin de semana de ofertas.</p>
+        <button type="button" class="btn primary" data-new="offer">+ Nueva oferta</button>
+      </div>
+      <div class="card disc-type">
+        <h2>🎟️ Códigos de descuento</h2>
+        <p class="hint">El cliente escribe un código en el carrito (ej. TWH10). Ideal para Instagram, sorteos o clientes frecuentes.</p>
+        <button type="button" class="btn primary" data-new="coupon">+ Nuevo código</button>
+      </div>
+    </div>
+    <form class="card disc-form" id="disc-form" hidden novalidate></form>
+    <h2 class="cat-title">Ofertas</h2>
+    <div id="offers-list"></div>
+    <h2 class="cat-title">Códigos</h2>
+    <div id="coupons-list"></div>
   </section>
 
   <!-- AJUSTES -->

@@ -15,11 +15,9 @@
   <div class="wrap hero-in">
     <div>
       <img class="hero-mark" src="assets/logos/cl-shop.svg" alt="The White Hilux CL Shop">
-      <h1>Merch off road</h1>
       <p>Poleras, polerones, jockeys y stickers para los amantes del off road, el 4x4 y las camionetas.</p>
       <div class="ctas">
         <a class="btn accent" href="#productos">Ver colección</a>
-        <a class="btn ghost" href="index.html?cat=poleron#productos">Polerones</a>
       </div>
     </div>
   </div>
@@ -72,6 +70,7 @@ TWH.loadData().then(function (d) {
   function tagFor(p) {
     if (p.status === 'proximamente') return '<span class="tag-pre">PRÓXIMAMENTE</span>';
     if (C.isSoldOut(p)) return '<span class="tag-pre tag-out">AGOTADO</span>';
+    if (p.compareAt) return '<span class="tag-pre tag-sale">' + p.offerPct + '% OFF</span>';
     return '';
   }
   var PRICES = { low: ['Hasta $15.000', 0, 15000], mid: ['$15.000 a $25.000', 15000, 25000], high: ['Más de $25.000', 25000, 1e9] };
@@ -145,7 +144,11 @@ TWH.loadData().then(function (d) {
   function render() {
     var list = [];
     d.products.filter(function (p) { return match(p); }).forEach(function (p) {
-      if (p.designs && f.cat === 'stickers') p.designs.forEach(function (dd) { list.push(Object.assign({}, p, { name: 'Sticker ' + dd.name + ' · Vinilo 10 cm', views: [{ shape: 'sticker', logo: dd.id }], _design: dd.id })); });
+      // Stickers: uno por diseño (todos en la categoría Stickers, algunos en el inicio)
+      if (p.designs && (f.cat === 'stickers' || (!f.q && !f.estado))) {
+        var ds = f.cat === 'stickers' ? p.designs : p.designs.slice(0, 6);
+        ds.forEach(function (dd) { list.push(Object.assign({}, p, { name: 'Sticker ' + dd.name + ' · Vinilo 10 cm', views: [{ shape: 'sticker', logo: dd.id }], _design: dd.id })); });
+      }
       else list.push(p);
     });
     var sort = document.getElementById('sort').value;
@@ -166,7 +169,7 @@ TWH.loadData().then(function (d) {
         (alt ? '<div class="alt">' + TWH.picture(p, 1, color) + '</div>' : '') +
         '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +
         '<div class="body"><span class="title">' + TWH.esc(p.name) + '</span>' +
-        '<span class="price">' + TWH.money(p.price) + '</span>' +
+        TWH.priceHtml(p) +
         '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">Envío a todo Chile</span>') +
         '<span class="cdots">' + dots + '</span></div></div></a>';
     }).join('');

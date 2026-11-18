@@ -11,6 +11,7 @@
     config: {
       storeName: 'The White Hilux',
       dropNote: 'Envío gratis en RM sobre $40.000',
+      whatsapp: '56992259960', // botón flotante de WhatsApp (sin + ni espacios)
       freeShippingZones: ['rm'],
       freeShippingFrom: 40000,
       maxQtyPerLine: 10,

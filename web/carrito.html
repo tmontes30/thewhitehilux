@@ -42,8 +42,16 @@
     </div>
     <div class="field"><label for="notes">Notas (opcional)</label><textarea id="notes" name="notes" maxlength="300" placeholder="Ej: dejar en conserjería"></textarea></div>
 
+    <div class="field">
+      <label for="coupon">¿Tienes un código de descuento?</label>
+      <div class="coupon"><input id="coupon" autocomplete="off" placeholder="Ej: TWH10" maxlength="20"><button type="button" class="btn secondary" id="coupon-apply">Aplicar</button></div>
+      <div class="coupon-ok" id="coupon-ok" hidden><span id="coupon-msg"></span><button type="button" id="coupon-remove">Quitar</button></div>
+      <p class="coupon-err" id="coupon-err" hidden></p>
+    </div>
+
     <div class="totals">
       <div><span>Subtotal</span><span id="t-sub">$0</span></div>
+      <div class="disc" id="t-disc-row" hidden><span id="t-disc-label">Descuento</span><span id="t-disc">$0</span></div>
       <div><span id="t-ship-label">Envío</span><span id="t-ship">$0</span></div>
       <div class="grand"><span>Total</span><span id="t-total">$0</span></div>
     </div>
@@ -65,7 +73,9 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var DRAFT = 'twh-checkout';
+  var COUPON = 'twh-coupon';
   var data;
+  var coupon = null; // { code, amount, label } validado por el servidor
 
   function lineFor(it) {
     var p = data.products.filter(function (x) { return x.id === it.id; })[0];
@@ -105,16 +115,22 @@
       var sub = [dsg, r.item.size !== 'Única' ? 'Talla ' + r.item.size : '', r.item.color ? data.config.colors[r.item.color] : ''].filter(Boolean).join(' · ');
       var img = r.p.designs && r.item.design ? TWHMock.mock({ shape: 'sticker', logo: r.item.design }, '', r.p.name) : TWH.picture(r.p, 0, r.item.color);
       return '<div class="line"><a class="pic" href="producto.html?id=' + encodeURIComponent(r.p.id) + '">' + img + '</a>' +
-        '<div><h3>' + TWH.esc(r.p.name) + '</h3><p class="sub">' + TWH.esc(sub) + '</p>' + (warn ? '<p class="line-warn">' + warn + '</p>' : '') +
+        '<div><h3>' + TWH.esc(r.p.name) + '</h3><p class="sub">' + TWH.esc(sub) + (r.p.compareAt ? ' · <b style="color:var(--green)">' + r.p.offerPct + '% OFF</b>' : '') + '</p>' + (warn ? '<p class="line-warn">' + warn + '</p>' : '') +
         '<div class="qty"><button type="button" data-act="minus" data-i="' + i + '" aria-label="Quitar uno">−</button><span>' + r.item.qty + '</span><button type="button" data-act="plus" data-i="' + i + '" aria-label="Agregar uno">+</button></div></div>' +
-        '<div class="right"><span class="lt">' + TWH.money(t) + '</span><button type="button" class="linkbtn" data-act="remove" data-i="' + i + '">Quitar</button></div></div>';
+        '<div class="right">' + (r.p.compareAt ? '<span class="was">' + TWH.money(r.p.compareAt * r.item.qty) + '</span>' : '') + '<span class="lt">' + TWH.money(t) + '</span><button type="button" class="linkbtn" data-act="remove" data-i="' + i + '">Quitar</button></div></div>';
     }).join('');
 
-    var ship = shippingFor(subtotal);
+    var disc = coupon ? Math.min(coupon.amount, subtotal) : 0;
+    var ship = shippingFor(subtotal - disc);
     $('t-sub').textContent = TWH.money(subtotal);
+    $('t-disc-row').hidden = !disc;
+    $('t-disc-label').textContent = coupon ? 'Descuento (' + coupon.code + ')' : 'Descuento';
+    $('t-disc').textContent = '-' + TWH.money(disc);
     $('t-ship-label').textContent = ship.label;
     $('t-ship').textContent = ship.cost == null ? '—' : (ship.cost === 0 ? 'Gratis' : TWH.money(ship.cost));
-    $('t-total').textContent = TWH.money(subtotal + (ship.cost || 0));
+    $('t-total').textContent = TWH.money(subtotal - disc + (ship.cost || 0));
+    $('coupon-ok').hidden = !coupon;
+    if (coupon) $('coupon-msg').textContent = '✓ ' + coupon.code + ' aplicado: ' + coupon.label + ' (ahorras ' + TWH.money(disc) + ')';
     var c = data.config;
     $('ship-hint').textContent = 'RM ' + TWH.money(c.shipping.rm.price) + ' · regiones ' + TWH.money(c.shipping.regiones.price) +
       (c.freeShippingFrom ? ' · gratis en RM sobre ' + TWH.money(c.freeShippingFrom) : '');
@@ -137,6 +153,39 @@
       if (have == null || it.qty < have) TWH.Cart.setQty(i, it.qty + 1);
     }
     if (act === 'remove') TWH.Cart.remove(i);
+    render();
+    if (coupon) applyCoupon(coupon.code, true);
+  });
+
+  // ---------- Código de descuento (lo valida el servidor) ----------
+  function couponErr(msg) { $('coupon-err').textContent = msg; $('coupon-err').hidden = !msg; }
+  function applyCoupon(code, silent) {
+    code = String(code || '').trim();
+    couponErr('');
+    if (!code) return couponErr('Escribe un código.');
+    if (location.protocol === 'file:') return couponErr('Los códigos funcionan en la tienda publicada.');
+    var btn = $('coupon-apply');
+    btn.disabled = true;
+    fetch(window.TWH_FIREBASE.apiBase + '/validarCupon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coupon: code, items: TWH.Cart.items() }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.j.error || 'No pudimos validar el código.');
+        coupon = { code: res.j.code, amount: res.j.amount, label: res.j.label };
+        try { localStorage.setItem(COUPON, coupon.code); } catch (e) {}
+        $('coupon').value = '';
+      })
+      .catch(function (err) {
+        coupon = null;
+        try { localStorage.removeItem(COUPON); } catch (e) {}
+        couponErr((silent ? 'Se quitó el código: ' : '') + err.message);
+      })
+      .then(function () { btn.disabled = false; render(); });
+  }
+  $('coupon-apply').addEventListener('click', function () { applyCoupon($('coupon').value); });
+  $('coupon').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyCoupon($('coupon').value); } });
+  $('coupon-remove').addEventListener('click', function () {
+    coupon = null;
+    try { localStorage.removeItem(COUPON); } catch (e) {}
     render();
   });
 
@@ -175,6 +224,7 @@
     }
     var payload = {
       items: TWH.Cart.items(),
+      coupon: coupon ? coupon.code : '',
       customer: { name: name, email: email, phone: phone },
       shipping: { method: method, region: $('region').value, comuna: $('comuna').value, address: $('address').value, notes: $('notes').value }
     };
@@ -201,6 +251,8 @@
     d.config.regions.forEach(function (r) { var o = document.createElement('option'); o.value = r; o.textContent = r; $('region').appendChild(o); });
     loadDraft();
     render();
+    var saved = null; try { saved = localStorage.getItem(COUPON); } catch (e) {}
+    if (saved && TWH.Cart.items().length) applyCoupon(saved, true);
   }).catch(function () { showErr('No pudimos cargar la tienda. Recarga la página.'); });
 })();
 </script>

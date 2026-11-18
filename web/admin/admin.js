@@ -6,7 +6,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js';
 import {
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy,
-  limit, increment, FieldPath, serverTimestamp
+  limit, increment, FieldPath, serverTimestamp, deleteField
 } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js';
 
 const F = window.TWH_FIREBASE;
@@ -23,6 +23,7 @@ if (F.useEmulators) {
 }
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
+const TABS = ['pedidos', 'ventas', 'productos', 'descuentos', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -33,6 +34,7 @@ const plural = (n, a, b) => n + ' ' + (n === 1 ? a : b);
 let raw = null; // documento tienda/catalogo tal cual
 let data = C.mergeCatalog(BASE, null); // catálogo mezclado
 let orders = [];
+let coupons = [];
 let orderFilter = 'abiertos';
 let prodFilter = 'todos';
 const dirty = new Set(); // productos con cambios sin guardar
@@ -73,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
   $('tabs').hidden = !isAdmin;
   $('who').hidden = !user;
   $('who-email').textContent = user ? user.email : '';
-  ['pedidos', 'productos', 'ajustes'].forEach((t) => ($('tab-' + t).hidden = true));
+  TABS.forEach((t) => ($('tab-' + t).hidden = true));
   if (user && !isAdmin) {
     $('login-msg').textContent = `La cuenta ${user.email} no tiene acceso al panel.`;
     $('login-btn').textContent = 'Entrar con otra cuenta';
@@ -93,10 +95,17 @@ onAuthStateChanged(auth, async (user) => {
       renderProducts();
       renderSettings();
       renderOrders();
+      renderSales();
+      renderDiscounts();
     }, fail),
-    onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(500)), (s) => {
+    onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(2000)), (s) => {
       orders = s.docs.map((d) => ({ ...d.data(), id: d.id }));
       renderOrders();
+      renderSales();
+    }, fail),
+    onSnapshot(collection(db, 'cupones'), (s) => {
+      coupons = s.docs.map((d) => ({ ...d.data(), code: d.id }));
+      renderDiscounts();
     }, fail)
   );
   showTab(location.hash.slice(1) || 'pedidos');
@@ -104,9 +113,9 @@ onAuthStateChanged(auth, async (user) => {
 
 // ---------- Pestañas ----------
 function showTab(name) {
-  if (!['pedidos', 'productos', 'ajustes'].includes(name)) name = 'pedidos';
+  if (!TABS.includes(name)) name = 'pedidos';
   document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'));
-  ['pedidos', 'productos', 'ajustes'].forEach((t) => ($('tab-' + t).hidden = t !== name));
+  TABS.forEach((t) => ($('tab-' + t).hidden = t !== name));
   if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
 }
 $('tabs').addEventListener('click', (e) => {
@@ -184,8 +193,8 @@ function orderCard(o) {
     </div>
     <div>
       <h4 class="hint" style="margin-bottom:4px">PRODUCTOS</h4>
-      <ul class="order-lines">${(o.lines || []).map((l) => `<li>${l.qty} × <b>${esc(l.name)}</b> <small>${esc(lineText(l))}</small> — ${money(l.total)}</li>`).join('')}
-        <li><small>Subtotal ${money(o.subtotal)} · Envío ${ship.cost ? money(ship.cost) : 'gratis'}${o.mpPaymentId ? ' · Pago MP #' + esc(o.mpPaymentId) : ''}</small></li>
+      <ul class="order-lines">${(o.lines || []).map((l) => `<li>${l.qty} × <b>${esc(l.name)}</b> <small>${esc(lineText(l))}</small> ${l.sku ? '<span class="sku">' + esc(l.sku) + '</span>' : ''} — ${money(l.net != null ? l.net : l.total)}${l.offer ? ' <small>(oferta)</small>' : ''}</li>`).join('')}
+        <li><small>Subtotal ${money(o.subtotal)}${o.discount ? ' · Código ' + esc(o.discount.code) + ' -' + money(o.discount.amount) : ''} · Envío ${ship.cost ? money(ship.cost) : 'gratis'}${o.mpPaymentId ? ' · Pago MP #' + esc(o.mpPaymentId) : ''}</small></li>
       </ul>
     </div>
     <div class="order-foot">
@@ -333,7 +342,7 @@ $('export').addEventListener('click', () => {
 // ---------- Productos y stock ----------
 function thumbFor(p) {
   if (p.designs && p.designs.length) return `../assets/logos/${p.designs[0].id}-claro.svg`;
-  const imgs = p.imagesByColor ? p.imagesByColor[p.colors[0]] || [] : p.images || [];
+  const imgs = C.orderedImages(p);
   return imgs.length ? '../' + imgs[0] : '../assets/logos/cl-shop.svg';
 }
 const colorName = (c) => (c === 'unico' ? 'Stock' : CFG.colors[c] || c);
@@ -364,7 +373,8 @@ function productCard(p) {
     <div class="product-main">
       <div class="row">
         <label>Nombre<input data-f="name" value="${esc(p.name)}" maxlength="120"></label>
-        <label>Precio (CLP)<input data-f="price" type="number" min="100" step="10" value="${p.price}"></label>
+        <label>SKU<input data-f="sku" class="sku-input" value="${esc(p.sku)}" maxlength="24" title="Código base; cada talla/color agrega su sufijo, ej. ${esc(C.variantSku(p, p.colors[0] || '', p.sizes[0]))}"></label>
+        <label>Precio normal (CLP)<input data-f="price" type="number" min="100" step="10" value="${p.listPrice}"></label>
       </div>
       <div class="actions">
         <div class="status-pick" role="group" aria-label="Estado en la tienda">${Object.keys(C.STATUS)
@@ -549,7 +559,12 @@ $('products').addEventListener('click', async (e) => {
       if (name.length < 3) return toast('El nombre es muy corto', true);
       if (!Number.isInteger(price) || price < 100) return toast('Revisa el precio', true);
       if (name !== p.name) args.push(fp(id, 'name'), name);
-      if (price !== p.price) args.push(fp(id, 'price'), price);
+      if (price !== p.listPrice) args.push(fp(id, 'price'), price);
+      const sku = C.cleanSku(card.querySelector('[data-f="sku"]').value);
+      if (!sku) return toast('Escribe un SKU (letras, números y guiones)', true);
+      const taken = data.products.find((x) => x.id !== id && x.sku === sku);
+      if (taken) return toast('Ese SKU ya lo usa ' + taken.name, true);
+      if (sku !== p.sku) args.push(fp(id, 'sku'), sku);
       if (desc !== p.desc) args.push(fp(id, 'desc'), desc);
       markDirty(card, false);
       if (!args.length) return renderProducts();
@@ -592,4 +607,468 @@ $('settings').addEventListener('submit', async (e) => {
 
 window.addEventListener('beforeunload', (e) => {
   if (dirty.size) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ---------- Utilidades compartidas por Inventario, Ventas y Descuentos ----------
+function downloadCsv(name, head, rows) {
+  const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const productById = (id) => data.products.find((p) => p.id === id);
+function skuOfLine(l) {
+  if (l.sku) return l.sku;
+  const p = productById(l.id);
+  return p ? C.variantSku(p, l.color, l.size, l.design) : l.id;
+}
+const lineNet = (l) => (l.net != null ? l.net : l.total) || 0;
+const orderPaid = (o) => Number(o.paidAmount != null ? o.paidAmount : o.total) || 0;
+function addDays(ymd, n) {
+  const d = new Date(ymd + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+// ---------- Inventario por SKU (CSV) ----------
+$('export-stock').addEventListener('click', () => {
+  const since = addDays(C.todayCL(), -30);
+  const sold30 = {};
+  orders.filter((o) => PAID.includes(o.status) && (o.paidDate || '') >= since).forEach((o) => (o.lines || []).forEach((l) => {
+    const k = skuOfLine(l);
+    sold30[k] = (sold30[k] || 0) + l.qty;
+  }));
+  const rows = [];
+  data.products.forEach((p) => {
+    const colors = p.colors.length ? p.colors : [''];
+    colors.forEach((c) => p.sizes.forEach((s) => {
+      const sku = C.variantSku(p, c, s);
+      const st = C.stockOf(p, c, s);
+      rows.push([sku, p.name, CFG.categories[p.type] || p.type, c ? CFG.colors[c] : '', s, st == null ? 'sin control' : st,
+        p.listPrice, p.price, st == null ? '' : st * p.price, C.STATUS[p.status], sold30[sku] || 0]);
+    }));
+  });
+  downloadCsv(`inventario-twh-${C.todayCL()}.csv`,
+    ['SKU', 'Producto', 'Categoría', 'Color', 'Talla', 'Stock', 'Precio normal', 'Precio actual', 'Valor inventario', 'Estado', 'Vendidas últimos 30 días'], rows);
+  toast('Inventario descargado');
+});
+
+// ---------- Ventas ----------
+const PERIODS = { hoy: 'Hoy', '7d': '7 días', mes: 'Este mes', mesant: 'Mes pasado', '30d': '30 días', ano: 'Este año', todo: 'Todo', rango: 'Elegir fechas' };
+let period = 'mes';
+
+function periodRange(k) {
+  const t = C.todayCL();
+  const first = t.slice(0, 8) + '01';
+  if (k === 'hoy') return [t, t];
+  if (k === '7d') return [addDays(t, -6), t];
+  if (k === '30d') return [addDays(t, -29), t];
+  if (k === 'mes') return [first, t];
+  if (k === 'mesant') { const end = addDays(first, -1); return [end.slice(0, 8) + '01', end]; }
+  if (k === 'ano') return [t.slice(0, 4) + '-01-01', t];
+  if (k === 'rango') return [$('sales-from').value || first, $('sales-to').value || t];
+  const firstPaid = orders.filter((o) => o.paidDate).map((o) => o.paidDate).sort()[0];
+  return [firstPaid || t, t];
+}
+
+function renderSales() {
+  if (!$('tab-ventas')) return;
+  $('sales-period').innerHTML = Object.keys(PERIODS).map((k) => `<button type="button" class="chip" data-p="${k}" aria-pressed="${k === period}">${PERIODS[k]}</button>`).join('');
+  $('sales-range').hidden = period !== 'rango';
+  const [from, to] = periodRange(period);
+  const inRange = (o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= from && o.paidDate <= to;
+  const list = orders.filter(inRange);
+
+  // Período anterior del mismo largo, para comparar
+  const days = Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86400000) + 1);
+  const pFrom = addDays(from, -days), pTo = addDays(from, -1);
+  const prev = orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= pFrom && o.paidDate <= pTo);
+
+  const sum = (arr, f) => arr.reduce((s, x) => s + f(x), 0);
+  const revenue = sum(list, orderPaid);
+  const prevRevenue = sum(prev, orderPaid);
+  const units = sum(list, (o) => sum(o.lines || [], (l) => l.qty));
+  const shipping = sum(list, (o) => (o.shipping && o.shipping.cost) || 0);
+  const coupons = sum(list, (o) => (o.discount && o.discount.amount) || 0);
+  const offersSaved = sum(list, (o) => sum(o.lines || [], (l) => Math.max(0, ((l.list_price || l.unit_price) - l.unit_price) * l.qty)));
+  const open = orders.filter((o) => C.OPEN_STATUS.includes(o.status)).length;
+  const trend = (a, b) => {
+    if (!b) return '';
+    const d = Math.round(((a - b) / b) * 100);
+    return ` <small style="color:${d >= 0 ? 'var(--green)' : 'var(--red)'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%</small>`;
+  };
+  $('sales-kpis').innerHTML = [
+    [money(revenue) + trend(revenue, prevRevenue), 'Ventas (total pagado)'],
+    [list.length + trend(list.length, prev.length), 'Pedidos pagados'],
+    [units, 'Unidades vendidas'],
+    [money(list.length ? revenue / list.length : 0), 'Ticket promedio'],
+    [money(coupons + offersSaved), `Descuentos dados (${money(coupons)} códigos · ${money(offersSaved)} ofertas)`],
+    [money(shipping), 'Envíos cobrados'],
+    [open, 'Pedidos por entregar (hoy)'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  // Gráfico por día (máx. 120 días; si es más largo, por mes)
+  const byDay = {};
+  list.forEach((o) => (byDay[o.paidDate] = (byDay[o.paidDate] || 0) + orderPaid(o)));
+  let buckets = [];
+  if (days <= 120) {
+    for (let d = from; d <= to; d = addDays(d, 1)) buckets.push([d, byDay[d] || 0, fmtDate(d)]);
+  } else {
+    const byMonth = {};
+    Object.keys(byDay).forEach((d) => (byMonth[d.slice(0, 7)] = (byMonth[d.slice(0, 7)] || 0) + byDay[d]));
+    for (let m = from.slice(0, 7); m <= to.slice(0, 7); m = addDays(m + '-28', 5).slice(0, 7)) buckets.push([m, byMonth[m] || 0, m.split('-').reverse().join('-')]);
+  }
+  const max = Math.max(1, ...buckets.map((b) => b[1]));
+  $('sales-chart').innerHTML = list.length
+    ? `<div class="bars">${buckets.map((b) => `<div class="bar${b[1] ? '' : ' zero'}" style="height:${b[1] ? Math.max(3, (b[1] / max) * 100) : 1}%" title="${b[2]}: ${money(b[1])}"></div>`).join('')}</div>
+       <div class="bars-axis"><span>${buckets[0][2]}</span><span>Máximo: ${money(max)}</span><span>${buckets[buckets.length - 1][2]}</span></div>`
+    : '<p class="empty" style="padding:20px 0">No hay ventas pagadas en este período.</p>';
+
+  // Por SKU
+  const bySku = {};
+  list.forEach((o) => (o.lines || []).forEach((l) => {
+    const k = skuOfLine(l);
+    const r = bySku[k] || (bySku[k] = { sku: k, id: l.id, name: l.name, variant: lineText(l), type: l.type || (productById(l.id) || {}).type, color: l.color, size: l.size, units: 0, revenue: 0, orders: new Set() });
+    r.units += l.qty;
+    r.revenue += lineNet(l);
+    r.orders.add(o.id);
+  }));
+  const skus = Object.values(bySku).sort((a, b) => b.revenue - a.revenue);
+  const lineRevenue = sum(skus, (r) => r.revenue);
+  const stockFor = (r) => { const p = productById(r.id); return p ? C.stockOf(p, r.color, r.size) : null; };
+
+  // Más vendidos (por producto)
+  const byProduct = {};
+  skus.forEach((r) => {
+    const x = byProduct[r.id] || (byProduct[r.id] = { name: r.name, units: 0, revenue: 0 });
+    x.units += r.units;
+    x.revenue += r.revenue;
+  });
+  const top = Object.values(byProduct).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+  const topMax = top.length ? top[0].revenue : 1;
+  $('sales-top').innerHTML = top.length
+    ? top.map((t, i) => `<div class="top-item"><span class="rank">${i + 1}</span><span>${esc(t.name)} <small class="hint">· ${plural(t.units, 'unidad', 'unidades')}</small></span><b>${money(t.revenue)}</b><span class="meter"><i style="width:${pct(t.revenue, topMax)}%"></i></span></div>`).join('')
+    : '<p class="hint">Sin ventas en este período.</p>';
+
+  // Stock bajo de lo que se vende
+  const low = skus.map((r) => ({ ...r, stock: stockFor(r) })).filter((r) => r.stock != null && r.stock <= 2).sort((a, b) => a.stock - b.stock);
+  $('sales-low').innerHTML = low.length
+    ? `<table class="data"><thead><tr><th>SKU</th><th>Producto</th><th class="n">Vendidas</th><th class="n">Quedan</th></tr></thead><tbody>${low.map((r) => `<tr><td><span class="sku">${esc(r.sku)}</span></td><td>${esc(r.name)} <small class="hint">${esc(r.variant)}</small></td><td class="n">${r.units}</td><td class="n"><b style="color:${r.stock ? 'var(--amber)' : 'var(--red)'}">${r.stock}</b></td></tr>`).join('')}</tbody></table>`
+    : '<p class="hint">Todo bien: nada de lo que se vende está por agotarse (o no tiene control de stock).</p>';
+
+  // Tabla por SKU
+  const q = $('sku-search').value.trim().toLowerCase();
+  const shown = q ? skus.filter((r) => (r.sku + ' ' + r.name + ' ' + r.variant).toLowerCase().includes(q)) : skus;
+  $('sales-sku').innerHTML = shown.length
+    ? `<thead><tr><th>SKU</th><th>Producto</th><th>Variante</th><th class="n">Unidades</th><th class="n">Pedidos</th><th class="n">Ventas</th><th class="n">% del total</th><th class="n">Stock</th></tr></thead>
+      <tbody>${shown.map((r) => { const st = stockFor(r); return `<tr><td><span class="sku">${esc(r.sku)}</span></td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="n">${r.units}</td><td class="n">${r.orders.size}</td><td class="n">${money(r.revenue)}</td><td class="n">${pct(r.revenue, lineRevenue)}%</td><td class="n">${st == null ? '—' : st}</td></tr>`; }).join('')}</tbody>
+      <tfoot><tr><td colspan="3">Total</td><td class="n">${sum(shown, (r) => r.units)}</td><td></td><td class="n">${money(sum(shown, (r) => r.revenue))}</td><td></td><td></td></tr></tfoot>`
+    : '<tbody><tr><td class="hint">Sin ventas en este período.</td></tr></tbody>';
+
+  // Por categoría
+  const byCat = {};
+  skus.forEach((r) => { const c = byCat[r.type] || (byCat[r.type] = { units: 0, revenue: 0 }); c.units += r.units; c.revenue += r.revenue; });
+  const cats = Object.keys(byCat).sort((a, b) => byCat[b].revenue - byCat[a].revenue);
+  $('sales-cat').innerHTML = cats.length
+    ? `<thead><tr><th>Categoría</th><th class="n">Unidades</th><th class="n">Ventas</th><th class="n">%</th></tr></thead><tbody>${cats.map((c) => `<tr><td>${esc(CFG.categories[c] || c)}</td><td class="n">${byCat[c].units}</td><td class="n">${money(byCat[c].revenue)}</td><td class="n">${pct(byCat[c].revenue, lineRevenue)}%</td></tr>`).join('')}</tbody>`
+    : '<tbody><tr><td class="hint">Sin ventas.</td></tr></tbody>';
+
+  // Por región
+  const byReg = {};
+  list.forEach((o) => {
+    const s = o.shipping || {};
+    const k = s.method === 'retiro' ? 'Retiro en Santiago' : s.region || '—';
+    const r = byReg[k] || (byReg[k] = { orders: 0, revenue: 0 });
+    r.orders++;
+    r.revenue += orderPaid(o);
+  });
+  const regs = Object.keys(byReg).sort((a, b) => byReg[b].revenue - byReg[a].revenue);
+  $('sales-region').innerHTML = regs.length
+    ? `<thead><tr><th>Región</th><th class="n">Pedidos</th><th class="n">Ventas</th></tr></thead><tbody>${regs.map((k) => `<tr><td>${esc(k)}</td><td class="n">${byReg[k].orders}</td><td class="n">${money(byReg[k].revenue)}</td></tr>`).join('')}</tbody>`
+    : '<tbody><tr><td class="hint">Sin ventas.</td></tr></tbody>';
+
+  // Descuentos usados
+  const disc = {};
+  list.forEach((o) => {
+    if (o.discount && o.discount.code) {
+      const d = disc['Código ' + o.discount.code] || (disc['Código ' + o.discount.code] = { orders: 0, amount: 0, revenue: 0 });
+      d.orders++; d.amount += o.discount.amount; d.revenue += orderPaid(o);
+    }
+    const seen = new Set();
+    (o.lines || []).forEach((l) => {
+      const saved = Math.max(0, ((l.list_price || l.unit_price) - l.unit_price) * l.qty);
+      if (!saved) return;
+      const k = 'Oferta ' + (l.offer || '');
+      const d = disc[k] || (disc[k] = { orders: 0, amount: 0, revenue: 0 });
+      if (!seen.has(k)) { d.orders++; seen.add(k); }
+      d.amount += saved; d.revenue += lineNet(l);
+    });
+  });
+  const dk = Object.keys(disc).sort((a, b) => disc[b].amount - disc[a].amount);
+  $('sales-disc').innerHTML = dk.length
+    ? `<thead><tr><th>Descuento</th><th class="n">Pedidos</th><th class="n">Descontado</th><th class="n">Ventas con descuento</th></tr></thead><tbody>${dk.map((k) => `<tr><td>${esc(k)}</td><td class="n">${disc[k].orders}</td><td class="n">${money(disc[k].amount)}</td><td class="n">${money(disc[k].revenue)}</td></tr>`).join('')}</tbody>`
+    : '<tbody><tr><td class="hint">No se usaron descuentos en este período.</td></tr></tbody>';
+
+  renderSales.last = { from, to, skus, stockFor };
+}
+
+$('sales-period').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-p]');
+  if (!b) return;
+  period = b.dataset.p;
+  if (period === 'rango' && !$('sales-from').value) {
+    const [f, t] = periodRange('30d');
+    $('sales-from').value = f;
+    $('sales-to').value = t;
+  }
+  renderSales();
+});
+$('sales-from').addEventListener('change', renderSales);
+$('sales-to').addEventListener('change', renderSales);
+$('sku-search').addEventListener('input', renderSales);
+$('export-sales').addEventListener('click', () => {
+  const L = renderSales.last;
+  if (!L || !L.skus.length) return toast('No hay ventas en este período', true);
+  downloadCsv(`ventas-por-sku-twh-${L.from}-a-${L.to}.csv`, ['SKU', 'Producto', 'Variante', 'Categoría', 'Unidades', 'Pedidos', 'Ventas', 'Stock actual'],
+    L.skus.map((r) => { const st = L.stockFor(r); return [r.sku, r.name, r.variant, CFG.categories[r.type] || r.type, r.units, r.orders.size, r.revenue, st == null ? 'sin control' : st]; }));
+});
+
+// ---------- Descuentos ----------
+let form = null; // lo que se está creando o editando
+
+function discStatus(d) {
+  const t = C.todayCL();
+  if (d.active === false) return ['Pausado', 'gray'];
+  if (d.to && d.to < t) return ['Vencido', 'gray'];
+  if (d.from && d.from > t) return [`Parte el ${fmtDate(d.from)}`, 'amber'];
+  if (d.maxUses && (d.uses || 0) >= d.maxUses) return ['Agotado', 'gray'];
+  return ['Activo ahora', 'green'];
+}
+const discBig = (d) => (d.kind === 'amount' ? '-' + money(d.value) : d.value + '% OFF');
+function discScope(d) {
+  if (d.scope === 'category') return 'en ' + (d.targets || []).map((t) => CFG.categories[t] || t).join(', ');
+  if (d.scope === 'products') {
+    const names = (d.targets || []).map((id) => (productById(id) || {}).name).filter(Boolean);
+    return names.length <= 2 ? 'en ' + names.join(' y ') : `en ${names.length} productos`;
+  }
+  return 'en toda la tienda';
+}
+function discDates(d) {
+  if (d.from && d.to) return `del ${fmtDate(d.from)} al ${fmtDate(d.to)}`;
+  if (d.from) return `desde el ${fmtDate(d.from)}`;
+  if (d.to) return `hasta el ${fmtDate(d.to)}`;
+  return 'sin fecha de término';
+}
+
+function renderDiscounts() {
+  if (!$('tab-descuentos')) return;
+  const offers = (raw && raw.offers) || {};
+  const ids = Object.keys(offers).sort((a, b) => (offers[b].createdAt || '').localeCompare(offers[a].createdAt || ''));
+  $('offers-list').innerHTML = ids.length
+    ? ids.map((id) => {
+        const o = offers[id];
+        const [st, cls] = discStatus(o);
+        const affected = data.products.filter((p) => C.offerApplies({ ...o, active: true, from: '', to: '' }, p, C.todayCL())).length;
+        return `<article class="card disc-row${cls === 'gray' ? ' off' : ''}" data-offer="${esc(id)}">
+          <div class="big">${discBig(o)}</div>
+          <div><b>${esc(o.name || 'Oferta')}</b> <span class="pill ${cls}">${st}</span>
+            <div class="meta">${discBig(o)} ${discScope(o)} · ${discDates(o)} · ${plural(affected, 'producto', 'productos')}</div></div>
+          <div class="acts">
+            <label class="switch"><input type="checkbox" data-act="toggle" ${o.active === false ? '' : 'checked'}> Activa</label>
+            <button type="button" class="btn small" data-act="edit">Editar</button>
+            <button type="button" class="btn small ghost" data-act="del">Eliminar</button>
+          </div></article>`;
+      }).join('')
+    : '<p class="hint">Todavía no hay ofertas. Crea una con "+ Nueva oferta".</p>';
+
+  const cs = coupons.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  $('coupons-list').innerHTML = cs.length
+    ? cs.map((c) => {
+        const [st, cls] = discStatus(c);
+        return `<article class="card disc-row${cls === 'gray' ? ' off' : ''}" data-coupon="${esc(c.code)}">
+          <div class="big">${discBig(c)}</div>
+          <div><span class="code">${esc(c.code)}</span> <span class="pill ${cls}">${st}</span>
+            <div class="meta">${discBig(c)} ${discScope(c)}${c.minSubtotal ? ' · compra mínima ' + money(c.minSubtotal) : ''} · ${discDates(c)}</div>
+            <div class="meta">Usado <b>${plural(c.uses || 0, 'vez', 'veces')}</b>${c.maxUses ? ' de ' + c.maxUses : ''}${c.name ? ' · ' + esc(c.name) : ''}</div></div>
+          <div class="acts">
+            <label class="switch"><input type="checkbox" data-act="toggle" ${c.active === false ? '' : 'checked'}> Activo</label>
+            <button type="button" class="btn small" data-act="copy">Copiar código</button>
+            <button type="button" class="btn small" data-act="edit">Editar</button>
+            <button type="button" class="btn small ghost" data-act="del">Eliminar</button>
+          </div></article>`;
+      }).join('')
+    : '<p class="hint">Todavía no hay códigos. Crea uno con "+ Nuevo código".</p>';
+}
+
+function openForm(type, existing, key) {
+  form = existing
+    ? { type, key, ...JSON.parse(JSON.stringify(existing)) }
+    : { type, key: null, name: '', code: '', kind: 'percent', value: type === 'coupon' ? 10 : 20, scope: 'all', targets: [], from: '', to: '', minSubtotal: '', maxUses: '', active: true };
+  renderForm();
+  $('disc-form').hidden = false;
+  $('disc-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function formPreview() {
+  const f = form;
+  const v = Number(f.value) || 0;
+  if (!v) return 'Escribe cuánto descuento quieres dar.';
+  const what = f.kind === 'amount' ? `<b>${money(v)} de descuento</b>` : `<b>${v}% de descuento</b>`;
+  const scope = discScope(f);
+  const dates = discDates(f);
+  let text = f.type === 'coupon'
+    ? `Quien escriba <b>${esc(f.code || 'EL CÓDIGO')}</b> en el carrito tiene ${what} ${scope}${f.minSubtotal ? `, comprando desde ${money(f.minSubtotal)}` : ''}, ${dates}${f.maxUses ? `, hasta ${plural(Number(f.maxUses), 'uso', 'usos')}` : ''}.`
+    : `Los clientes ven ${what} ${scope}, ${dates}, con el precio normal tachado.`;
+  const ex = data.products.find((p) => C.offerApplies({ ...f, active: true, from: '', to: '' }, p, C.todayCL()));
+  if (ex && f.type === 'offer') text += `<span class="ex">Ejemplo: ${esc(ex.name)} <s>${money(ex.listPrice)}</s> → <b>${money(C.offerPrice(f, ex.listPrice))}</b></span>`;
+  if (ex && f.type === 'coupon') {
+    const off = f.kind === 'amount' ? Math.min(v, ex.price) : Math.round((ex.price * v) / 100);
+    text += `<span class="ex">Ejemplo: una ${esc(ex.name)} a ${money(ex.price)} queda en <b>${money(ex.price - off)}</b></span>`;
+  }
+  return text;
+}
+
+function renderForm() {
+  const f = form;
+  const isC = f.type === 'coupon';
+  const cats = CFG.categories;
+  const seg = (name, opts, cur) => `<div class="seg" data-seg="${name}">${Object.keys(opts).map((k) => `<button type="button" data-v="${k}" aria-pressed="${k === cur}">${opts[k]}</button>`).join('')}</div>`;
+  const quick = f.kind === 'amount' ? [2000, 3000, 5000, 10000] : [10, 15, 20, 30, 50];
+  $('disc-form').innerHTML = `
+    <h2>${f.key ? 'Editar' : 'Nuevo'} ${isC ? 'código de descuento' : 'oferta'}</h2>
+    <div class="step"><b>1. ${isC ? 'El código que escribirá el cliente' : 'Nombre de la oferta (lo ve el cliente en la ficha)'}</b>
+      ${isC ? `<input id="f-code" class="sku-input" value="${esc(f.code)}" placeholder="Ej: TWH10, VERANO, SORTEO" maxlength="20" ${f.key ? 'disabled' : ''} style="max-width:280px">
+        <input id="f-name" value="${esc(f.name)}" placeholder="Nota para ti (opcional): ej. sorteo Instagram noviembre" maxlength="80">`
+      : `<input id="f-name" value="${esc(f.name)}" placeholder="Ej: Black Friday, Liquidación de invierno" maxlength="60">`}
+    </div>
+    <div class="step"><b>2. ¿Cuánto descuento?</b>
+      ${seg('kind', { percent: '% Porcentaje', amount: '$ Monto fijo' }, f.kind)}
+      <div class="inline">
+        <input id="f-value" type="number" min="1" ${f.kind === 'percent' ? 'max="90"' : 'step="500"'} value="${esc(f.value)}" aria-label="Valor del descuento"> ${f.kind === 'percent' ? '%' : 'pesos'}
+        ${quick.map((q) => `<button type="button" class="chip" data-quick="${q}">${f.kind === 'percent' ? q + '%' : money(q)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="step"><b>3. ¿En qué productos?</b>
+      ${seg('scope', { all: 'Toda la tienda', category: 'Una o más categorías', products: 'Productos específicos' }, f.scope)}
+      ${f.scope === 'category' ? `<div class="picks">${Object.keys(cats).map((k) => `<label class="pick"><input type="checkbox" data-target="${k}" ${f.targets.includes(k) ? 'checked' : ''}> ${esc(cats[k])}</label>`).join('')}</div>` : ''}
+      ${f.scope === 'products' ? `<div class="picks">${data.products.filter((p) => p.status !== 'oculto').map((p) => `<label class="pick"><input type="checkbox" data-target="${esc(p.id)}" ${f.targets.includes(p.id) ? 'checked' : ''}> ${esc(p.name)}</label>`).join('')}</div>` : ''}
+    </div>
+    <div class="step"><b>4. ¿Cuándo? <span class="hint">(déjalo vacío para que empiece ya y no termine)</span></b>
+      <div class="inline"><label>Desde <input type="date" id="f-from" value="${esc(f.from)}"></label><label>Hasta <input type="date" id="f-to" value="${esc(f.to)}"></label></div>
+    </div>
+    ${isC ? `<div class="step"><b>5. Condiciones <span class="hint">(opcionales)</span></b>
+      <div class="inline"><label>Compra mínima $ <input type="number" id="f-min" min="0" step="1000" value="${esc(f.minSubtotal)}" placeholder="0"></label>
+      <label>Máximo de usos <input type="number" id="f-max" min="0" step="1" value="${esc(f.maxUses)}" placeholder="sin límite"></label></div>
+    </div>` : ''}
+    <div class="preview" id="f-preview">${formPreview()}</div>
+    <div class="actions"><button type="submit" class="btn primary">${f.key ? 'Guardar cambios' : isC ? 'Crear código' : 'Crear oferta'}</button><button type="button" class="btn ghost" data-act="cancel">Cancelar</button></div>`;
+}
+
+function readForm() {
+  const f = form;
+  const val = (id) => ($(id) ? $(id).value : '');
+  if (f.type === 'coupon' && !f.key) f.code = val('f-code').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  f.name = val('f-name').trim();
+  f.value = val('f-value');
+  f.from = val('f-from');
+  f.to = val('f-to');
+  if (f.type === 'coupon') { f.minSubtotal = val('f-min'); f.maxUses = val('f-max'); }
+  f.targets = [...document.querySelectorAll('#disc-form [data-target]:checked')].map((i) => i.dataset.target);
+}
+
+$('tab-descuentos').addEventListener('click', (e) => {
+  const n = e.target.closest('[data-new]');
+  if (n) return openForm(n.dataset.new);
+  if (!form || !e.target.closest('#disc-form')) return;
+  const segBtn = e.target.closest('[data-seg] button');
+  if (segBtn) {
+    readForm();
+    const name = segBtn.parentElement.dataset.seg;
+    form[name] = segBtn.dataset.v;
+    if (name === 'scope') form.targets = [];
+    if (name === 'kind') form.value = segBtn.dataset.v === 'amount' ? 5000 : 10;
+    return renderForm();
+  }
+  const q = e.target.closest('[data-quick]');
+  if (q) { readForm(); form.value = q.dataset.quick; return renderForm(); }
+  if (e.target.closest('[data-act="cancel"]')) { form = null; $('disc-form').hidden = true; }
+});
+$('disc-form').addEventListener('input', () => { readForm(); $('f-preview').innerHTML = formPreview(); });
+$('disc-form').addEventListener('change', () => { readForm(); $('f-preview').innerHTML = formPreview(); });
+
+$('disc-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  readForm();
+  const f = form;
+  const v = Number(f.value);
+  if (f.type === 'coupon' && !/^[A-Z0-9]{3,20}$/.test(f.code)) return toast('El código debe tener entre 3 y 20 letras o números (sin espacios)', true);
+  if (f.type === 'coupon' && !f.key && coupons.some((c) => c.code === f.code)) return toast('Ese código ya existe', true);
+  if (!(v > 0)) return toast('Escribe cuánto descuento quieres dar', true);
+  if (f.kind === 'percent' && v > 90) return toast('El máximo es 90%', true);
+  if (f.scope !== 'all' && !f.targets.length) return toast('Elige al menos una categoría o producto', true);
+  if (f.from && f.to && f.from > f.to) return toast('La fecha "hasta" es antes que "desde"', true);
+  const out = {
+    name: f.name, kind: f.kind, value: Math.round(v), scope: f.scope, targets: f.scope === 'all' ? [] : f.targets,
+    from: f.from || '', to: f.to || '', active: f.active !== false, createdAt: f.createdAt || new Date().toISOString(),
+  };
+  try {
+    if (f.type === 'offer') {
+      const key = f.key || 'of' + Date.now().toString(36);
+      await updateDoc(CATALOG, new FieldPath('offers', key), out);
+    } else {
+      out.minSubtotal = Math.max(0, Math.round(Number(f.minSubtotal) || 0));
+      out.maxUses = Math.max(0, Math.round(Number(f.maxUses) || 0));
+      await setDoc(doc(db, 'cupones', f.code), { ...out, code: f.code }, { merge: true });
+    }
+    toast(f.key ? 'Cambios guardados ✓' : f.type === 'offer' ? 'Oferta creada ✓' : `Código ${f.code} creado ✓`);
+    form = null;
+    $('disc-form').hidden = true;
+  } catch (err) {
+    fail(err);
+  }
+});
+
+async function discAction(e) {
+  const row = e.target.closest('[data-offer], [data-coupon]');
+  const act = e.target.closest('[data-act]');
+  if (!row || !act) return;
+  const isOffer = row.dataset.offer != null;
+  const key = isOffer ? row.dataset.offer : row.dataset.coupon;
+  const item = isOffer ? ((raw && raw.offers) || {})[key] : coupons.find((c) => c.code === key);
+  if (!item) return;
+  try {
+    switch (act.dataset.act) {
+      case 'toggle':
+        if (e.type !== 'change') return;
+        if (isOffer) await updateDoc(CATALOG, new FieldPath('offers', key, 'active'), act.checked);
+        else await updateDoc(doc(db, 'cupones', key), { active: act.checked });
+        toast(act.checked ? 'Activado ✓' : 'Pausado');
+        break;
+      case 'edit':
+        if (e.type !== 'click') return;
+        openForm(isOffer ? 'offer' : 'coupon', item, key);
+        break;
+      case 'copy':
+        if (e.type !== 'click') return;
+        await navigator.clipboard.writeText(key);
+        toast(`Código ${key} copiado`);
+        break;
+      case 'del':
+        if (e.type !== 'click') return;
+        if (!confirm(`¿Eliminar ${isOffer ? 'la oferta "' + (item.name || 'Oferta') + '"' : 'el código ' + key}? No se puede deshacer.`)) return;
+        if (isOffer) await updateDoc(CATALOG, new FieldPath('offers', key), deleteField());
+        else await deleteDoc(doc(db, 'cupones', key));
+        toast('Eliminado');
+        break;
+    }
+  } catch (err) {
+    fail(err);
+  }
+}
+['offers-list', 'coupons-list'].forEach((id) => {
+  $(id).addEventListener('click', discAction);
+  $(id).addEventListener('change', discAction);
 });

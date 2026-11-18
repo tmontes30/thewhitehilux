@@ -31,15 +31,56 @@
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  // ---------- SKU ----------
+  // SKU base por producto (editable en el panel) y SKU por variante: BASE-COLOR-TALLA[-DISEÑO]
+  var TYPE_CODE = { polera: 'POL', poleron: 'PLR', jockey: 'JCK', stickers: 'STK' };
+  var COLOR_CODE = { negro: 'NEG', blanco: 'BLA' };
+  var SKIP_WORDS = /^(twh|algodon|de|del|con|el|la|y|10|cm)$/;
+  function defaultSku(p) {
+    var words = p.id.split('-').filter(function (w) { return w && w !== p.type && w !== 'polera' && w !== 'poleron' && w !== 'jockey' && w !== 'sticker' && !SKIP_WORDS.test(w); });
+    var ini = words.map(function (w) { return /^\d/.test(w) ? w : w[0]; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    return (TYPE_CODE[p.type] || 'TWH') + '-' + (ini || 'X');
+  }
+  function cleanSku(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 24); }
+  function variantSku(p, color, size, design) {
+    return [p.sku, color ? (COLOR_CODE[color] || color.slice(0, 3).toUpperCase()) : '', size === 'Única' || !size ? 'U' : size,
+      design ? design.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) : ''].filter(Boolean).join('-');
+  }
+
+  // ---------- Ofertas automáticas (precio tachado en la tienda) ----------
+  // offer = { name, kind: 'percent'|'amount', value, scope: 'all'|'category'|'products', targets: [], from, to, active }
+  function inDates(o, today) { return (!o.from || today >= o.from) && (!o.to || today <= o.to); }
+  function offerApplies(o, p, today) {
+    if (!o || o.active === false || !(Number(o.value) > 0) || !inDates(o, today)) return false;
+    if (o.scope === 'category') return (o.targets || []).indexOf(p.type) >= 0;
+    if (o.scope === 'products') return (o.targets || []).indexOf(p.id) >= 0;
+    return true;
+  }
+  function offerPrice(o, price) {
+    var v = Number(o.value);
+    var out = o.kind === 'amount' ? price - v : Math.round((price * (1 - Math.min(v, 95) / 100)) / 10) * 10;
+    return Math.max(100, Math.round(out));
+  }
+  // Imágenes del producto: en poleras y polerones, la foto de frente primero
+  function orderedImages(p, color) {
+    var imgs = p.imagesByColor ? (p.imagesByColor[color || p.colors[0]] || []) : (p.images || []);
+    if (p.type !== 'polera' && p.type !== 'poleron') return imgs;
+    var rank = function (src) { return /-frente\.\w+$/.test(src) ? 0 : /-frente-/.test(src) ? 1 : /-espalda/.test(src) ? 2 : 3; };
+    return imgs.slice().sort(function (a, b) { return rank(a) - rank(b); });
+  }
+
   // Clave de stock: el color, o "unico" si el producto no tiene colores
   function stockKey(color) { return color || 'unico'; }
   function stockColors(p) { return p.colors && p.colors.length ? p.colors : ['unico']; }
 
   // remote = { products: { id: { name, price, desc, status, stock } }, settings: {...} }
-  function mergeCatalog(base, remote) {
+  function mergeCatalog(base, remote, today) {
     var data = clone(base);
     var r = remote || {};
     var rp = r.products || {};
+    var day = today || todayCL();
+    var offers = r.offers || {};
+    var usedSku = {};
     data.products = data.products.map(function (p) {
       var o = rp[p.id] || {};
       p.status = STATUS[o.status] ? o.status : (p.active === false ? 'oculto' : (STATUS[p.status] ? p.status : 'disponible'));
@@ -47,8 +88,26 @@
       if (typeof o.desc === 'string' && o.desc.trim()) p.desc = o.desc.trim();
       if (Number.isInteger(o.price) && o.price > 0) p.price = o.price;
       p.stock = o.stock && typeof o.stock === 'object' ? o.stock : null;
+      // SKU: el del panel o uno generado; sin repetidos
+      var sku = cleanSku(o.sku) || defaultSku(p);
+      if (usedSku[sku]) { var n = 2; while (usedSku[sku + n]) n++; sku = sku + n; }
+      usedSku[sku] = true;
+      p.sku = sku;
+      // Mejor oferta vigente
+      p.listPrice = p.price;
+      Object.keys(offers).forEach(function (k) {
+        var of = offers[k];
+        if (!offerApplies(of, p, day)) return;
+        var np = offerPrice(of, p.listPrice);
+        if (np < p.price) { p.price = np; p.offer = { id: k, name: of.name || '' }; }
+      });
+      if (p.price < p.listPrice) {
+        p.compareAt = p.listPrice;
+        p.offerPct = Math.round((1 - p.price / p.listPrice) * 100);
+      }
       return p;
     });
+    data.offers = offers;
     var s = r.settings || {};
     data.settings = {
       deliveryDaysRM: posInt(s.deliveryDaysRM, DEFAULT_SETTINGS.deliveryDaysRM),
@@ -120,7 +179,9 @@
     mergeCatalog: mergeCatalog, stockKey: stockKey, stockColors: stockColors, stockOf: stockOf, totalStock: totalStock,
     isSoldOut: isSoldOut, isBuyable: isBuyable,
     todayCL: todayCL, addBusinessDays: addBusinessDays, isBusinessDay: isBusinessDay, daysUntil: daysUntil,
-    deliveryDaysFor: deliveryDaysFor, promiseDate: promiseDate
+    deliveryDaysFor: deliveryDaysFor, promiseDate: promiseDate,
+    defaultSku: defaultSku, cleanSku: cleanSku, variantSku: variantSku, COLOR_CODE: COLOR_CODE,
+    offerApplies: offerApplies, offerPrice: offerPrice, inDates: inDates, orderedImages: orderedImages
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.TWHCore = api;

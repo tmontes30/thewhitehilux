@@ -59,8 +59,7 @@
 
   // Imagen de un producto: foto real si existe, si no la prenda dibujada con el logo
   function imagesFor(p, color) {
-    if (p.imagesByColor) return p.imagesByColor[color || p.colors[0]] || [];
-    return p.images || [];
+    return window.TWHCore.orderedImages(p, color); // poleras y polerones: frente primero
   }
   function usesImages(p, color) { return imagesFor(p, color).length > 0; }
   function picture(p, i, color) {
@@ -153,9 +152,48 @@
         nos.parentNode.insertBefore(a, nos);
       });
     }
+    renderWhatsApp();
+  }
+
+  // ---------- Botón flotante de WhatsApp ----------
+  var WA_ICON = '<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16.04 3C9 3 3.3 8.68 3.3 15.7c0 2.24.59 4.43 1.71 6.36L3.2 28.8l6.92-1.8a12.8 12.8 0 0 0 5.92 1.48h.01c7.03 0 12.75-5.7 12.75-12.72C28.8 8.7 23.07 3 16.04 3Zm0 23.3h-.01c-1.9 0-3.77-.51-5.4-1.48l-.39-.23-4.1 1.07 1.1-3.99-.26-.41a10.5 10.5 0 0 1-1.62-5.6c0-5.84 4.77-10.6 10.67-10.6 2.85 0 5.53 1.1 7.54 3.11a10.5 10.5 0 0 1 3.12 7.5c0 5.84-4.78 10.6-10.65 10.6Zm5.84-7.94c-.32-.16-1.89-.93-2.18-1.03-.3-.11-.51-.16-.72.16-.22.32-.83 1.03-1.02 1.24-.19.21-.37.24-.69.08-.32-.16-1.35-.5-2.57-1.58a9.6 9.6 0 0 1-1.78-2.2c-.19-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.18.21-.31.32-.52.1-.21.05-.4-.03-.56-.08-.16-.72-1.72-.98-2.36-.26-.62-.53-.53-.72-.54h-.62c-.21 0-.56.08-.85.4-.29.31-1.12 1.09-1.12 2.66 0 1.57 1.15 3.08 1.31 3.3.16.2 2.25 3.43 5.46 4.81.76.33 1.36.52 1.82.67.77.24 1.46.2 2.01.12.61-.09 1.89-.77 2.15-1.51.27-.74.27-1.38.19-1.51-.08-.13-.29-.21-.61-.37Z"/></svg>';
+  function renderWhatsApp() {
+    var num = D && D.config.whatsapp;
+    if (!num || document.querySelector('.wa-float')) return;
+    var msg = 'Hola! Vengo de la tienda The White Hilux y tengo una consulta';
+    if (/producto/.test(location.pathname)) {
+      var t = document.title.split(' · ')[0];
+      if (t && t !== 'Producto') msg = 'Hola! Vi la ' + t + ' en la tienda y tengo una consulta';
+    } else if (/carrito/.test(location.pathname)) {
+      msg = 'Hola! Tengo una consulta sobre mi compra en la tienda The White Hilux';
+    }
+    var a = document.createElement('a');
+    a.className = 'wa-float';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.setAttribute('aria-label', 'Escríbenos por WhatsApp');
+    a.title = 'Escríbenos por WhatsApp';
+    a.innerHTML = WA_ICON;
+    // el mensaje se arma al hacer clic (en la ficha el título del producto se carga después)
+    a.addEventListener('click', function () {
+      var m = msg;
+      if (/producto/.test(location.pathname)) {
+        var t2 = document.title.split(' · ')[0];
+        if (t2 && t2 !== 'Producto') m = 'Hola! Vi la ' + t2 + ' en la tienda y tengo una consulta';
+      }
+      a.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(m);
+    });
+    a.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+    document.body.appendChild(a);
+  }
+
+  // Precio con oferta: tachado + porcentaje
+  function priceHtml(p, cls) {
+    if (!p.compareAt) return '<span class="' + (cls || 'price') + '">' + money(p.price) + '</span>';
+    return '<span class="price-old">' + money(p.compareAt) + '</span><span class="' + (cls || 'price') + '">' + money(p.price) + ' <em class="off">' + p.offerPct + '% OFF</em></span>';
   }
 
   document.addEventListener('DOMContentLoaded', renderChrome);
 
-  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON };
+  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON, priceHtml: priceHtml };
 })();

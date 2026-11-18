@@ -20,6 +20,11 @@ service cloud.firestore {
       allow create: if false;
     }
 
+    // Códigos de descuento: privados (el cliente solo los valida a través de la función validarCupon)
+    match /cupones/{code} {
+      allow read, write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
