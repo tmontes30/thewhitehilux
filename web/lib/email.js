@@ -67,8 +67,8 @@ function alertHtml(orders, today) {
 }
 
 async function sendEmail({ to, subject, html, key, from }) {
-  key = key || process.env.RESEND_API_KEY;
-  if (!key || !to) return { skipped: true };
+  key = (key || process.env.RESEND_API_KEY || '').trim();
+  if (!key || key === 'none' || !to) return { skipped: true }; // "none" = correos desactivados
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
