@@ -126,7 +126,7 @@
         '<a class="icon-link" href="carrito.html" aria-label="Carrito">' + ICON.cart + '<span class="label">Carrito</span><span class="badge" id="cart-count" hidden>0</span></a>' +
         '</div></div><nav class="wrap cats" aria-label="Categorías"><a href="index.html"' + (document.getElementById('productos') && !params.get('cat') && !params.get('q') && !params.get('estado') ? ' aria-current="page"' : '') + '>Todo</a>' +
         Object.keys(cats).map(function (k) { return '<a href="index.html?cat=' + k + '"' + (params.get('cat') === k ? ' aria-current="page"' : '') + '>' + esc(cats[k]) + '</a>'; }).join('') +
-        '<a href="nosotros.html"' + (/nosotros/.test(location.pathname) ? ' aria-current="page"' : '') + '>Nosotros</a><span class="spacer"></span>' + (free ? '<span class="ship-note">Envío a todo Chile</span>' : '') +
+        '<a href="nosotros.html"' + (/nosotros/.test(location.pathname) ? ' aria-current="page"' : '') + '>Nosotros</a><a href="seguimiento.html"' + (/seguimiento/.test(location.pathname) ? ' aria-current="page"' : '') + '>Sigue tu pedido</a><span class="spacer"></span>' + (free ? '<span class="ship-note">Envío a todo Chile</span>' : '') +
         '</nav><div class="stripes"></div></header>';
     }
     var f = document.getElementById('site-footer');
@@ -136,7 +136,7 @@
         '<div><img src="assets/logos/logo-oficial.svg" alt="The White Hilux · 4WD Race Dept."><p>Merch off road de @the.whitehilux.</p></div>' +
         '<div><h4>Tienda</h4>' + Object.keys(c2).map(function (k) { return '<a href="index.html?cat=' + k + '">' + esc(c2[k]) + '</a>'; }).join('') + '</div>' +
         '<div><h4>Ayuda</h4><a href="seguimiento.html"><b>Sigue tu pedido</b></a><a href="nosotros.html">Nosotros</a><a href="carrito.html">Mi carrito</a>' +
-        (D && D.config.whatsapp ? '<a class="foot-wa" href="https://wa.me/' + D.config.whatsapp + '?text=' + encodeURIComponent('Hola! Vengo de la tienda The White Hilux y tengo una consulta') + '" target="_blank" rel="noopener">' + WA_ICON + 'WhatsApp +' + D.config.whatsapp.replace(/^56(9)(\d{4})(\d{4})$/, '56 $1 $2 $3') + '</a>' : '') +
+        (D && D.config.whatsapp ? '<a class="foot-wa" href="https://wa.me/' + D.config.whatsapp + '?text=' + encodeURIComponent('Hola! Vengo de la tienda The White Hilux y tengo una consulta') + '" target="_blank" rel="noopener">' + WA_ICON + 'WhatsApp</a>' : '') +
         (D && D.config.email ? '<a href="mailto:' + esc(D.config.email) + '">✉ ' + esc(D.config.email) + '</a>' : '') +
         '<a href="https://www.instagram.com/the.whitehilux/" target="_blank" rel="noopener">Instagram @the.whitehilux</a></div>' +
         '<div><h4>Legal</h4><a href="terminos.html">Términos y condiciones</a><a href="cambios.html">Cambios y devoluciones</a><a href="privacidad.html">Privacidad</a></div>' +
