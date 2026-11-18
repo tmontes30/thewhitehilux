@@ -35,7 +35,6 @@
 
   <div class="crumbs" id="crumbs"></div>
   <div class="list-layout" id="productos">
-    <aside class="filters" id="filters" aria-label="Filtros"></aside>
     <section>
       <div class="toolbar">
         <div><h1 id="list-title">Toda la colección</h1><p class="count" id="list-count"></p></div>
@@ -125,7 +124,8 @@ TWH.loadData().then(function (d) {
       return n ? '<a href="' + url({ estado: f.estado === k ? '' : k }) + '"' + (f.estado === k ? ' aria-current="true"' : '') + '>' + ESTADOS[k] + ' <span>' + n + '</span></a>' : '';
     }).join('') + '</div>';
   }
-  document.getElementById('filters').innerHTML = html;
+  var filtersBox = document.getElementById('filters'); // panel de filtros retirado (las categorías están en el menú)
+  if (filtersBox) filtersBox.innerHTML = html;
 
   // Filtros activos
   var chips = [];

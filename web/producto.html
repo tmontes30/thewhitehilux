@@ -100,46 +100,71 @@
           '<div class="body"><span class="title">' + TWH.esc(x.name) + '</span>' + TWH.priceHtml(x) + '</div></a>';
       }).join('') + '</div></section>';
 
+    var galleryKey = null, shownView = -1;
+    // Cambia solo la foto grande y marca la miniatura, sin redibujar nada más
+    function setView(k) {
+      st.view = k;
+      if (k === shownView) return;
+      shownView = k;
+      document.getElementById('main').innerHTML = TWH.picture(p, k, st.color);
+      var bs = document.getElementById('thumbs').children;
+      for (var j = 0; j < bs.length; j++) bs[j].setAttribute('aria-pressed', j === k ? 'true' : 'false');
+    }
+
     function render() {
       n = TWH.pictureCount(p, st.color);
       if (st.view >= n) st.view = 0;
       var ds = document.getElementById('designs');
       if (ds) {
         p.views = [{ shape: 'sticker', logo: st.design }];
-        ds.innerHTML = '';
-        p.designs.forEach(function (dd) {
-          var b = document.createElement('button');
-          b.type = 'button'; b.className = 'color-choice'; b.title = dd.name; b.setAttribute('aria-label', dd.name);
-          b.setAttribute('aria-pressed', dd.id === st.design ? 'true' : 'false');
-          b.innerHTML = '<img src="assets/logos/' + dd.id + '-claro.svg" alt="">';
-          b.addEventListener('click', function () { st.design = dd.id; st.view = 0; render(); });
-          ds.appendChild(b);
-        });
+        if (!ds.children.length) {
+          p.designs.forEach(function (dd) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'color-choice'; b.title = dd.name; b.setAttribute('aria-label', dd.name);
+            b.dataset.d = dd.id;
+            b.innerHTML = '<img src="assets/logos/' + dd.id + '-claro.svg" alt="">';
+            b.addEventListener('click', function () { if (st.design !== dd.id) { st.design = dd.id; st.view = 0; render(); } });
+            ds.appendChild(b);
+          });
+        }
+        Array.prototype.forEach.call(ds.children, function (b) { b.setAttribute('aria-pressed', b.dataset.d === st.design ? 'true' : 'false'); });
         document.getElementById('design-name').textContent = p.designs.filter(function (dd) { return dd.id === st.design; })[0].name;
       }
-      document.getElementById('main').innerHTML = TWH.picture(p, st.view, st.color);
-      var th = document.getElementById('thumbs');
-      th.innerHTML = '';
-      for (var i = 0; i < n; i++) {
-        var b = document.createElement('button');
-        b.type = 'button'; b.className = 'thumb'; b.setAttribute('aria-label', 'Foto ' + (i + 1));
-        b.setAttribute('aria-pressed', i === st.view ? 'true' : 'false');
-        b.innerHTML = TWH.picture(p, i, st.color);
-        (function (k) { b.addEventListener('mouseenter', function () { st.view = k; render(); }); b.addEventListener('click', function () { st.view = k; render(); }); })(i);
-        th.appendChild(b);
+      // Galería: solo se redibuja si cambió el color o el diseño (redibujarla siempre hacía parpadear en el celular)
+      var key = st.color + '|' + st.design;
+      if (key !== galleryKey) {
+        galleryKey = key;
+        shownView = -1;
+        var th = document.getElementById('thumbs');
+        th.innerHTML = '';
+        for (var i = 0; i < n; i++) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'thumb'; b.setAttribute('aria-label', 'Foto ' + (i + 1));
+          b.innerHTML = TWH.picture(p, i, st.color);
+          (function (k) {
+            // pasar el mouse cambia la foto solo con mouse de verdad (en el celular se simula y causaba un bucle)
+            b.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') setView(k); });
+            b.addEventListener('click', function () { setView(k); });
+          })(i);
+          th.appendChild(b);
+        }
       }
+      setView(st.view);
       var cs = document.getElementById('colors');
       if (cs) {
-        cs.innerHTML = '';
-        p.colors.forEach(function (c) {
-          var b = document.createElement('button');
-          b.type = 'button'; b.className = 'color-choice'; b.title = cfg.colors[c];
-          b.setAttribute('aria-label', cfg.colors[c]);
-          b.setAttribute('aria-pressed', c === st.color ? 'true' : 'false');
-          b.innerHTML = TWH.picture(p, 0, c);
-          b.addEventListener('click', function () { st.color = c; render(); });
-          cs.appendChild(b);
-        });
+        // los botones de color (con foto) se crean una vez; después solo se marca el elegido
+        if (!cs.children.length) {
+          p.colors.forEach(function (c) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'color-choice'; b.title = cfg.colors[c];
+            b.setAttribute('aria-label', cfg.colors[c]);
+            b.dataset.c = c;
+            b.innerHTML = TWH.picture(p, 0, c);
+            b.addEventListener('click', function () { if (st.color !== c) { st.color = c; render(); } });
+            cs.appendChild(b);
+          });
+        }
+        Array.prototype.forEach.call(cs.children, function (b) { b.setAttribute('aria-pressed', b.dataset.c === st.color ? 'true' : 'false'); });
         document.getElementById('color-name').textContent = cfg.colors[st.color];
       }
       var ss = document.getElementById('sizes');

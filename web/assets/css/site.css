@@ -130,7 +130,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .crumbs { font-size: 13px; color: var(--muted); padding-block: 18px 12px; }
 .crumbs a { color: var(--muted); }
 .crumbs a:hover { color: var(--text); }
-.list-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; padding-bottom: 56px; align-items: start; }
+.list-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding-bottom: 56px; align-items: start; }
 @media (max-width: 900px) { .list-layout { grid-template-columns: minmax(0, 1fr); } }
 .filters { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 18px 8px; position: sticky; top: 176px; }
 @media (max-width: 900px) { .filters { position: static; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 14px; } .filters .group { margin: 0; } .filters h3 { display: none; } }
