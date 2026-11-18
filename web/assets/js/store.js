@@ -119,7 +119,7 @@
       h.innerHTML =
         (D && D.config.dropNote ? '<div class="notice">' + esc(D.config.dropNote) + '</div>' : '') +
         '<header class="head"><div class="wrap head-row">' +
-        '<a class="brand" href="index.html" aria-label="The White Hilux, inicio"><img src="assets/logos/logo-shop.svg" alt="The White Hilux CL Shop"></a>' +
+        '<a class="brand" href="index.html" aria-label="The White Hilux, inicio"><img src="assets/logos/logo-oficial.svg" alt="The White Hilux · 4WD Race Dept."></a>' +
         '<form class="search" action="index.html" role="search"><input name="q" id="q" placeholder="Buscar poleras, polerones, jockeys…" aria-label="Buscar productos" value="' + esc(params.get('q') || '') + '"><button aria-label="Buscar">' + ICON.search + '</button></form>' +
         '<div class="head-actions">' +
         '<a class="icon-link" href="https://www.instagram.com/the.whitehilux/" target="_blank" rel="noopener" aria-label="Instagram">' + ICON.ig + '<span class="label">Instagram</span></a>' +
@@ -133,7 +133,7 @@
     if (f) {
       var c2 = D ? D.config.categories : {};
       f.innerHTML = '<footer class="foot"><div class="wrap foot-in">' +
-        '<div><img src="assets/logos/cl-shop.svg" alt="The White Hilux CL Shop"><p>Merch off road de @the.whitehilux.</p></div>' +
+        '<div><img src="assets/logos/logo-oficial.svg" alt="The White Hilux · 4WD Race Dept."><p>Merch off road de @the.whitehilux.</p></div>' +
         '<div><h4>Tienda</h4>' + Object.keys(c2).map(function (k) { return '<a href="index.html?cat=' + k + '">' + esc(c2[k]) + '</a>'; }).join('') + '</div>' +
         '<div><h4>Ayuda</h4><a href="seguimiento.html"><b>Sigue tu pedido</b></a><a href="nosotros.html">Nosotros</a><a href="carrito.html">Mi carrito</a>' +
         (D && D.config.whatsapp ? '<a class="foot-wa" href="https://wa.me/' + D.config.whatsapp + '?text=' + encodeURIComponent('Hola! Vengo de la tienda The White Hilux y tengo una consulta') + '" target="_blank" rel="noopener">' + WA_ICON + 'WhatsApp +' + D.config.whatsapp.replace(/^56(9)(\d{4})(\d{4})$/, '56 $1 $2 $3') + '</a>' : '') +

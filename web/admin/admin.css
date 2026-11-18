@@ -20,7 +20,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .top { background: var(--ink); color: var(--cream); position: sticky; top: 0; z-index: 20; }
 .top-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--cream); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
-.brand img { height: 36px; }
+.brand img { height: 46px; }
 .brand span { background: var(--accent); color: var(--ink); padding: 2px 6px; border-radius: 4px; }
 .tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
 .tabs button { background: none; border: 0; color: rgba(242,240,232,.75); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
