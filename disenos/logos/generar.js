@@ -636,6 +636,9 @@ const LOGOS = {
   }
 };
 
+// Logos pro (insignias y deporte con tipografías en trazos y volumen): reemplazan a los de igual nombre
+Object.assign(LOGOS, require('./pro.js')({ INK, BG, ORANGE, RED, DRED, MUST, OLIVE }));
+
 // ---------- salida ----------
 const here = __dirname;
 const svgDir = path.join(here, 'svg'), pngDir = path.join(here, 'png');
