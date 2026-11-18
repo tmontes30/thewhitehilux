@@ -1,4 +1,4 @@
-// Etiqueta TWH estampada en el cuello interior: logo + talla (60 x 40 mm).
+// Etiqueta TWH estampada en el cuello interior: "TWH" + franjas + "RACE SHOP" + talla (60 x 40 mm).
 // La comparten disenos/etiquetas/generar.js (archivos para la imprenta) y el configurador (vista previa).
 // Dos versiones, según el color de la prenda:
 //   negra  → "clara"  (1 tinta crema)
@@ -11,26 +11,20 @@
   };
   function versionPara(color) { return color === 'blanco' ? 'oscura' : 'clara'; }
 
-  var n = 0;
-  // Mismo dibujo que el logo oficial "THE WHITE HILUX · CL SHOP" (web/assets/logos/logo-shop.svg), en 1 tinta,
-  // con "CL SHOP" calado dentro de su caja. Abajo la talla grande.
-  // opts.width/height: tamaño del <svg> (por defecto 60mm x 40mm)
+  // Iniciales "TWH" en cursiva con las 3 franjas de rally (mismo estilo del logo oficial), "RACE SHOP" debajo
+  // y la talla grande. 1 sola tinta. opts.width/height: tamaño del <svg> (por defecto 60mm x 40mm)
   function svg(talla, version, opts) {
     var o = opts || {};
     var ink = (VERSIONES[version] || VERSIONES.clara).tinta;
-    var id = 'twh-et-' + version + '-' + talla + '-' + (n++);
-    var ancho = talla.length >= 3 ? 330 : talla.length === 2 ? 260 : null; // XL/XXL más angostas
+    var ancho = talla.length >= 3 ? 300 : talla.length === 2 ? 230 : null; // XL/XXL más angostas
+    // franjas: borde izquierdo recto y derecho en diagonal, cada una un poco más corta (como en el logo)
+    var franja = function (y, x2) { return '<path d="M168 ' + y + ' H' + x2 + ' L' + (x2 - 8) + ' ' + (y + 9) + ' H168 Z" fill="' + ink + '"/>'; };
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="' + (o.width || '60mm') + '" height="' + (o.height || '40mm') + '">' +
-      '<defs><mask id="' + id + '"><rect x="0" y="0" width="566" height="120" fill="#fff"/><g transform="translate(470 97) skewX(-12)"><text x="0" y="0" font-family="' + FONT + '" font-size="24" fill="#000" text-anchor="middle" letter-spacing="4">CL SHOP</text></g></mask></defs>' +
-      '<g transform="translate(37 22) scale(0.93) translate(0 -8)">' +
-        '<g transform="translate(14 58) skewX(-12)"><text x="0" y="0" font-family="' + FONT + '" font-size="50" fill="' + ink + '" textLength="510" lengthAdjust="spacingAndGlyphs">THE WHITE HILUX</text></g>' +
-        '<path d="M8 74 H372 L366 80 H8 Z" fill="' + ink + '"/>' +
-        '<path d="M8 83 H362 L356 89 H8 Z" fill="' + ink + '"/>' +
-        '<path d="M8 92 H352 L346 98 H8 Z" fill="' + ink + '"/>' +
-        '<path d="M392 72 H556 L546 104 H382 Z" fill="' + ink + '" mask="url(#' + id + ')"/>' +
-      '</g>' +
-      '<rect x="60" y="148" width="480" height="4" fill="' + ink + '" opacity=".9"/>' +
-      '<text x="300" y="352" font-family="' + FONT + '" font-size="190" fill="' + ink + '" text-anchor="middle"' + (ancho ? ' textLength="' + ancho + '" lengthAdjust="spacingAndGlyphs"' : '') + '>' + talla + '</text>' +
+      '<g transform="translate(300 118) skewX(-12)"><text x="0" y="0" font-family="' + FONT + '" font-size="122" fill="' + ink + '" text-anchor="middle" textLength="270" lengthAdjust="spacingAndGlyphs">TWH</text></g>' +
+      franja(132, 440) + franja(146, 428) + franja(160, 416) +
+      '<g transform="translate(300 206) skewX(-12)"><text x="0" y="0" font-family="' + FONT + '" font-size="27" fill="' + ink + '" text-anchor="middle" letter-spacing="9">RACE SHOP</text></g>' +
+      '<rect x="120" y="228" width="360" height="4" fill="' + ink + '" opacity=".9"/>' +
+      '<text x="300" y="378" font-family="' + FONT + '" font-size="150" fill="' + ink + '" text-anchor="middle"' + (ancho ? ' textLength="' + ancho + '" lengthAdjust="spacingAndGlyphs"' : '') + '>' + talla + '</text>' +
       '</svg>';
   }
 
