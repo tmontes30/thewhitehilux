@@ -108,6 +108,10 @@ const etiquetas = {};
 filas.filter((f) => f.m.etiqueta).forEach((f) => TALLAS.forEach((t) => { const k = E.versionPara(f.col); etiquetas[k] = etiquetas[k] || {}; etiquetas[k][t] = (etiquetas[k][t] || 0) + f.cant[t]; }));
 
 // ---------- documento ----------
+let MODE = 'html'; // 'pdf': los links saltan a la página del logo dentro del mismo PDF; 'html': abren el archivo
+const ancla = (a) => 'lg-' + a.file.slice(0, 2);
+const linkLogo = (a, label) => `<a class="file" href="${MODE === 'pdf' ? '#' + ancla(a) : 'logos/' + encodeURIComponent(a.file)}">${esc(label || a.file)}</a>`;
+const linkEt = (k, t) => `<a class="file" href="${MODE === 'pdf' ? '#etiquetas-real' : 'etiquetas/etiqueta-' + k + '-' + t + '.pdf'}">etiqueta-${k}-${t}.pdf</a>`;
 const img = (rel) => (rel ? 'file:///' + path.join(WEB, rel).replace(/\\/g, '/') : '');
 const fotos = (p, col) => {
   const imgs = C.orderedImages(p, col);
@@ -117,8 +121,10 @@ const logoCell = (a, lugar) => {
   if (!a) return `<td class="muted">— sin estampado —</td>`;
   const { svg, hcm } = svgLogo(a);
   return `<td><div class="logo-prev ${a.tinta}">${svg.replace(/width="[^"]+" height="[^"]+"/, 'width="100%" height="70"')}</div>
-    <b>${esc(LOGOS[a.logo].name)}</b><br>${a.cm} × ${hcm} cm · tinta ${a.tinta === 'clara' ? 'clara (sobre negro)' : 'oscura (sobre blanco)'}<br><span class="file">${esc(a.file)}</span><br><small>${esc(UBICACION[lugar])}</small></td>`;
+    <b>${esc(LOGOS[a.logo].name)}</b><br>${a.cm} × ${hcm} cm · tinta ${a.tinta === 'clara' ? 'clara (sobre negro)' : 'oscura (sobre blanco)'}<br>${linkLogo(a)}<br><small>${esc(UBICACION[lugar])}</small></td>`;
 };
+function construir(modo) {
+MODE = modo;
 const tabla = (rows, head) => `<table class="q"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
 
 const fichas = modelos.map((m) => {
@@ -130,9 +136,9 @@ const fichas = modelos.map((m) => {
       return `<div class="color-block">
         <div class="fotos">${f.frente ? `<img src="${img(f.frente)}">` : ''}${f.espalda ? `<img src="${img(f.espalda)}">` : ''}</div>
         <div class="det">
-          <p class="col"><span class="dot ${col}"></span> Polera <b>${COLOR[col]}</b> · algodón 100% 220 g · corte oversize · estampado DTF</p>
+          <p class="col"><span class="dot ${col}"></span> Polera <b>${COLOR[col]}</b></p>
           <table class="specs"><tr><th>Frente</th><th>Espalda</th></tr><tr>${logoCell(m[col].frente, m.c.frente && (m.c.frente.pos === 'centro' ? 'centro' : 'pecho'))}${logoCell(m[col].espalda, 'espalda')}</tr></table>
-          <p class="et">Etiqueta cuello: ${m.etiqueta ? `<b>sí</b> · etiqueta-${E.versionPara(col)}-&lt;talla&gt;.pdf` : 'no'}</p>
+          <p class="et">Etiqueta cuello: ${m.etiqueta ? `<b>sí</b> · ${TALLAS.filter((t) => curvaDe(m)[t]).map((t) => linkEt(E.versionPara(col), t)).join(' · ')}` : 'no'}</p>
           ${tabla([`<tr><td>${COLOR[col]}</td>${TALLAS.map((t) => `<td>${curvaDe(m)[t] || '—'}</td>`).join('')}<td><b>${suma(curvaDe(m))}</b></td></tr>`], ['Color', ...TALLAS, 'Total'])}
         </div></div>`;
     }).join('')}
@@ -147,11 +153,30 @@ const porColor = tabla(
   Object.keys(porColorTalla).map((col) => `<tr><td>${COLOR[col]}</td>${TALLAS.map((t) => `<td>${porColorTalla[col][t]}</td>`).join('')}<td><b>${TALLAS.reduce((s, t) => s + porColorTalla[col][t], 0)}</b></td></tr>`),
   ['Color', ...TALLAS, 'Total']);
 const tablaEt = tabla(
-  Object.keys(etiquetas).map((k) => `<tr><td>${E.VERSIONES[k].nombre}</td>${TALLAS.map((t) => `<td>${etiquetas[k][t] || 0}<br><span class="file">etiqueta-${k}-${t}.pdf</span></td>`).join('')}<td><b>${TALLAS.reduce((s, t) => s + (etiquetas[k][t] || 0), 0)}</b></td></tr>`),
+  Object.keys(etiquetas).map((k) => `<tr><td>${E.VERSIONES[k].nombre}</td>${TALLAS.map((t) => `<td>${etiquetas[k][t] || 0}<br>${etiquetas[k][t] ? linkEt(k, t) : ''}</td>`).join('')}<td><b>${TALLAS.reduce((s, t) => s + (etiquetas[k][t] || 0), 0)}</b></td></tr>`),
   ['Etiqueta', ...TALLAS, 'Total']);
 const tablaArch = tabla(
-  [...archivos.values()].map((a) => `<tr><td class="file">${esc(a.file)}</td><td>${esc(LOGOS[a.logo].name)}</td><td>${a.lugar}</td><td>${a.cm} cm</td><td>${a.tinta}</td><td>${a.usos.length}</td></tr>`),
+  [...archivos.values()].map((a) => `<tr><td>${linkLogo(a)}</td><td>${esc(LOGOS[a.logo].name)}</td><td>${a.lugar}</td><td>${a.cm} cm</td><td>${a.tinta}</td><td>${a.usos.length}</td></tr>`),
   ['Archivo', 'Logo', 'Ubicación', 'Ancho', 'Tinta', 'Modelos']);
+
+// anexo: una página por logo (destino de los links) + etiquetas a tamaño real
+const anexo = [...archivos.values()].map((a) => {
+  const { svg, hcm } = svgLogo(a);
+  const w = Math.min(a.cm, 17), h = Math.round((w * hcm / a.cm) * 10) / 10;
+  return `<section class="anexo" id="${ancla(a)}">
+    <h2><span class="num">${a.file.slice(0, 2)}</span> ${esc(LOGOS[a.logo].name)}</h2>
+    <table class="specs"><tr><th>Archivo</th><td>${MODE === 'pdf' ? `<b>${esc(a.file)}</b> (carpeta logos/)` : linkLogo(a)}</td></tr>
+      <tr><th>Medida impresa</th><td><b>${a.cm} × ${hcm} cm</b> (ancho × alto)</td></tr>
+      <tr><th>Ubicación</th><td>${esc(UBICACION[a.lugar])}</td></tr>
+      <tr><th>Tinta</th><td>${a.tinta === 'clara' ? 'Clara · para polera negra' : 'Oscura · para polera blanca'}</td></tr>
+      <tr><th>Va en</th><td>${a.usos.map(esc).join('<br>')}</td></tr></table>
+    <div class="big ${a.tinta}">${svg.replace(/width="[^"]+" height="[^"]+"/, `width="${w}cm" height="${h}cm"`)}</div>
+    ${a.cm > 17 ? `<p class="muted-l">Vista reducida al ${Math.round(100 * 17 / a.cm)} % para que quepa en la hoja. El archivo PDF está a tamaño real.</p>` : '<p class="muted-l">Vista a tamaño real.</p>'}
+    <p><a class="back" href="#archivos">↑ Volver a la lista de archivos</a></p></section>`;
+}).join('') + `<section class="anexo" id="etiquetas-real"><h2>Etiquetas de cuello · tamaño real (${ETIQUETA.ancho} × ${ETIQUETA.alto} cm)</h2>
+  <p>${esc(ETIQUETA.ubicacion)}. Archivos en la carpeta etiquetas/.</p>
+  <div class="etq-real">${Object.keys(etiquetas).map((k) => TALLAS.filter((t) => etiquetas[k][t]).map((t) => `<div><div class="box" style="background:${E.VERSIONES[k].fondo}">${E.svg(t, k)}</div><b>etiqueta-${k}-${t}.pdf</b> · ${etiquetas[k][t]} un.</div>`).join('')).join('')}</div>
+  <p><a class="back" href="#archivos">↑ Volver a la lista de archivos</a></p></section>`;
 
 const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedido de producción TWH · ${hoy}</title><style>
   @page { size: A4; margin: 12mm; }
@@ -181,6 +206,10 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
   .note { background: #FFF2D9; border-left: 4px solid #E39B2D; padding: 8px 10px; border-radius: 6px; margin: 10px 0; }
   .etq { display: flex; gap: 8px; flex-wrap: wrap; } .etq div { border-radius: 6px; padding: 6px; text-align: center; font-size: 10px; } .etq svg { width: 120px; height: 80px; display: block; }
   .page-break { page-break-before: always; }
+  a.file { color: #2968C8; text-decoration: underline; } a.back { color: #2968C8; font-weight: 600; }
+  .anexo { page-break-before: always; } .anexo .specs th { width: 130px; } .anexo .specs td { width: auto; }
+  .big { margin: 14px 0 6px; padding: 14px; border-radius: 8px; display: flex; justify-content: center; } .big.clara { background: #1B1C1A; } .big.oscura { background: #fff; border: 1px solid #ddd; }
+  .muted-l { color: #6B706C; font-size: 10.5px; } .etq-real { display: grid; grid-template-columns: repeat(2, auto); gap: 14px; justify-content: start; } .etq-real .box { border: 1px solid #ccc; display: inline-block; margin-bottom: 3px; } .etq-real svg { display: block; }
 </style></head><body>
 <div class="head"><img src="logo-twh.svg"><div><h1>Pedido de producción · Poleras TWH</h1><div>The White Hilux · CL Shop</div></div>
   <div class="meta">Fecha: <b>${hoy.split('-').reverse().join('-')}</b><br>Proveedor: ____________________<br>Contacto: +56 9 9225 9960</div></div>
@@ -188,29 +217,33 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 <div class="kpis"><div class="kpi"><b>${total}</b>poleras</div><div class="kpi"><b>${modelos.length}</b>modelos</div><div class="kpi"><b>${estampados.frente}</b>estampados pecho</div><div class="kpi"><b>${estampados.espalda}</b>estampados espalda</div><div class="kpi"><b>${Object.values(etiquetas).reduce((s, o) => s + Object.values(o).reduce((a, b) => a + b, 0), 0)}</b>etiquetas cuello</div></div>
 
 <div class="note"><b>Curvas (por modelo y color):</b> ${[...new Set(modelos.map((m) => txtCurva(curvaDe(m))))].map((c) => `modelos ${modelos.filter((m) => txtCurva(curvaDe(m)) === c).map((m) => m.n).join(', ')} → <b>${c}</b>`).join(' &nbsp;|&nbsp; ')}. Modelos con logo adelante y atrás: solo negro. Modelos solo con logo adelante: negro y blanco.<br>
-<b>Prenda:</b> polera algodón 100% 220 g, corte oversize. <b>Técnica:</b> DTF. Los logos van en PDF vectorial a tamaño real (ancho indicado = ancho impreso). <b>Medidas y ubicaciones referenciales: confirmar con el proveedor antes de imprimir.</b></div>
+Los logos van en PDF vectorial a tamaño real (ancho indicado = ancho impreso). <b>Toca el nombre de cualquier archivo para ir a ese logo.</b> <b>Medidas y ubicaciones referenciales: confirmar con el proveedor antes de imprimir.</b></div>
 
 <h3>Resumen por modelo</h3>${resumen}
 <h3>Total por color y talla</h3>${porColor}
 <h3>Etiquetas de cuello (${ETIQUETA.ancho} × ${ETIQUETA.alto} cm · ${ETIQUETA.ubicacion})</h3>${tablaEt}
 <div class="etq">${Object.keys(etiquetas).map((k) => TALLAS.map((t) => `<div style="background:${E.VERSIONES[k].fondo};border:1px solid #ddd">${E.svg(t, k, { width: 120, height: 80 })}</div>`).join('')).join('')}</div>
-<h3>Archivos de logos (carpeta logos/)</h3>${tablaArch}
+<h3 id="archivos">Archivos de logos (carpeta logos/)</h3>${tablaArch}
 
 <div class="page-break"></div>
 <h3>Ficha por modelo</h3>${fichas}
+${anexo}
 </body></html>`;
+return html;
+}
 
 // logo del encabezado en versión oscura (para papel blanco)
 const shop = fs.readFileSync(path.join(WEB, 'assets', 'logos', 'logo-shop.svg'), 'utf8').split('#F2F0E8').join('#1C1D1A');
 fs.writeFileSync(path.join(OUT, 'logo-twh.svg'), shop);
-fs.writeFileSync(path.join(OUT, 'pedido.html'), html);
+fs.writeFileSync(path.join(OUT, 'pedido.html'), construir('html'));
+fs.writeFileSync(path.join(OUT, '_pedido-pdf.html'), construir('pdf'));
 
 // ---------- PDF ----------
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(fs.existsSync);
 (async () => {
   const browser = await puppeteer.launch({ executablePath: edge, headless: true, args: ['--allow-file-access-from-files'] });
   const page = await browser.newPage();
-  await page.goto('file:///' + path.join(OUT, 'pedido.html').replace(/\\/g, '/'), { waitUntil: 'load' });
+  await page.goto('file:///' + path.join(OUT, '_pedido-pdf.html').replace(/\\/g, '/'), { waitUntil: 'load' });
   await page.pdf({ path: path.join(OUT, 'pedido.pdf'), format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' } });
 
   // logos: un PDF por archivo, página del tamaño exacto del logo (sin fondo: transparente al importarlo)
@@ -225,5 +258,13 @@ const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C
     await page.pdf({ path: path.join(OUT, 'etiquetas', `etiqueta-${k}-${t}.pdf`), width: `${ETIQUETA.ancho}cm`, height: `${ETIQUETA.alto}cm`, printBackground: false, margin: { top: 0, bottom: 0, left: 0, right: 0 }, pageRanges: '1' });
   }
   await browser.close();
+  fs.unlinkSync(path.join(OUT, '_pedido-pdf.html'));
+
+  // ZIP para mandar al proveedor: documento + logos + etiquetas
+  const zip = path.join(OUT, '..', `pedido-TWH-${hoy}.zip`);
+  try { fs.unlinkSync(zip); } catch (e) {}
+  const items = ['pedido.pdf', 'pedido.html', 'logo-twh.svg', 'logos', 'etiquetas'].map((n) => `'${path.join(OUT, n)}'`).join(',');
+  require('child_process').execFileSync('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path ${items} -DestinationPath '${zip}' -Force`]);
+  console.log(`ZIP para el proveedor: ${path.relative(ROOT, zip)}`);
   console.log(`Listo en ${path.relative(ROOT, OUT)}: ${total} poleras, ${archivos.size} logos PDF, ${Object.keys(etiquetas).length * TALLAS.length} etiquetas PDF`);
 })().catch((e) => { console.error(e); process.exit(1); });
