@@ -119,7 +119,8 @@ function showTab(name) {
   TABS.forEach((t) => ($('tab-' + t).hidden = t !== name));
   if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
   // el configurador (con sus fotos base) se carga solo la primera vez que se abre
-  if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html';
+  // ?v= evita que el navegador muestre una versión vieja guardada en caché
+  if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html?v=' + Date.now();
   document.body.classList.toggle('wide', name === 'configurador');
 }
 $('tabs').addEventListener('click', (e) => {

@@ -11,6 +11,9 @@ fs.mkdirSync(path.join(OUT, 'bases'), { recursive: true });
 // Página: desde web/admin/configurador/ los logos están en ../../assets/logos/
 let html = fs.readFileSync(path.join(HERE, 'configurador.html'), 'utf8');
 html = html.split('../../web/assets/').join('../../assets/');
+// versión en los scripts: cada publicación obliga al navegador a bajar los archivos nuevos (no usa los de caché)
+const ver = Date.now().toString(36);
+html = html.replace(/<script src="(posiciones|datos|etiqueta)\.js"><\/script>/g, (m, f) => `<script src="${f}.js?v=${ver}"></script>`);
 html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex, nofollow">\n<!-- COPIA GENERADA por disenos/configurador/copiar-al-panel.js: no editar aquí -->');
 fs.writeFileSync(path.join(OUT, 'configurador.html'), html);
 
