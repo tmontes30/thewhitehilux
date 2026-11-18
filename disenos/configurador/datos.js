@@ -20,33 +20,6 @@ window.TWH_CFG = {
    "b": 0.9267
   },
   {
-   "id": "andes-outdoor",
-   "name": "Andes Outdoor Co.",
-   "aspect": 1,
-   "l": 0.1083,
-   "r": 0.8933,
-   "t": 0.0267,
-   "b": 0.9683
-  },
-  {
-   "id": "piston-skull",
-   "name": "Calavera Pistones",
-   "aspect": 1,
-   "l": 0.1283,
-   "r": 0.8717,
-   "t": 0.1733,
-   "b": 0.975
-  },
-  {
-   "id": "condor-plugs",
-   "name": "Cóndor Bujías",
-   "aspect": 1,
-   "l": 0.0267,
-   "r": 0.9733,
-   "t": 0.0267,
-   "b": 0.9733
-  },
-  {
    "id": "iron-cross",
    "name": "Cruz Chopper",
    "aspect": 1,
@@ -65,15 +38,6 @@ window.TWH_CFG = {
    "b": 0.905
   },
   {
-   "id": "kite-club",
-   "name": "Kite Club",
-   "aspect": 1,
-   "l": 0.1283,
-   "r": 0.8867,
-   "t": 0.1033,
-   "b": 0.975
-  },
-  {
    "id": "low-range",
    "name": "Low Range Club",
    "aspect": 1,
@@ -81,15 +45,6 @@ window.TWH_CFG = {
    "r": 0.8883,
    "t": 0.1483,
    "b": 0.86
-  },
-  {
-   "id": "mx-moto",
-   "name": "Motocross TWH MX",
-   "aspect": 1,
-   "l": 0.1,
-   "r": 0.875,
-   "t": 0.1233,
-   "b": 0.9883
   },
   {
    "id": "mud-terrain",
@@ -144,24 +99,6 @@ window.TWH_CFG = {
    "r": 0.95,
    "t": 0.2567,
    "b": 0.7433
-  },
-  {
-   "id": "winged-piston",
-   "name": "Pistón Alado",
-   "aspect": 1,
-   "l": 0.0267,
-   "r": 0.9733,
-   "t": 0.0267,
-   "b": 0.9733
-  },
-  {
-   "id": "enduro-plate",
-   "name": "Placa Enduro 01",
-   "aspect": 1,
-   "l": 0.1333,
-   "r": 0.8667,
-   "t": 0.1717,
-   "b": 0.9683
   },
   {
    "id": "rally-plate",
@@ -270,15 +207,6 @@ window.TWH_CFG = {
    "r": 0.905,
    "t": 0.2333,
    "b": 0.9467
-  },
-  {
-   "id": "mtb-trail",
-   "name": "Trail Club MTB",
-   "aspect": 1,
-   "l": 0.1183,
-   "r": 0.8817,
-   "t": 0.0883,
-   "b": 0.9883
   },
   {
    "id": "twh-4x4",
