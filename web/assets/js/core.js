@@ -61,11 +61,11 @@
     var out = o.kind === 'amount' ? price - v : Math.round((price * (1 - Math.min(v, 95) / 100)) / 10) * 10;
     return Math.max(100, Math.round(out));
   }
-  // Imágenes del producto: en poleras y polerones, la foto de frente primero
+  // Imágenes del producto: en poleras y polerones, frente → espalda → resto (frente-2...)
   function orderedImages(p, color) {
     var imgs = p.imagesByColor ? (p.imagesByColor[color || p.colors[0]] || []) : (p.images || []);
     if (p.type !== 'polera' && p.type !== 'poleron') return imgs;
-    var rank = function (src) { return /-frente\.\w+$/.test(src) ? 0 : /-frente-/.test(src) ? 1 : /-espalda/.test(src) ? 2 : 3; };
+    var rank = function (src) { return /-frente\.\w+$/.test(src) ? 0 : /-espalda/.test(src) ? 1 : /-frente-/.test(src) ? 2 : 3; };
     return imgs.slice().sort(function (a, b) { return rank(a) - rank(b); });
   }
 

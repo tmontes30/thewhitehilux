@@ -302,7 +302,7 @@ window.TWH_CFG = {
     "blanco"
    ],
    "frente": {
-    "logo": "round-stamp",
+    "logo": "speed-shop",
     "pos": "pecho",
     "tam": "m"
    },
@@ -321,7 +321,7 @@ window.TWH_CFG = {
     "blanco"
    ],
    "frente": {
-    "logo": "round-stamp",
+    "logo": "supply-co",
     "pos": "pecho",
     "tam": "m"
    },
@@ -359,7 +359,7 @@ window.TWH_CFG = {
     "blanco"
    ],
    "frente": {
-    "logo": "supply-co",
+    "logo": "coordenadas",
     "pos": "pecho",
     "tam": "m"
    },

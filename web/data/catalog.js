@@ -45,17 +45,17 @@
       {
         id: 'polera-low-range-club-4wd', name: 'Polera Low Range Club 4WD', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
-        views: [{ shape: 'tee-back', logo: 'low-range' }, { shape: 'tee-front', logo: 'round-stamp' }],
+        views: [{ shape: 'tee-back', logo: 'low-range' }, { shape: 'tee-front', logo: 'speed-shop' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-low-range-club-4wd-negro-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente-2.png'], blanco: ['assets/img/productos/polera-low-range-club-4wd-blanco-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
-        desc: 'Polera con Low Range Club en la espalda y Sello Off Road Supply chico en el pecho.',
+        desc: 'Polera con Low Range Club en la espalda y Speed Shop chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']]
       },
       {
         id: 'polera-twh-cruz-white-hilux-algodon', name: 'Polera TWH Cruz White Hilux Algodón', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
-        views: [{ shape: 'tee-back', logo: 'sunset' }, { shape: 'tee-front', logo: 'round-stamp' }],
+        views: [{ shape: 'tee-back', logo: 'sunset' }, { shape: 'tee-front', logo: 'supply-co' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
-        desc: 'Polera con Sunset en la espalda y Sello Off Road Supply chico en el pecho.',
+        desc: 'Polera con Sunset en la espalda y TWH Supply Co. chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']]
       },
       {
@@ -69,9 +69,9 @@
       {
         id: 'polera-twh', name: 'Polera TWH ', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
-        views: [{ shape: 'tee-back', logo: 'warp-text' }, { shape: 'tee-front', logo: 'supply-co' }],
+        views: [{ shape: 'tee-back', logo: 'warp-text' }, { shape: 'tee-front', logo: 'coordenadas' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-negro-espalda.png', 'assets/img/productos/polera-twh-negro-frente.png', 'assets/img/productos/polera-twh-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-blanco-espalda.png', 'assets/img/productos/polera-twh-blanco-frente.png', 'assets/img/productos/polera-twh-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
-        desc: 'Polera con Warp en la espalda y TWH Supply Co. chico en el pecho.',
+        desc: 'Polera con Warp en la espalda y Off Road Team chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']]
       },
       {

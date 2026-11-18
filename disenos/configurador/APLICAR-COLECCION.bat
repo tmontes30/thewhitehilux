@@ -46,20 +46,41 @@ echo  Revisando que los pagos sigan funcionando...
 pushd "%~dp0..\..\web"
 call npm test >nul 2>nul
 if errorlevel 1 (
-  echo  ATENCION: las pruebas de la tienda fallaron. Avisale a Claude.
-) else (
-  echo  Pruebas OK.
+  popd
+  echo  ATENCION: las pruebas de la tienda fallaron. NO se publico nada. Avisale a Claude.
+  goto fin
 )
+echo  Pruebas OK.
 popd
 
 node preparar.js --sin-bases >nul 2>nul
-
-echo.
-echo  Listo. Para publicar: git add -A, git commit y git push (o pidele a Claude).
-echo  Los productos nuevos aparecen solos en el panel de admin.
-echo  Abriendo la tienda...
 if "%~1"=="/prueba" exit /b 0
-start "" "%~dp0..\..\web\index.html"
+
+rem ---- Publicar en la pagina (GitHub Pages se actualiza solo en 1-2 minutos) ----
+echo.
+echo  Publicando en thewhitehilux.cavedevz.com...
+pushd "%~dp0..\.."
+git add -A
+git diff --cached --quiet
+if not errorlevel 1 (
+  echo  No habia cambios nuevos que publicar.
+  popd
+  goto abrir
+)
+git -c user.name="tmontes30" -c user.email="tmontes30@users.noreply.github.com" commit -q -m "Coleccion actualizada desde el configurador"
+git push -q
+if errorlevel 1 (
+  popd
+  echo  ATENCION: no se pudo publicar ^(revisa tu internet^). Los cambios quedaron guardados; avisale a Claude.
+  goto fin
+)
+popd
+echo  Publicado. En 1-2 minutos se ve en la pagina.
+echo  Los productos nuevos aparecen solos en el panel de admin.
+
+:abrir
+echo  Abriendo la tienda...
+start "" "https://thewhitehilux.cavedevz.com/"
 
 :fin
 echo.

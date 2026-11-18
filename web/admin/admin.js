@@ -343,7 +343,9 @@ $('export').addEventListener('click', () => {
 function thumbFor(p) {
   if (p.designs && p.designs.length) return `../assets/logos/${p.designs[0].id}-claro.svg`;
   const imgs = C.orderedImages(p);
-  return imgs.length ? '../' + imgs[0] : '../assets/logos/cl-shop.svg';
+  // en el panel, la espalda primero: es donde va el diseño grande y sirve para reconocerlas rápido
+  const back = imgs.find((src) => /-espalda/.test(src));
+  return back ? '../' + back : imgs.length ? '../' + imgs[0] : '../assets/logos/cl-shop.svg';
 }
 const colorName = (c) => (c === 'unico' ? 'Stock' : CFG.colors[c] || c);
 
