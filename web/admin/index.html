@@ -17,6 +17,7 @@
       <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
       <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
+      <button type="button" data-tab="configurador" aria-pressed="false">Configurador</button>
       <button type="button" data-tab="ajustes" aria-pressed="false">Ajustes</button>
     </nav>
     <div class="who" id="who" hidden><span id="who-email"></span><button type="button" class="link" id="logout">Salir</button></div>
@@ -100,6 +101,16 @@
     <div id="offers-list"></div>
     <h2 class="cat-title">Códigos</h2>
     <div id="coupons-list"></div>
+  </section>
+
+  <!-- CONFIGURADOR (copia del de disenos/configurador) -->
+  <section id="tab-configurador" hidden>
+    <div class="cfg-steps">
+      <span><b>1.</b> Arma la colección aquí abajo</span>
+      <span><b>2.</b> Aprieta <b>"Descargar colección"</b> (baja <code>twh-coleccion.json</code> a Descargas)</span>
+      <span><b>3.</b> En tu computador, doble clic en <b>APLICAR-COLECCION.bat</b>: genera las fotos y publica la tienda (1-2 min)</span>
+    </div>
+    <iframe id="cfg-frame" class="cfg-frame" title="Configurador de colección"></iframe>
   </section>
 
   <!-- AJUSTES -->

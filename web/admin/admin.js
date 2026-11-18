@@ -23,7 +23,7 @@ if (F.useEmulators) {
 }
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
-const TABS = ['pedidos', 'ventas', 'productos', 'descuentos', 'ajustes'];
+const TABS = ['pedidos', 'ventas', 'productos', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -117,6 +117,9 @@ function showTab(name) {
   document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'));
   TABS.forEach((t) => ($('tab-' + t).hidden = t !== name));
   if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+  // el configurador (con sus fotos base) se carga solo la primera vez que se abre
+  if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html';
+  document.body.classList.toggle('wide', name === 'configurador');
 }
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-tab]');

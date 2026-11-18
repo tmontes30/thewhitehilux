@@ -47,6 +47,7 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 2. El dueño hace doble clic en `disenos/configurador/APLICAR-COLECCION.bat` : toma `twh-coleccion.json` de esa carpeta o el más reciente de Descargas y corre `aplicar.js` y las pruebas; si pasan, **publica solo** (git commit + push → GitHub Pages en 1-2 min) y abre la tienda publicada. Si las pruebas fallan no publica. Ojo: los ids salen del nombre; renombrar una prenda crea un producto nuevo en el panel (pierde su stock y estado). También se puede correr a mano: `node disenos/configurador/aplicar.js <archivo>`.
 3. `aplicar.js` genera las fotos con modelo en `web/assets/img/productos/`, reemplaza poleras/polerones/jockeys en `web/data/catalog.js` (los stickers no se tocan) y borra fotos viejas. Después correr `cd web && npm test` y revisar con una captura.
 
+- El configurador también está en el panel (pestaña **Configurador**): es una copia generada en `web/admin/configurador/` por `disenos/configurador/copiar-al-panel.js` (el .bat la corre antes de publicar). Editar siempre el original en `disenos/configurador/`. Su colección se guarda en el navegador (localStorage), separada de la versión de doble clic; "Volver a la tienda actual" la recarga.
 - Posiciones y tamaños de los logos: `disenos/configurador/posiciones.js` (lo comparten la vista previa y las fotos finales).
 - Fotos base limpias: `disenos/configurador/bases/`. Logos nuevos o bases nuevas: `node disenos/configurador/preparar.js` (con `--sin-bases` solo actualiza la lista de logos y la colección inicial).
 

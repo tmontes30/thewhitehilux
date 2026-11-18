@@ -201,3 +201,10 @@ table.data tfoot td { font-weight: 700; border-top: 2px solid var(--line); borde
   .disc-row { grid-template-columns: 1fr; }
   .disc-row .acts { justify-content: flex-start; }
 }
+
+/* ---------- Configurador ---------- */
+#tab-configurador { margin: -20px -16px 0; }
+.cfg-steps { display: flex; flex-wrap: wrap; gap: 6px 22px; background: var(--amber-soft); border-bottom: 1px solid #F0DDB5; padding: 10px 18px; font-size: 13.5px; }
+.cfg-steps code { background: #fff; border-radius: 4px; padding: 0 4px; font-size: 12.5px; }
+.cfg-frame { display: block; width: 100%; height: calc(100vh - 110px); border: 0; background: #EEEEEC; }
+body.wide main.wrap { max-width: none; padding-bottom: 0; }

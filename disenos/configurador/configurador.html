@@ -286,7 +286,7 @@
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
     a.download = 'twh-coleccion.json'; document.body.appendChild(a); a.click(); a.remove();
-    msg('<span class="ok">Descargado twh-coleccion.json.</span> Déjalo en la carpeta disenos/configurador y avísame para pasarlo a la tienda.');
+    msg('<span class="ok">Descargado twh-coleccion.json.</span> Ahora haz doble clic en <b>APLICAR-COLECCION.bat</b> (carpeta disenos/configurador): toma el archivo de Descargas, genera las fotos y publica la tienda.');
   };
   function msg(t) { $('msg').innerHTML = t; }
   render();

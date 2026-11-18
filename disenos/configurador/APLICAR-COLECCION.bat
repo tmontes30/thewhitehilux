@@ -54,6 +54,7 @@ echo  Pruebas OK.
 popd
 
 node preparar.js --sin-bases >nul 2>nul
+node copiar-al-panel.js >nul 2>nul
 if "%~1"=="/prueba" exit /b 0
 
 rem ---- Publicar en la pagina (GitHub Pages se actualiza solo en 1-2 minutos) ----
