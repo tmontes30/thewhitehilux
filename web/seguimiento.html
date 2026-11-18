@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sigue tu pedido · The White Hilux</title>
+<link rel="icon" href="assets/logos/logo-header.svg">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="wrap track">
+  <div class="crumbs"><a href="index.html">Tienda</a> › Sigue tu pedido</div>
+  <section class="panel track-form">
+    <h1>Sigue tu pedido</h1>
+    <p class="muted">Escribe el número de pedido (empieza con <b>TWH-</b>, está en el correo de tu compra) y el correo con que compraste.</p>
+    <form id="form" novalidate>
+      <div class="row2">
+        <div class="field"><label for="id">N° de pedido</label><input id="id" placeholder="TWH-XXXXXXX-XXXX" autocomplete="off" required></div>
+        <div class="field"><label for="email">Correo de la compra</label><input id="email" type="email" autocomplete="email" required></div>
+      </div>
+      <p class="msg-err" id="err" role="alert" hidden></p>
+      <button class="btn primary" type="submit" id="go">Ver estado</button>
+    </form>
+  </section>
+
+  <section class="panel track-result" id="result" hidden aria-live="polite"></section>
+</main>
+
+<div id="site-footer"></div>
+<script src="data/catalog.js"></script>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/mockups.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (ymd) { return ymd ? ymd.split('-').reverse().join('-') : ''; };
+  var esc = TWH.esc;
+
+  // Rellenar con lo que haya: ?pedido=, último pedido y correo de este navegador
+  var q = new URLSearchParams(location.search);
+  try {
+    $('id').value = q.get('pedido') || localStorage.getItem('twh-last-order') || '';
+    $('email').value = q.get('correo') || (JSON.parse(localStorage.getItem('twh-checkout') || '{}').email || '');
+  } catch (e) {}
+
+  function steps(o) {
+    var retiro = o.method === 'retiro';
+    var order = ['pendiente_pago', 'pagado', 'preparando', 'despachado', 'entregado'];
+    var at = order.indexOf(o.status);
+    return [
+      ['Pedido recibido', o.createdDate, 'Recibimos tu pedido.'],
+      ['Pago confirmado', o.paidDate, 'Mercado Pago confirmó tu pago.'],
+      ['En preparación', o.preparingDate, 'Estamos preparando tus productos.'],
+      [retiro ? 'Listo para retiro' : 'Despachado', o.shippedDate, retiro ? 'Te escribimos para coordinar el retiro en Santiago.' : 'Tu pedido va en camino.'],
+      ['Entregado', o.deliveredDate, '¡Que lo disfrutes!']
+    ].map(function (s, i) { return { title: s[0], date: s[1], text: s[2], done: i <= at, current: i === at }; });
+  }
+
+  function render(o) {
+    var r = $('result');
+    var head;
+    if (o.status === 'cancelado') {
+      head = '<p class="track-state cancel">Pedido cancelado</p><p class="muted">Si tienes dudas, escríbenos por WhatsApp o correo.</p>';
+    } else if (o.status === 'pendiente_pago') {
+      head = '<p class="track-state wait">Esperando confirmación del pago</p><p class="muted">Si ya pagaste, puede tardar unos minutos. Si el pago no se completó, puedes volver a intentarlo desde el carrito.</p>';
+    } else {
+      var promise = o.status !== 'entregado' && o.promisedDate
+        ? '<p class="track-eta">' + (o.method === 'retiro' ? 'Listo para retiro' : 'Entrega estimada') + ': <b>a más tardar el ' + fmt(o.promisedDate) + '</b></p>' : '';
+      head = '<p class="track-state">' + esc(steps(o).filter(function (s) { return s.current; })[0].title) + '</p>' + promise;
+    }
+    var timeline = o.status === 'cancelado' ? '' : '<ol class="timeline">' + steps(o).map(function (s) {
+      return '<li class="' + (s.done ? 'done' : '') + (s.current ? ' current' : '') + '"><span class="dot"></span><div><b>' + esc(s.title) + '</b>' +
+        (s.date ? ' <span class="muted">· ' + fmt(s.date) + '</span>' : '') + (s.current || s.done ? '<p class="muted">' + esc(s.text) + '</p>' : '') + '</div></li>';
+    }).join('') + '</ol>';
+    var ship = '';
+    if (o.courier || o.trackingCode) {
+      ship = '<div class="track-ship"><b>Despacho</b><p>' + esc(o.courier || '') + (o.trackingCode ? ' · N° de seguimiento <b class="code">' + esc(o.trackingCode) + '</b>' : '') + '</p>' +
+        (o.trackingUrl ? '<a class="btn secondary" href="' + esc(o.trackingUrl) + '" target="_blank" rel="noopener" style="width:auto">Ver en ' + esc(o.courier || 'el courier') + ' ↗</a>' : '') + '</div>';
+    }
+    var dest = o.method === 'retiro' ? 'Retiro coordinado en Santiago' : 'Despacho a ' + esc(o.comuna) + ', ' + esc(o.region);
+    r.innerHTML = '<p class="muted">Pedido <b>' + esc(o.id) + '</b></p>' + head + timeline + ship +
+      '<div class="track-items"><b>Tu compra</b><ul>' + o.lines.map(function (l) { return '<li>' + l.qty + ' × ' + esc(l.name) + (l.detail ? ' <span class="muted">· ' + esc(l.detail) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
+      '<p class="muted">' + dest + ' · Total pagado ' + TWH.money(o.total) + '</p></div>';
+    r.hidden = false;
+    r.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('err');
+    err.hidden = true;
+    var id = $('id').value.trim(), email = $('email').value.trim();
+    if (!id || !email) { err.textContent = 'Escribe el número de pedido y tu correo.'; err.hidden = false; return; }
+    if (location.protocol === 'file:') { err.textContent = 'El seguimiento funciona en la tienda publicada.'; err.hidden = false; return; }
+    var btn = $('go');
+    btn.disabled = true; btn.textContent = 'Buscando…';
+    fetch(window.TWH_FIREBASE.apiBase + '/seguimiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, email: email }) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.j.error || 'No pudimos buscar tu pedido.');
+        render(res.j);
+        try { history.replaceState(null, '', 'seguimiento.html?pedido=' + encodeURIComponent(res.j.id)); } catch (e2) {}
+      })
+      .catch(function (e3) { $('result').hidden = true; err.textContent = e3.message || 'No pudimos buscar tu pedido. Intenta de nuevo.'; err.hidden = false; })
+      .then(function () { btn.disabled = false; btn.textContent = 'Ver estado'; });
+  });
+
+  // Si viene con número y correo, buscar al tiro
+  if ($('id').value && $('email').value && q.get('pedido')) $('form').requestSubmit();
+})();
+</script>
+</body>
+</html>

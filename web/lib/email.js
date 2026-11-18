@@ -40,7 +40,7 @@ function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promi
     ${ship.notes ? `<p style="margin:6px 0 0;color:#555">Notas: ${esc(ship.notes)}</p>` : ''}
     ${
       forCustomer
-        ? '<p style="margin:20px 0 0">Te escribiremos por WhatsApp o correo cuando tu pedido salga. Cualquier duda, respóndenos por Instagram a @the.whitehilux.</p>'
+        ? `<p style="margin:20px 0 0"><a href="https://thewhitehilux.cavedevz.com/seguimiento.html?pedido=${encodeURIComponent(orderId)}&correo=${encodeURIComponent((customer && customer.email) || '')}" style="background:#2968C8;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Sigue tu pedido</a></p><p style="margin:14px 0 0">Ahí verás cuándo sale tu despacho y su número de seguimiento. Cualquier duda, escríbenos por WhatsApp al +56 9 9225 9960 o por Instagram a @the.whitehilux.</p>`
         : `<h3 style="margin:20px 0 6px">Cliente</h3><p style="margin:0">${esc(customer && customer.name)}<br>${esc(
             customer && customer.email
           )}<br>${esc(customer && customer.phone)}</p>`

@@ -325,3 +325,33 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .coupon-err { color: var(--red); font-size: 13px; margin-top: 6px; }
 .totals .disc { color: var(--green); }
 .line .was { color: var(--muted); text-decoration: line-through; font-size: 12.5px; display: block; }
+
+/* ---------- Pie: WhatsApp en Ayuda ---------- */
+.foot-wa { display: inline-flex !important; align-items: center; gap: 7px; }
+.foot-wa svg { width: 18px; height: 18px; background: #25D366; border-radius: 50%; padding: 3px; flex: none; }
+
+/* ---------- Sigue tu pedido ---------- */
+.track { display: grid; gap: 16px; padding-bottom: 56px; max-width: 760px !important; }
+.track .panel { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px; }
+.track h1 { font-size: 24px; margin-bottom: 6px; }
+.track .muted { color: var(--muted); }
+.track-form form { display: grid; gap: 12px; margin-top: 14px; }
+.track-form .btn { width: auto; justify-self: start; }
+.track-state { font-size: 22px; font-weight: 800; margin: 4px 0 2px; color: var(--green); }
+.track-state.wait { color: var(--accent); }
+.track-state.cancel { color: var(--red); }
+.track-eta { font-size: 15px; margin-top: 4px; }
+.timeline { list-style: none; margin: 18px 0 6px; padding: 0; }
+.timeline li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; position: relative; padding-bottom: 16px; color: var(--muted); }
+.timeline li::before { content: ""; position: absolute; left: 8px; top: 18px; bottom: 0; width: 2px; background: var(--line); }
+.timeline li:last-child::before { display: none; }
+.timeline li.done { color: var(--text); }
+.timeline li.done::before { background: var(--green); }
+.timeline .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #C9C9C4; background: #fff; margin-top: 1px; position: relative; z-index: 1; }
+.timeline li.done .dot { background: var(--green); border-color: var(--green); }
+.timeline li.current .dot { box-shadow: 0 0 0 5px rgba(10,138,74,.18); }
+.timeline p { margin: 2px 0 0; font-size: 13.5px; }
+.track-ship, .track-items { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 10px; display: grid; gap: 6px; }
+.track-items ul { margin: 0; padding-left: 18px; }
+.track-ship .code { font-family: Consolas, monospace; letter-spacing: .03em; }
+.track-ship .btn { justify-self: start; }

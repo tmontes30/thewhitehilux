@@ -20,10 +20,15 @@ global.window = {}; require('./datos.js'); const LMETA = {}; window.TWH_CFG.logo
 
 // ---------- ids únicos a partir del nombre ----------
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+// Si la prenda ya existe en la tienda (el configurador guarda su id), se conserva el id aunque cambie el nombre:
+// así no pierde su stock, precio, estado ni ventas en el panel. Las prendas nuevas reciben un id a partir del nombre.
+const current = new Map(require(CATALOG).products.map((p) => [p.id, p.type]));
 const used = new Set();
+items.forEach((d) => { if (d.id && current.get(d.id) === d.tipo && !used.has(d.id)) { used.add(d.id); d._id = d.id; } });
 items.forEach((d) => {
+  if (d._id) return;
   let id = slug(d.nombre || d.tipo) || d.tipo, k = 2;
-  while (used.has(id)) id = slug(d.nombre) + '-' + k++;
+  while (used.has(id)) id = (slug(d.nombre) || d.tipo) + '-' + k++;
   used.add(id); d._id = id;
 });
 

@@ -11,9 +11,9 @@
 <main class="wrap result">
   <p class="eyebrow">Pago aprobado</p>
   <h1>¡Gracias por tu compra!</h1>
-  <p>Tu pedido <code id="order">—</code> quedó confirmado. Te llegará un correo con el detalle y te avisaremos cuando salga el despacho.</p>
+  <p>Tu pedido <code id="order">—</code> quedó confirmado. Guarda ese número: con él y tu correo puedes ver en qué va tu pedido cuando quieras.</p>
   <p>Mientras tanto, sube una foto con tu merch y etiqueta a <b>@the.whitehilux</b>.</p>
-  <div><a class="btn primary" href="index.html">Volver a la tienda</a></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn primary" id="track" href="seguimiento.html" style="width:auto">Sigue tu pedido</a><a class="btn secondary" href="index.html" style="width:auto">Volver a la tienda</a></div>
 </main>
 <div id="site-footer"></div>
 <script src="data/catalog.js"></script>
@@ -26,11 +26,14 @@
   var q = new URLSearchParams(location.search);
   var ref = q.get('external_reference');
   var last = null; try { last = localStorage.getItem('twh-last-order'); } catch (e) {}
-  document.getElementById('order').textContent = ref || last || '—';
+  var id = ref || last;
+  document.getElementById('order').textContent = id || '—';
+  if (id) document.getElementById('track').href = 'seguimiento.html?pedido=' + encodeURIComponent(id);
   var status = q.get('collection_status') || q.get('status');
   if (!status || status === 'approved') {
     TWH.Cart.clear();
-    try { localStorage.removeItem('twh-last-order'); } catch (e) {}
+    // se guarda el número para que "Sigue tu pedido" lo rellene solo
+    if (id) try { localStorage.setItem('twh-last-order', id); } catch (e) {}
   }
 })();
 </script>

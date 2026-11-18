@@ -23,6 +23,7 @@ if (F.useEmulators) {
 }
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
+const COURIERS = ['Starken', 'Chilexpress', 'Blue Express', 'Correos de Chile', 'Despacho propio', 'Otro'];
 const TABS = ['pedidos', 'ventas', 'productos', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
@@ -200,8 +201,17 @@ function orderCard(o) {
         <li><small>Subtotal ${money(o.subtotal)}${o.discount ? ' · Código ' + esc(o.discount.code) + ' -' + money(o.discount.amount) : ''} · Envío ${ship.cost ? money(ship.cost) : 'gratis'}${o.mpPaymentId ? ' · Pago MP #' + esc(o.mpPaymentId) : ''}</small></li>
       </ul>
     </div>
+    ${o.status !== 'pendiente_pago' && o.status !== 'cancelado' && ship.method !== 'retiro' ? `<div class="ship-track">
+      <h4>Despacho (lo ve el cliente en "Sigue tu pedido")</h4>
+      <div class="ship-fields">
+        <select data-act="courier" aria-label="Courier"><option value="">Courier…</option>${COURIERS.map((c) => `<option${c === o.courier ? ' selected' : ''}>${c}</option>`).join('')}</select>
+        <input data-act="trackingCode" value="${esc(o.trackingCode || '')}" placeholder="N° de seguimiento" maxlength="60">
+        <input data-act="trackingUrl" value="${esc(o.trackingUrl || '')}" placeholder="Link de seguimiento (opcional)" maxlength="300">
+      </div>
+    </div>` : ''}
     <div class="order-foot">
-      <textarea data-act="note" rows="1" placeholder="Nota interna (solo tú la ves): n° de seguimiento, cambios de talla…">${esc(o.adminNote || '')}</textarea>
+      <textarea data-act="note" rows="1" placeholder="Nota interna (solo tú la ves): cambios de talla, acuerdos con el cliente…">${esc(o.adminNote || '')}</textarea>
+      <a class="btn ghost small" href="../seguimiento.html?pedido=${encodeURIComponent(o.id)}&correo=${encodeURIComponent((o.customer || {}).email || '')}" target="_blank" rel="noopener" title="Ver lo que ve el cliente">Ver seguimiento ↗</a>
       ${o.status === 'pendiente_pago' || o.status === 'cancelado' ? '<button type="button" class="btn ghost small" data-act="delete">Eliminar</button>' : ''}
     </div>
   </article>`;
@@ -242,7 +252,7 @@ function renderOrders() {
   if (q) list = list.filter((o) => [o.id, o.customer && o.customer.name, o.customer && o.customer.email, o.shipping && o.shipping.comuna, o.shipping && o.shipping.region].join(' ').toLowerCase().includes(q));
   // Por entregar: primero lo que vence antes
   if (orderFilter === 'abiertos') list.sort((a, b) => (a.promisedDate || '9999').localeCompare(b.promisedDate || '9999'));
-  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#orders textarea');
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#orders textarea, #orders input');
   if (focused) return; // no borrar lo que se está escribiendo
   $('orders').innerHTML = list.length ? list.map(orderCard).join('') : `<p class="empty">No hay pedidos ${orderFilter === 'todos' ? 'todavía' : 'en esta lista'}.</p>`;
 }
@@ -285,6 +295,12 @@ $('orders').addEventListener('change', async (e) => {
     if (act === 'status') {
       const to = e.target.value;
       const patch = { status: to, [to + 'At']: serverTimestamp() };
+      // fechas que ve el cliente en "Sigue tu pedido" (se completan las etapas saltadas)
+      if (to === 'preparando') patch.preparingDate = o.preparingDate || C.todayCL();
+      if (to === 'despachado' || to === 'entregado') {
+        patch.preparingDate = o.preparingDate || C.todayCL();
+        patch.shippedDate = o.shippedDate || C.todayCL();
+      }
       if (to === 'entregado') patch.deliveredDate = C.todayCL();
       // Pago manual (transferencia, efectivo): fija la promesa y descuenta stock
       if (PAID.includes(to) && !PAID.includes(o.status)) {
@@ -307,6 +323,12 @@ $('orders').addEventListener('change', async (e) => {
     if (act === 'note') {
       await updateDoc(ref, { adminNote: e.target.value.slice(0, 1000) });
       toast('Nota guardada');
+    }
+    if (act === 'courier' || act === 'trackingCode' || act === 'trackingUrl') {
+      let v = e.target.value.trim().slice(0, 300);
+      if (act === 'trackingUrl' && v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
+      await updateDoc(ref, { [act]: v });
+      toast('Despacho actualizado ✓');
     }
   } catch (err) {
     fail(err);

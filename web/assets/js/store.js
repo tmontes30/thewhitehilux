@@ -135,7 +135,10 @@
       f.innerHTML = '<footer class="foot"><div class="wrap foot-in">' +
         '<div><img src="assets/logos/cl-shop.svg" alt="The White Hilux CL Shop"><p>Merch off road de @the.whitehilux.</p></div>' +
         '<div><h4>Tienda</h4>' + Object.keys(c2).map(function (k) { return '<a href="index.html?cat=' + k + '">' + esc(c2[k]) + '</a>'; }).join('') + '</div>' +
-        '<div><h4>Ayuda</h4><a href="nosotros.html">Nosotros</a><a href="carrito.html">Mi carrito</a><a href="https://www.instagram.com/the.whitehilux/" target="_blank" rel="noopener">Escríbenos por Instagram</a><a href="index.html">Envíos a todo Chile</a></div>' +
+        '<div><h4>Ayuda</h4><a href="seguimiento.html"><b>Sigue tu pedido</b></a><a href="nosotros.html">Nosotros</a><a href="carrito.html">Mi carrito</a>' +
+        (D && D.config.whatsapp ? '<a class="foot-wa" href="https://wa.me/' + D.config.whatsapp + '?text=' + encodeURIComponent('Hola! Vengo de la tienda The White Hilux y tengo una consulta') + '" target="_blank" rel="noopener">' + WA_ICON + 'WhatsApp +' + D.config.whatsapp.replace(/^56(9)(\d{4})(\d{4})$/, '56 $1 $2 $3') + '</a>' : '') +
+        (D && D.config.email ? '<a href="mailto:' + esc(D.config.email) + '">✉ ' + esc(D.config.email) + '</a>' : '') +
+        '<a href="https://www.instagram.com/the.whitehilux/" target="_blank" rel="noopener">Instagram @the.whitehilux</a></div>' +
         '</div><div class="wrap foot-bottom"><span>© The White Hilux</span><span>Pagos procesados por Mercado Pago</span></div></footer>';
     }
     updateBadge();

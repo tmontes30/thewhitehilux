@@ -89,6 +89,19 @@ async function post(items, shipping = rm, cust = customer) {
   await fetch(`${API}/simularPago?id=${of.body.order_id}`);
   console.log('✔ oferta: jockey a', ofo.lines[0].unit_price, 'en vez de', jk2.price, '· SKU', ofo.lines[0].sku);
 
+  // 8) Seguimiento: con el correo correcto muestra el pedido; con otro correo o número no muestra nada
+  const track = async (id, email) => fetch(`${API}/seguimiento`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, email }) });
+  await db.doc('pedidos/' + a.body.order_id).update({ status: 'despachado', preparingDate: '2026-11-18', shippedDate: '2026-11-18', courier: 'Starken', trackingCode: '123456789' });
+  const tr = await track(a.body.order_id.toLowerCase(), 'CAMILA@ejemplo.cl');
+  const tj = await tr.json();
+  assert.strictEqual(tr.status, 200, JSON.stringify(tj));
+  assert.strictEqual(tj.status, 'despachado');
+  assert.strictEqual(tj.trackingCode, '123456789');
+  assert.ok(!('customer' in tj) && !JSON.stringify(tj).includes('Av. Italia'), 'no debe exponer datos personales');
+  assert.strictEqual((await track(a.body.order_id, 'otro@ejemplo.cl')).status, 404);
+  assert.strictEqual((await track('TWH-NOEXISTE-0000', 'camila@ejemplo.cl')).status, 404);
+  console.log('✔ seguimiento: estado', tj.status, '·', tj.courier, tj.trackingCode, '· correo ajeno rechazado');
+
   // Datos de ejemplo para el panel: un pedido regional pagado, uno atrasado, uno pendiente
   const b = await post([{ id: polera.id, size: 'L', color: 'negro', qty: 1 }, { id: 'sticker-twh', size: 'Única', design: 'race-dept', qty: 3 }],
     { method: 'despacho', region: 'Biobío', comuna: 'Concepción', address: 'O\'Higgins 820', notes: 'Dejar en conserjería' },

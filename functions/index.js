@@ -169,6 +169,44 @@ exports.validarCupon = onRequest(
   }
 );
 
+// ---------- seguimiento (página pública "Sigue tu pedido") ----------
+// Responde solo si el número de pedido y el correo coinciden. Devuelve lo mínimo: estado, fechas y despacho
+// (sin dirección completa ni teléfono), para que nadie pueda ver pedidos ajenos adivinando números.
+exports.seguimiento = onRequest(
+  { cors: [/thewhitehilux\.cavedevz\.com$/, /tmontes30\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/] },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' });
+    const body = (typeof req.body === 'string' ? safeJson(req.body) : req.body) || {};
+    const id = String(body.id || '').trim().toUpperCase().replace(/\s+/g, '').slice(0, 40);
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    const notFound = () => res.status(404).json({ error: 'No encontramos un pedido con ese número y correo. Revisa que estén igual que en el correo de tu compra.' });
+    if (!/^TWH-[A-Z0-9]+-[A-Z0-9]+$/.test(id) || !email) return notFound();
+    const snap = await ORDERS.doc(id).get();
+    if (!snap.exists) return notFound();
+    const o = snap.data();
+    if (((o.customer && o.customer.email) || '').toLowerCase() !== email) return notFound();
+    const s = o.shipping || {};
+    return res.json({
+      id,
+      status: o.status,
+      createdDate: o.createdDate || '',
+      paidDate: o.paidDate || '',
+      preparingDate: o.preparingDate || '',
+      shippedDate: o.shippedDate || '',
+      deliveredDate: o.deliveredDate || '',
+      promisedDate: o.promisedDate || '',
+      method: s.method || 'despacho',
+      comuna: s.comuna || '',
+      region: s.region || '',
+      courier: o.courier || '',
+      trackingCode: o.trackingCode || '',
+      trackingUrl: /^https?:\/\//.test(o.trackingUrl || '') ? o.trackingUrl : '',
+      total: o.paidAmount != null ? o.paidAmount : o.total,
+      lines: (o.lines || []).map((l) => ({ name: l.name, qty: l.qty, detail: [l.design_name, l.size && l.size !== 'Única' ? 'Talla ' + l.size : '', l.color_name].filter(Boolean).join(' · ') })),
+    });
+  }
+);
+
 // ---------- Confirmar pago (lo usa el webhook; exportado para pruebas) ----------
 // Marca el pedido pagado, fija la promesa de entrega y descuenta stock en una sola transacción.
 async function confirmPaid(orderId, payment) {

@@ -12,6 +12,7 @@
       storeName: 'The White Hilux',
       dropNote: '', // franja amarilla arriba de la tienda (vacío = no se muestra)
       whatsapp: '56992259960', // botón flotante de WhatsApp (sin + ni espacios)
+      email: 'tmontes30@gmail.com', // correo de contacto en Ayuda (pie de página)
       freeShippingZones: ['rm'],
       freeShippingFrom: 40000,
       maxQtyPerLine: 10,
@@ -27,139 +28,139 @@
     },
     products: [
       {
-        id: 'polera-twh-4x4-rally-team-algodon', name: 'Polera TWH 4x4 Rally Team Algodón', type: 'polera', price: 19990,
+        id: 'polera-twh-4x4-rally-team-algodon', name: 'Polera White Hilux Script', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'script-checker' }, { shape: 'tee-front', logo: 'checkered-shield' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-espalda.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-frente.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-espalda.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-frente.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con White Hilux Script en la espalda y Escudo 4x4 Team chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera TWH 4x4 Rally Team Algodón","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"m"},"espalda":{"logo":"script-checker","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera White Hilux Script","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"m"},"espalda":{"logo":"script-checker","tam":"m","alto":0}}
       },
       {
-        id: 'polera-mud-terrain-twh-algodon', name: 'Polera Mud Terrain TWH Algodón', type: 'polera', price: 19990,
+        id: 'polera-mud-terrain-twh-algodon', name: 'Polera Race Shop', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'mountain-patch' }, { shape: 'tee-front', logo: 'round-stamp' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-mud-terrain-twh-algodon-negro-espalda.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-negro-frente.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-mud-terrain-twh-algodon-blanco-espalda.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-blanco-frente.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Race Shop en la espalda y Sello Off Road Supply chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera Mud Terrain TWH Algodón","colores":["negro","blanco"],"frente":{"logo":"round-stamp","pos":"pecho","tam":"m"},"espalda":{"logo":"mountain-patch","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Race Shop","colores":["negro","blanco"],"frente":{"logo":"round-stamp","pos":"pecho","tam":"m"},"espalda":{"logo":"mountain-patch","tam":"m","alto":0}}
       },
       {
-        id: 'polera-low-range-club-4wd', name: 'Polera Low Range Club 4WD', type: 'polera', price: 19990,
+        id: 'polera-low-range-club-4wd', name: 'Polera Low Range Club', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'low-range' }, { shape: 'tee-front', logo: 'speed-shop' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-low-range-club-4wd-negro-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente-2.png'], blanco: ['assets/img/productos/polera-low-range-club-4wd-blanco-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Low Range Club en la espalda y Speed Shop chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera Low Range Club 4WD","colores":["negro","blanco"],"frente":{"logo":"speed-shop","pos":"pecho","tam":"m"},"espalda":{"logo":"low-range","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Low Range Club","colores":["negro","blanco"],"frente":{"logo":"speed-shop","pos":"pecho","tam":"m"},"espalda":{"logo":"low-range","tam":"m","alto":0}}
       },
       {
-        id: 'polera-twh-cruz-white-hilux-algodon', name: 'Polera TWH Cruz White Hilux Algodón', type: 'polera', price: 19990,
+        id: 'polera-twh-cruz-white-hilux-algodon', name: 'Polera Sunset', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'sunset' }, { shape: 'tee-front', logo: 'supply-co' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Sunset en la espalda y TWH Supply Co. chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera TWH Cruz White Hilux Algodón","colores":["negro","blanco"],"frente":{"logo":"supply-co","pos":"pecho","tam":"m"},"espalda":{"logo":"sunset","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Sunset","colores":["negro","blanco"],"frente":{"logo":"supply-co","pos":"pecho","tam":"m"},"espalda":{"logo":"sunset","tam":"m","alto":0}}
       },
       {
-        id: 'polera-twh-recovery', name: 'Polera TWH Recovery', type: 'polera', price: 19990,
+        id: 'polera-twh-recovery', name: 'Polera Recovery Crew', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'recovery-crew' }, { shape: 'tee-front', logo: 'race-dept' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-recovery-negro-espalda.png', 'assets/img/productos/polera-twh-recovery-negro-frente.png', 'assets/img/productos/polera-twh-recovery-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-recovery-blanco-espalda.png', 'assets/img/productos/polera-twh-recovery-blanco-frente.png', 'assets/img/productos/polera-twh-recovery-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Recovery Crew en la espalda y 4WD Race Dept. chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera TWH Recovery","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":{"logo":"recovery-crew","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Recovery Crew","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":{"logo":"recovery-crew","tam":"m","alto":0}}
       },
       {
-        id: 'polera-twh', name: 'Polera TWH ', type: 'polera', price: 19990,
+        id: 'polera-twh', name: 'Polera Warp', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'warp-text' }, { shape: 'tee-front', logo: 'coordenadas' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-negro-espalda.png', 'assets/img/productos/polera-twh-negro-frente.png', 'assets/img/productos/polera-twh-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-blanco-espalda.png', 'assets/img/productos/polera-twh-blanco-frente.png', 'assets/img/productos/polera-twh-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Warp en la espalda y Off Road Team chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera TWH ","colores":["negro","blanco"],"frente":{"logo":"coordenadas","pos":"pecho","tam":"m"},"espalda":{"logo":"warp-text","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Warp","colores":["negro","blanco"],"frente":{"logo":"coordenadas","pos":"pecho","tam":"m"},"espalda":{"logo":"warp-text","tam":"m","alto":0}}
       },
       {
-        id: 'polera-twh-aired-down', name: 'Polera TWH Aired Down', type: 'polera', price: 19990,
+        id: 'polera-twh-aired-down', name: 'Polera Aired Down', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-back', logo: 'aired-down' }, { shape: 'tee-front', logo: 'script-checker' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-aired-down-negro-espalda.png', 'assets/img/productos/polera-twh-aired-down-negro-frente.png', 'assets/img/productos/polera-twh-aired-down-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-aired-down-blanco-espalda.png', 'assets/img/productos/polera-twh-aired-down-blanco-frente.png', 'assets/img/productos/polera-twh-aired-down-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Aired Down en la espalda y White Hilux Script chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera TWH Aired Down","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":{"logo":"aired-down","tam":"m","alto":0}}
+        cfg: {"tipo":"polera","nombre":"Polera Aired Down","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":{"logo":"aired-down","tam":"m","alto":0}}
       },
       {
-        id: 'polera-basica-twh-logo-pecho', name: 'Polera Básica TWH Logo Pecho', type: 'polera', price: 19990,
+        id: 'polera-basica-twh-logo-pecho', name: 'Polera Básica White Hilux Script', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-front', logo: 'script-checker' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-twh-logo-pecho-negro-frente.png', 'assets/img/productos/polera-basica-twh-logo-pecho-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-twh-logo-pecho-blanco-frente.png', 'assets/img/productos/polera-basica-twh-logo-pecho-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con White Hilux Script chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera Básica TWH Logo Pecho","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":null}
+        cfg: {"tipo":"polera","nombre":"Polera Básica White Hilux Script","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":null}
       },
       {
-        id: 'polera-basica-sello-off-road-supply', name: 'Polera Básica Sello Off Road Supply', type: 'polera', price: 19990,
+        id: 'polera-basica-sello-off-road-supply', name: 'Polera Básica Escudo 4x4 Team', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-front', logo: 'checkered-shield' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-sello-off-road-supply-negro-frente.png', 'assets/img/productos/polera-basica-sello-off-road-supply-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-sello-off-road-supply-blanco-frente.png', 'assets/img/productos/polera-basica-sello-off-road-supply-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Escudo 4x4 Team chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera Básica Sello Off Road Supply","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"s"},"espalda":null}
+        cfg: {"tipo":"polera","nombre":"Polera Básica Escudo 4x4 Team","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
-        id: 'polera-basica-the-white-hilux-cl-shop', name: 'Polera Básica The White Hilux CL Shop', type: 'polera', price: 19990,
+        id: 'polera-basica-the-white-hilux-cl-shop', name: 'Polera Básica 4WD Race Dept.', type: 'polera', price: 19990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro', 'blanco'],
         views: [{ shape: 'tee-front', logo: 'race-dept' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-the-white-hilux-cl-shop-negro-frente.png', 'assets/img/productos/polera-basica-the-white-hilux-cl-shop-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-the-white-hilux-cl-shop-blanco-frente.png', 'assets/img/productos/polera-basica-the-white-hilux-cl-shop-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con 4WD Race Dept. chico en el pecho.',
         features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"polera","nombre":"Polera Básica The White Hilux CL Shop","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":null}
+        cfg: {"tipo":"polera","nombre":"Polera Básica 4WD Race Dept.","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
-        id: 'poleron-canguro-basico-twh-logo-pecho', name: 'Polerón Canguro Básico TWH Logo Pecho', type: 'poleron', price: 34990,
+        id: 'poleron-canguro-basico-twh-logo-pecho', name: 'Polerón Canguro Sello Off Road Supply', type: 'poleron', price: 34990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro'],
         views: [{ shape: 'hoodie-front', logo: 'round-stamp' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/poleron-canguro-basico-twh-logo-pecho-negro-frente.png', 'assets/img/productos/poleron-canguro-basico-twh-logo-pecho-negro-espalda.png'] }, sizeGuide: 'poleron', active: true,
         desc: 'Polerón con capucha con Sello Off Road Supply chico en el pecho.',
         features: [['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"poleron","nombre":"Polerón Canguro Básico TWH Logo Pecho","colores":["negro"],"frente":{"logo":"round-stamp","pos":"pecho","tam":"s"},"espalda":null}
+        cfg: {"tipo":"poleron","nombre":"Polerón Canguro Sello Off Road Supply","colores":["negro"],"frente":{"logo":"round-stamp","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
-        id: 'poleron-canguro-basico-escudo-4x4-team', name: 'Polerón Canguro Básico Escudo 4x4 Team', type: 'poleron', price: 34990,
+        id: 'poleron-canguro-basico-escudo-4x4-team', name: 'Polerón Canguro Escudo 4x4 Team', type: 'poleron', price: 34990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro'],
         views: [{ shape: 'hoodie-front', logo: 'checkered-shield' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/poleron-canguro-basico-escudo-4x4-team-negro-frente.png', 'assets/img/productos/poleron-canguro-basico-escudo-4x4-team-negro-espalda.png'] }, sizeGuide: 'poleron', active: true,
         desc: 'Polerón con capucha con Escudo 4x4 Team chico en el pecho.',
         features: [['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"poleron","nombre":"Polerón Canguro Básico Escudo 4x4 Team","colores":["negro"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"s"},"espalda":null}
+        cfg: {"tipo":"poleron","nombre":"Polerón Canguro Escudo 4x4 Team","colores":["negro"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
-        id: 'poleron-canguro-basico-white-hilux-script', name: 'Polerón Canguro Básico White Hilux Script', type: 'poleron', price: 34990,
+        id: 'poleron-canguro-basico-white-hilux-script', name: 'Polerón Canguro White Hilux Script', type: 'poleron', price: 34990,
         sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['negro'],
         views: [{ shape: 'hoodie-front', logo: 'script-checker' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/poleron-canguro-basico-white-hilux-script-negro-frente.png', 'assets/img/productos/poleron-canguro-basico-white-hilux-script-negro-espalda.png'] }, sizeGuide: 'poleron', active: true,
         desc: 'Polerón con capucha con White Hilux Script chico en el pecho.',
         features: [['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', 'DTF pecho']],
-        cfg: {"tipo":"poleron","nombre":"Polerón Canguro Básico White Hilux Script","colores":["negro"],"frente":{"logo":"script-checker","pos":"pecho","tam":"s"},"espalda":null}
+        cfg: {"tipo":"poleron","nombre":"Polerón Canguro White Hilux Script","colores":["negro"],"frente":{"logo":"script-checker","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
-        id: 'jockey-5-paneles-twh-parche-tejido', name: 'Jockey 5 Paneles TWH Parche Tejido', type: 'jockey', price: 15990,
+        id: 'jockey-5-paneles-twh-parche-tejido', name: 'Jockey 5 Paneles TWH Franjas Parche Tejido', type: 'jockey', price: 15990,
         sizes: ['Única'], colors: ['negro'],
         views: [{ shape: 'cap', logo: 'logo-header' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/jockey-5-paneles-twh-parche-tejido-negro-jockey.png'] }, sizeGuide: null, active: true,
         desc: 'Jockey negro de 5 paneles con TWH franjas en parche tejido al frente. Cierre ajustable.',
         features: [['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', 'Parche tejido'], ['Cierre', 'Ajustable'], ['Talla', 'Única']],
-        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles TWH Parche Tejido","colores":["negro"],"jockey":{"logo":"logo-header","estilo":"parche","tam":"m"}}
+        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles TWH Franjas Parche Tejido","colores":["negro"],"jockey":{"logo":"logo-header","estilo":"parche","tam":"m"}}
       },
       {
-        id: 'jockey-5-paneles-the-white-hilux-parche-tejido', name: 'Jockey 5 Paneles The White Hilux Parche Tejido', type: 'jockey', price: 15990,
+        id: 'jockey-5-paneles-the-white-hilux-parche-tejido', name: 'Jockey 5 Paneles Off Road Team Parche Tejido', type: 'jockey', price: 15990,
         sizes: ['Única'], colors: ['negro'],
         views: [{ shape: 'cap', logo: 'coordenadas' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/jockey-5-paneles-the-white-hilux-parche-tejido-negro-jockey.png'] }, sizeGuide: null, active: true,
         desc: 'Jockey negro de 5 paneles con Off Road Team en parche tejido al frente. Cierre ajustable.',
         features: [['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', 'Parche tejido'], ['Cierre', 'Ajustable'], ['Talla', 'Única']],
-        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles The White Hilux Parche Tejido","colores":["negro"],"jockey":{"logo":"coordenadas","estilo":"parche","tam":"m"}}
+        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles Off Road Team Parche Tejido","colores":["negro"],"jockey":{"logo":"coordenadas","estilo":"parche","tam":"m"}}
       },
       {
         id: 'jockey-5-paneles-sunset-bordado', name: 'Jockey 5 Paneles Sunset Bordado', type: 'jockey', price: 15990,
@@ -171,13 +172,13 @@
         cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles Sunset Bordado","colores":["negro"],"jockey":{"logo":"sunset","estilo":"bordado","tam":"m"}}
       },
       {
-        id: 'jockey-5-paneles-twh-speed-shop-bordado', name: 'Jockey 5 Paneles TWH Speed Shop Bordado', type: 'jockey', price: 15990,
+        id: 'jockey-5-paneles-twh-speed-shop-bordado', name: 'Jockey 5 Paneles Sello Off Road Supply Bordado', type: 'jockey', price: 15990,
         sizes: ['Única'], colors: ['negro'],
         views: [{ shape: 'cap', logo: 'round-stamp' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/jockey-5-paneles-twh-speed-shop-bordado-negro-jockey.png'] }, sizeGuide: null, active: true,
         desc: 'Jockey negro de 5 paneles con Sello Off Road Supply bordado al frente. Cierre ajustable.',
         features: [['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', 'Bordado'], ['Cierre', 'Ajustable'], ['Talla', 'Única']],
-        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles TWH Speed Shop Bordado","colores":["negro"],"jockey":{"logo":"round-stamp","estilo":"bordado","tam":"m"}}
+        cfg: {"tipo":"jockey","nombre":"Jockey 5 Paneles Sello Off Road Supply Bordado","colores":["negro"],"jockey":{"logo":"round-stamp","estilo":"bordado","tam":"m"}}
       },
       {
         id: 'jockey-5-paneles-escudo-4x4-team-bordado', name: 'Jockey 5 Paneles Escudo 4x4 Team Bordado', type: 'jockey', price: 15990,

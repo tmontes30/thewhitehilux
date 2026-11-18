@@ -258,7 +258,7 @@ window.TWH_CFG = {
   {
    "id": "polera-twh-4x4-rally-team-algodon",
    "tipo": "polera",
-   "nombre": "Polera TWH 4x4 Rally Team Algodón",
+   "nombre": "Polera White Hilux Script",
    "colores": [
     "negro",
     "blanco"
@@ -277,7 +277,7 @@ window.TWH_CFG = {
   {
    "id": "polera-mud-terrain-twh-algodon",
    "tipo": "polera",
-   "nombre": "Polera Mud Terrain TWH Algodón",
+   "nombre": "Polera Race Shop",
    "colores": [
     "negro",
     "blanco"
@@ -296,7 +296,7 @@ window.TWH_CFG = {
   {
    "id": "polera-low-range-club-4wd",
    "tipo": "polera",
-   "nombre": "Polera Low Range Club 4WD",
+   "nombre": "Polera Low Range Club",
    "colores": [
     "negro",
     "blanco"
@@ -315,7 +315,7 @@ window.TWH_CFG = {
   {
    "id": "polera-twh-cruz-white-hilux-algodon",
    "tipo": "polera",
-   "nombre": "Polera TWH Cruz White Hilux Algodón",
+   "nombre": "Polera Sunset",
    "colores": [
     "negro",
     "blanco"
@@ -334,7 +334,7 @@ window.TWH_CFG = {
   {
    "id": "polera-twh-recovery",
    "tipo": "polera",
-   "nombre": "Polera TWH Recovery",
+   "nombre": "Polera Recovery Crew",
    "colores": [
     "negro",
     "blanco"
@@ -353,7 +353,7 @@ window.TWH_CFG = {
   {
    "id": "polera-twh",
    "tipo": "polera",
-   "nombre": "Polera TWH ",
+   "nombre": "Polera Warp",
    "colores": [
     "negro",
     "blanco"
@@ -372,7 +372,7 @@ window.TWH_CFG = {
   {
    "id": "polera-twh-aired-down",
    "tipo": "polera",
-   "nombre": "Polera TWH Aired Down",
+   "nombre": "Polera Aired Down",
    "colores": [
     "negro",
     "blanco"
@@ -391,7 +391,7 @@ window.TWH_CFG = {
   {
    "id": "polera-basica-twh-logo-pecho",
    "tipo": "polera",
-   "nombre": "Polera Básica TWH Logo Pecho",
+   "nombre": "Polera Básica White Hilux Script",
    "colores": [
     "negro",
     "blanco"
@@ -406,7 +406,7 @@ window.TWH_CFG = {
   {
    "id": "polera-basica-sello-off-road-supply",
    "tipo": "polera",
-   "nombre": "Polera Básica Sello Off Road Supply",
+   "nombre": "Polera Básica Escudo 4x4 Team",
    "colores": [
     "negro",
     "blanco"
@@ -421,7 +421,7 @@ window.TWH_CFG = {
   {
    "id": "polera-basica-the-white-hilux-cl-shop",
    "tipo": "polera",
-   "nombre": "Polera Básica The White Hilux CL Shop",
+   "nombre": "Polera Básica 4WD Race Dept.",
    "colores": [
     "negro",
     "blanco"
@@ -436,7 +436,7 @@ window.TWH_CFG = {
   {
    "id": "poleron-canguro-basico-twh-logo-pecho",
    "tipo": "poleron",
-   "nombre": "Polerón Canguro Básico TWH Logo Pecho",
+   "nombre": "Polerón Canguro Sello Off Road Supply",
    "colores": [
     "negro"
    ],
@@ -450,7 +450,7 @@ window.TWH_CFG = {
   {
    "id": "poleron-canguro-basico-escudo-4x4-team",
    "tipo": "poleron",
-   "nombre": "Polerón Canguro Básico Escudo 4x4 Team",
+   "nombre": "Polerón Canguro Escudo 4x4 Team",
    "colores": [
     "negro"
    ],
@@ -464,7 +464,7 @@ window.TWH_CFG = {
   {
    "id": "poleron-canguro-basico-white-hilux-script",
    "tipo": "poleron",
-   "nombre": "Polerón Canguro Básico White Hilux Script",
+   "nombre": "Polerón Canguro White Hilux Script",
    "colores": [
     "negro"
    ],
@@ -478,7 +478,7 @@ window.TWH_CFG = {
   {
    "id": "jockey-5-paneles-twh-parche-tejido",
    "tipo": "jockey",
-   "nombre": "Jockey 5 Paneles TWH Parche Tejido",
+   "nombre": "Jockey 5 Paneles TWH Franjas Parche Tejido",
    "colores": [
     "negro"
    ],
@@ -491,7 +491,7 @@ window.TWH_CFG = {
   {
    "id": "jockey-5-paneles-the-white-hilux-parche-tejido",
    "tipo": "jockey",
-   "nombre": "Jockey 5 Paneles The White Hilux Parche Tejido",
+   "nombre": "Jockey 5 Paneles Off Road Team Parche Tejido",
    "colores": [
     "negro"
    ],
@@ -517,7 +517,7 @@ window.TWH_CFG = {
   {
    "id": "jockey-5-paneles-twh-speed-shop-bordado",
    "tipo": "jockey",
-   "nombre": "Jockey 5 Paneles TWH Speed Shop Bordado",
+   "nombre": "Jockey 5 Paneles Sello Off Road Supply Bordado",
    "colores": [
     "negro"
    ],
