@@ -32,7 +32,7 @@ Lo editado en el panel **pisa** a `catalog.js`. Si Firestore no responde (o abre
 - El stock baja solo cuando Mercado Pago confirma el pago. Si cancelas un pedido pagado, el panel pregunta si devolver las unidades. Si marcas a mano un pedido como pagado (transferencia), fija la promesa y pregunta si descontar stock.
 
 ## Flujo de compra
-1. `carrito.html` → `crearPreferencia`: recalcula precios con catálogo + panel, valida stock y estado, guarda el pedido como *pago pendiente* y crea el pago en Mercado Pago.
+1. `carrito.html` → `crearPreferencia`: recalcula precios con catálogo + panel, valida stock y estado, guarda el pedido como *pago pendiente* y crea una **order** de Mercado Pago (`POST /v1/orders`); el cliente paga en su `checkout_url`.
 2. Mercado Pago → `webhook`: si el pago está aprobado, en una transacción marca *pagado*, fija la **promesa** (días hábiles según zona) y descuenta stock. Es idempotente (un aviso repetido no descuenta ni manda correos dos veces). Manda correo al dueño y al cliente si hay Resend.
 3. `alertaEntregas`: cada día 09:00 (Chile) manda un correo con los pedidos que vencen pronto.
 
@@ -46,7 +46,7 @@ Lo editado en el panel **pisa** a `catalog.js`. Si Firestore no responde (o abre
    firebase functions:secrets:set RESEND_API_KEY       # API key de resend.com, o "none" para no mandar correos
    firebase deploy --only functions,firestore
    ```
-4. Mercado Pago → tu aplicación → Webhooks → URL `https://southamerica-east1-the-white-hilux.cloudfunctions.net/webhook`, evento **Pagos**.
+4. Mercado Pago → tu aplicación → Webhooks → URL `https://southamerica-east1-the-white-hilux.cloudfunctions.net/webhook`, evento **Order (Mercado Pago)**. El pago usa Checkout Pro con la **API de Orders** (no Preferencias). La clave secreta de esa pantalla va en `MP_WEBHOOK_SECRET`.
 5. DNS de cavedevz.com: registro **CNAME** `thewhitehilux` → `tmontes30.github.io`.
 
 ## Publicar cambios

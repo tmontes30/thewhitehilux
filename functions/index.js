@@ -1,23 +1,24 @@
 // Funciones de Firebase de la tienda The White Hilux (región São Paulo).
-//  - crearPreferencia: recibe el carrito, recalcula precios y stock, guarda el pedido y crea el pago en Mercado Pago.
-//  - webhook: Mercado Pago avisa los pagos; si está aprobado marca el pedido pagado, calcula la promesa de entrega,
-//    descuenta stock y manda correos. Es idempotente: un aviso repetido no descuenta ni manda correos dos veces.
+//  - crearPreferencia: recibe el carrito, recalcula precios y stock, guarda el pedido y crea el pago en Mercado Pago
+//    (Checkout Pro con la API de Orders: POST /v1/orders → checkout_url).
+//  - webhook: Mercado Pago avisa los pagos (evento "Order"); si está aprobado (processed/accredited) marca el pedido
+//    pagado, calcula la promesa de entrega, descuenta stock y manda correos. Es idempotente: un aviso repetido no
+//    descuenta ni manda correos dos veces.
 //  - alertaEntregas: cada mañana manda un correo con los pedidos que vencen en 2 días o menos.
 //
 // El código compartido con la tienda (shared/) se copia desde web/ con `node sync.js` (corre solo antes de deploy).
 
-const crypto = require('crypto');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { defineSecret, defineString } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const { FieldPath, FieldValue } = require('firebase-admin/firestore');
-const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+const { MercadoPagoConfig, Order, Payment, WebhookSignatureValidator } = require('mercadopago');
 
 const base = require('./shared/catalog.js');
 const core = require('./shared/core.js');
-const { buildOrder, newOrderId, toMercadoPagoItems, OrderError } = require('./shared/order.js');
+const { buildOrder, newOrderId, OrderError } = require('./shared/order.js');
 const { orderHtml, alertHtml, sendEmail } = require('./shared/email.js');
 
 admin.initializeApp();
@@ -48,6 +49,42 @@ async function loadCatalog(tx) {
   const snap = tx ? await tx.get(CATALOG) : await CATALOG.get();
   return { snap, data: core.mergeCatalog(base, snap.exists ? snap.data() : null) };
 }
+
+// Cuerpo de la order de Mercado Pago (CLP sin decimales, montos como texto; el envío va como un ítem más)
+function mpOrderBody(orderId, order, siteUrl) {
+  const [firstName, ...rest] = order.customer.name.split(/\s+/);
+  const items = order.lines.map((l) => ({
+    external_code: `${l.size}${l.color ? '-' + l.color : ''}${l.design ? '-' + l.design : ''}-${l.id}`.slice(0, 30), // máx. 30
+    title: [l.name, l.design_name, l.size !== 'Única' ? `Talla ${l.size}` : '', l.color_name].filter(Boolean).join(' · ').slice(0, 150),
+    quantity: l.qty,
+    unit_price: String(Math.round(l.unit_price)),
+  }));
+  if (order.shipping.cost > 0) {
+    items.push({ external_code: 'envio', title: order.shipping.zone_label, quantity: 1, unit_price: String(Math.round(order.shipping.cost)) });
+  }
+  const payer = { email: order.customer.email, first_name: firstName };
+  if (rest.length) payer.last_name = rest.join(' ');
+  return {
+    type: 'online',
+    processing_mode: 'manual',
+    total_amount: String(Math.round(order.total)),
+    external_reference: orderId,
+    description: `Pedido ${orderId} · The White Hilux`,
+    expiration_time: 'P1D',
+    payer,
+    items,
+    config: {
+      statement_descriptor: 'THEWHITEHILUX',
+      online: {
+        success_url: `${siteUrl}/gracias.html`,
+        pending_url: `${siteUrl}/pago-pendiente.html`,
+        failure_url: `${siteUrl}/pago-fallido.html`,
+        auto_return: 'approved',
+      },
+    },
+  };
+}
+exports._mpOrderBody = mpOrderBody;
 
 // ---------- crearPreferencia ----------
 exports.crearPreferencia = onRequest(
@@ -90,30 +127,15 @@ exports.crearPreferencia = onRequest(
     }
     if (!token) return res.status(500).json({ error: 'La tienda aún no tiene configurado Mercado Pago.' });
 
-    const [firstName, ...rest] = order.customer.name.split(/\s+/);
-    const project = process.env.GCLOUD_PROJECT;
-    const prefBody = {
-      items: toMercadoPagoItems(order),
-      payer: { name: firstName, surname: rest.join(' '), email: order.customer.email },
-      back_urls: {
-        success: `${siteUrl}/gracias.html`,
-        pending: `${siteUrl}/pago-pendiente.html`,
-        failure: `${siteUrl}/pago-fallido.html`,
-      },
-      auto_return: 'approved',
-      notification_url: `https://${REGION}-${project}.cloudfunctions.net/webhook`,
-      external_reference: orderId,
-      statement_descriptor: 'THEWHITEHILUX',
-      metadata: { order_id: orderId },
-    };
-
     try {
       const client = new MercadoPagoConfig({ accessToken: token });
-      const pref = await new Preference(client).create({ body: prefBody });
-      logger.info('[pedido creado]', orderId, order.total);
-      return res.json({ order_id: orderId, init_point: pref.init_point, total: order.total });
+      const mp = await new Order(client).create({ body: mpOrderBody(orderId, order, siteUrl), requestOptions: { idempotencyKey: orderId } });
+      if (!mp.checkout_url) throw new Error('Mercado Pago no devolvió checkout_url');
+      await ORDERS.doc(orderId).update({ mpOrderId: String(mp.id || '') });
+      logger.info('[pedido creado]', orderId, order.total, mp.id);
+      return res.json({ order_id: orderId, init_point: mp.checkout_url, total: order.total });
     } catch (err) {
-      logger.error('[mercadopago] error al crear preferencia', err && (err.message || err));
+      logger.error('[mercadopago] error al crear la order', (err && err.message) || err, err && err.errors ? JSON.stringify(err.errors) : '');
       await ORDERS.doc(orderId).delete().catch(() => {});
       return res.status(502).json({ error: 'No pudimos conectar con Mercado Pago. Intenta de nuevo en unos minutos.' });
     }
@@ -170,20 +192,19 @@ async function confirmPaid(orderId, payment) {
 }
 exports._confirmPaid = confirmPaid;
 
+// Firma del aviso (validador oficial del SDK de Mercado Pago). Sin clave secreta configurada, no se valida.
 function validSignature(req, dataId, secretValue) {
   if (!secretValue) return true;
-  const sig = req.headers['x-signature'] || '';
-  const requestId = req.headers['x-request-id'] || '';
-  const parts = Object.fromEntries(
-    String(sig).split(',').map((p) => p.split('=').map((s) => s.trim())).filter((p) => p.length === 2)
-  );
-  if (!parts.ts || !parts.v1) return false;
-  const id = /^[a-z0-9]+$/i.test(dataId) ? String(dataId).toLowerCase() : dataId;
-  const manifest = `id:${id};request-id:${requestId};ts:${parts.ts};`;
-  const expected = crypto.createHmac('sha256', secretValue).update(manifest).digest('hex');
   try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1));
-  } catch {
+    WebhookSignatureValidator.validate({
+      xSignature: req.headers['x-signature'],
+      xRequestId: req.headers['x-request-id'],
+      dataId,
+      secret: secretValue,
+    });
+    return true;
+  } catch (err) {
+    logger.warn('[webhook] firma inválida', err.reason || err.message);
     return false;
   }
 }
@@ -197,33 +218,53 @@ async function notifyPaid(order) {
   ]).catch((err) => logger.error('[email] error', err.message));
 }
 
+const isOrderEvent = (type, action) => /^order/i.test(type || '') || /^order\./i.test(action || '');
+
 // ---------- webhook ----------
 exports.webhook = onRequest({ secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, RESEND_API_KEY] }, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
   const body = (typeof req.body === 'string' ? safeJson(req.body) : req.body) || {};
   const q = req.query || {};
-  const type = body.type || q.type || q.topic;
+  const type = body.type || q.type || q.topic || '';
   const dataId = String((body.data && body.data.id) || q['data.id'] || q.id || '');
+  logger.info('[webhook] aviso', type, body.action || '', dataId);
 
-  if (type !== 'payment' || !dataId) return res.json({ ok: true, ignored: true });
+  const orderEvent = isOrderEvent(type, body.action);
+  if (!dataId || !(orderEvent || type === 'payment')) return res.json({ ok: true, ignored: true });
   if (!validSignature(req, dataId, secret(MP_WEBHOOK_SECRET))) return res.status(401).json({ error: 'Firma inválida' });
 
   try {
     const client = new MercadoPagoConfig({ accessToken: secret(MP_ACCESS_TOKEN) });
-    const payment = await new Payment(client).get({ id: dataId });
-    const orderId = (payment.metadata && payment.metadata.order_id) || payment.external_reference;
-    if (!orderId) return res.json({ ok: true, ignored: true });
+    let orderId, paid, payment, mpStatus;
 
-    if (payment.status !== 'approved') {
-      await ORDERS.doc(orderId).set({ mpStatus: payment.status, mpPaymentId: String(payment.id) }, { merge: true }).catch(() => {});
-      return res.json({ ok: true, status: payment.status });
+    if (orderEvent) {
+      // Checkout Pro con API de Orders: se consulta la order directo a Mercado Pago
+      const mp = await new Order(client).get({ id: dataId });
+      orderId = mp.external_reference;
+      paid = mp.status === 'processed' && mp.status_detail === 'accredited';
+      mpStatus = `${mp.status}/${mp.status_detail}`;
+      const pay = ((mp.transactions && mp.transactions.payments) || [])[0] || {};
+      payment = { id: pay.id || mp.id, transaction_amount: Number(mp.total_paid_amount || mp.total_amount) };
+    } else {
+      // Respaldo: aviso de pago clásico
+      const p = await new Payment(client).get({ id: dataId });
+      orderId = (p.metadata && p.metadata.order_id) || p.external_reference;
+      paid = p.status === 'approved';
+      mpStatus = p.status;
+      payment = p;
+    }
+
+    if (!orderId) return res.json({ ok: true, ignored: true });
+    if (!paid) {
+      await ORDERS.doc(orderId).set({ mpStatus }, { merge: true }).catch(() => {});
+      return res.json({ ok: true, status: mpStatus });
     }
     const r = await confirmPaid(orderId, payment);
-    if (r.missing) logger.error('[webhook] pago aprobado de un pedido que no existe', orderId, payment.id);
+    if (r.missing) logger.error('[webhook] pago aprobado de un pedido que no existe', orderId, dataId);
     if (r.paid) await notifyPaid(r.order);
     return res.json({ ok: true });
   } catch (err) {
-    logger.error('[webhook] error', err && (err.message || err));
+    logger.error('[webhook] error', (err && err.message) || err);
     return res.status(500).json({ error: 'No se pudo procesar el aviso' }); // Mercado Pago reintenta
   }
 });
