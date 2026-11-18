@@ -143,8 +143,8 @@
         sizes: ['Única'], colors: ['negro'],
         views: [{ shape: 'cap', logo: 'coordenadas' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/jockey-5-paneles-the-white-hilux-parche-tejido-negro-jockey.png'] }, sizeGuide: null, active: true,
-        desc: 'Jockey negro de 5 paneles con Off Road Team bordado al frente. Cierre ajustable.',
-        features: [['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', 'Bordado'], ['Cierre', 'Ajustable'], ['Talla', 'Única']]
+        desc: 'Jockey negro de 5 paneles con Off Road Team en parche tejido al frente. Cierre ajustable.',
+        features: [['Material', 'Gabardina de algodón'], ['Paneles', '5'], ['Logo', 'Parche tejido'], ['Cierre', 'Ajustable'], ['Talla', 'Única']]
       },
       {
         id: 'jockey-5-paneles-sunset-bordado', name: 'Jockey 5 Paneles Sunset Bordado', type: 'jockey', price: 15990,
