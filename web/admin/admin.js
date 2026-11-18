@@ -348,7 +348,8 @@ function stockTable(p) {
         return `<td><input type="number" min="0" max="9999" inputmode="numeric" data-c="${c}" data-s="${esc(s)}" value="${n}" class="${n === 0 ? 'zero' : ''}" aria-label="${esc(colorName(c))} ${esc(s)}"></td>`;
       })
       .join('')}<td class="total">${plural(C.totalStock(p, c === 'unico' ? undefined : c), 'unidad', 'unidades')}</td></tr>`).join('')}
-    <tr class="arrivals" hidden><td colspan="${p.sizes.length + 2}" class="hint" style="padding-top:10px">Llegó mercadería: escribe cuántas unidades llegaron de cada talla y se suman al stock.</td></tr>
+    <tr><td colspan="${p.sizes.length + 2}" class="hint" style="padding-top:6px">Escribe cuántas unidades tienes de cada talla: se guarda sola al salir de la casilla.</td></tr>
+    <tr class="arrivals" hidden><td colspan="${p.sizes.length + 2}" class="hint" style="padding-top:10px">Llegó mercadería: escribe cuántas unidades <b>llegaron</b> y aprieta "Sumar al stock" (se suman a lo que ya tienes).</td></tr>
     ${colors.map((c) => `<tr class="arrivals" hidden><th>+ ${esc(colorName(c))}</th>${p.sizes
       .map((s) => `<td><input type="number" min="0" max="9999" inputmode="numeric" class="add" data-add-c="${c}" data-add-s="${esc(s)}" placeholder="0" aria-label="Llegaron ${esc(colorName(c))} ${esc(s)}"></td>`)
       .join('')}<td></td></tr>`).join('')}
@@ -409,6 +410,8 @@ function renderProducts() {
     const el = box.querySelector(`[data-id="${CSS.escape(id)}"]`);
     if (el) keep[id] = el;
   });
+  const editing = document.activeElement && document.activeElement.closest && document.activeElement.closest('.product');
+  if (editing && editing.querySelector('tr.arrivals') && !keep[editing.dataset.id] && document.activeElement.matches('input[data-c], input.add')) keep[editing.dataset.id] = editing;
   // ...y las que tienen abierto "Registrar llegada" (se actualiza solo el stock mostrado)
   box.querySelectorAll('.product').forEach((el) => {
     const open = el.querySelector('tr.arrivals:not([hidden])');
@@ -416,6 +419,7 @@ function renderProducts() {
     const p = list.find((x) => x.id === el.dataset.id);
     if (!p || !p.stock) return;
     el.querySelectorAll('input[data-c]').forEach((i) => {
+      if (i === document.activeElement) return;
       const n = C.stockOf(p, i.dataset.c === 'unico' ? '' : i.dataset.c, i.dataset.s);
       i.value = n;
       i.classList.toggle('zero', n === 0);
@@ -454,7 +458,32 @@ const fp = (...parts) => new FieldPath('products', ...parts);
 $('products').addEventListener('input', (e) => {
   const card = e.target.closest('.product');
   if (!card || e.target.classList.contains('add')) return;
-  if (e.target.matches('[data-f], [data-c]')) markDirty(card, true);
+  if (e.target.matches('[data-f]')) markDirty(card, true);
+});
+
+// Stock: cada casilla se guarda sola al cambiarla (al salir de la casilla o con Enter)
+$('products').addEventListener('change', async (e) => {
+  const i = e.target;
+  if (!i.matches('input[data-c]')) return;
+  const card = i.closest('.product');
+  const id = card.dataset.id;
+  const p = data.products.find((x) => x.id === id);
+  const n = Math.max(0, Math.floor(Number(i.value) || 0));
+  i.value = n;
+  if (n === C.stockOf(p, i.dataset.c === 'unico' ? '' : i.dataset.c, i.dataset.s)) return;
+  try {
+    await updateDoc(CATALOG, fp(id, 'stock', i.dataset.c, i.dataset.s), n);
+    toast(`Stock ${i.dataset.s !== 'Única' ? 'talla ' + i.dataset.s : ''} ${i.dataset.c === 'unico' ? '' : colorName(i.dataset.c).toLowerCase()}: ${plural(n, 'unidad', 'unidades')} ✓`.replace(/\s+/g, ' '));
+  } catch (err) {
+    fail(err);
+  }
+});
+$('products').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches('input[data-c], input.add')) {
+    e.preventDefault();
+    if (e.target.matches('input[data-c]')) e.target.blur();
+    else e.target.closest('.product').querySelector('[data-act="add-stock"]').click();
+  }
 });
 
 $('products').addEventListener('click', async (e) => {
@@ -522,11 +551,6 @@ $('products').addEventListener('click', async (e) => {
       if (name !== p.name) args.push(fp(id, 'name'), name);
       if (price !== p.price) args.push(fp(id, 'price'), price);
       if (desc !== p.desc) args.push(fp(id, 'desc'), desc);
-      card.querySelectorAll('input[data-c]').forEach((i) => {
-        const n = Math.max(0, Math.floor(Number(i.value) || 0));
-        const cur = C.stockOf(p, i.dataset.c === 'unico' ? '' : i.dataset.c, i.dataset.s);
-        if (n !== cur) args.push(fp(id, 'stock', i.dataset.c, i.dataset.s), n);
-      });
       markDirty(card, false);
       if (!args.length) return renderProducts();
       await updateDoc(CATALOG, ...args);
