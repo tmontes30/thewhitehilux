@@ -14,6 +14,7 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 | `disenos/logos/` | Logos de la marca. `generar.js` los crea; salen en `svg/` (vectorial), `png/` (vista 1000 px) y `_todos.png` (hoja con todos numerados). También copia versiones sin fondo a `web/assets/logos/` (`<logo>.svg` para prenda oscura y `<logo>-claro.svg` para prenda clara). |
 | `disenos/montajes/` | `montar.js`: pone logos TWH sobre las fotos lifestyle. `modelos.js`: genera las fotos de producto con modelo (negro y blanco). Ambos borran el estampado original píxel a píxel y dejan el resultado en `web/assets/img/`. |
 | `web/` | La tienda (sitio estático en GitHub Pages) y el panel `web/admin/`. Ver `web/README.md`. |
+| `estrategia/` | Privada (en .gitignore). Planificación de negocio: `planificador.html` (doble clic: márgenes, plan de compra con curva de tallas, escenarios, cuándo comprar, ventas reales), datos en `costos.js` (único archivo a editar), `node estrategia/exportar-excel.js` genera `planificacion-twh.xlsx` con fórmulas. Ver `estrategia/README.md`. |
 | `functions/` | Cloud Functions de Firebase: `crearPreferencia`, `webhook`, `alertaEntregas`. Copian `web/lib`, `core.js` y `catalog.js` a `functions/shared/` con `sync.js`. |
 
 ## Tienda (`web/`)
@@ -22,6 +23,12 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 - Precio, nombre, descripción, estado y stock se editan en el **panel** (Firestore `tienda/catalogo`) y pisan a catalog.js. `assets/js/core.js` hace la mezcla, el stock y los días hábiles (lo comparten tienda, panel y funciones).
 - Descuentos: ofertas automáticas en `tienda/catalogo.offers` (precio tachado) y códigos en la colección privada `cupones/*` (función `validarCupon`). SKU por variante: base del producto + color + talla (`core.js` `variantSku`). Pestaña Ventas del panel con reportes por SKU.
 - Botón flotante de WhatsApp: número en `config.whatsapp` de catalog.js. En computador la tienda usa `zoom` (.78 / .72) para verse como al 70-80%.
+- Seguimiento: `web/seguimiento.html` + función `seguimiento` (responde solo si N° de pedido y correo coinciden; no expone dirección ni teléfono). En el panel, cada pedido tiene courier, N° y link de seguimiento; los estados guardan `preparingDate`/`shippedDate`/`deliveredDate`.
+- `aplicar.js` conserva el id de las prendas que ya existen (el configurador guarda el id): renombrar no pierde stock ni ventas. Los nombres siguen el diseño real (ej. 'Polera Race Shop', 'Polera Básica Escudo 4x4 Team').
+- Etiqueta de cuello ("TWH" + franjas + "RACE SHOP" + talla, sin CL SHOP; 60×40 mm): dibujo en `disenos/configurador/etiqueta.js` (lo usan el configurador y `node disenos/etiquetas/generar.js` → `svg/`, `png/` 600 dpi transparente, `_todas.png`). Solo 2 versiones: clara para prendas negras y oscura para blancas. En el configurador cada polera/polerón tiene "Etiqueta en el cuello" (sí/no, por defecto sí); se guarda en `cfg.etiqueta` y agrega la fila "Etiqueta" a las características.
+- Logos 26-33 (deporte y mecánica dibujados a mano en SVG) se probaron el 2026-11-18 y se descartaron: el dueño los encontró básicos. No recrear ilustraciones complejas a mano. Camino acordado: ilustraciones con licencia comercial (Freepik/Adobe Stock/etc., archivos en ideas/licenciados/), ilustrador o IA, y Claude las adapta a TWH. Nunca copiar diseños de otras marcas (TLD, Greenish). Quedan disponibles las tipografías libres en disenos/fuentes/ y opentype.js (cd disenos && npm install).
+- Pedido a proveedor: `node disenos/pedido/generar-pedido.js` → `pedido-proveedor/<fecha>/` (privado, en .gitignore): pedido.html/pdf, logos/*.pdf a tamaño real, etiquetas/*.pdf. Reglas (curva, colores, cm de estampado) arriba del script. Pedido 2026-11-18 (ajustado): 96 poleras; modelos 1-7 solo negro 2L 2XL 2XXL; 3 básicas negro+blanco 1M 2L 3XL 3XXL (CURVA y CURVA_MODELO en el script).
+- Contacto en Ayuda: `config.email` y `config.whatsapp` de catalog.js.
 - Pedidos en Firestore `pedidos/*`. Promesa de entrega = días hábiles desde el pago (RM 3, regiones 7, editable en Ajustes). El stock se descuenta solo al aprobarse el pago.
 - Páginas: `index.html` (portada + listado con filtros), `producto.html` (ficha estilo Mercado Libre), `carrito.html`, `nosotros.html` (galería de las Hilux), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`.
 - `functions/index.js`: pago con Mercado Pago Checkout Pro y webhook idempotente. `lib/order.js` recalcula precios y valida stock en el servidor.
@@ -38,7 +45,7 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 - Todas las poleras: **$19.990**. Stickers: $2.990 cada uno, el cliente elige el diseño.
 - Envío gratis **solo en la RM** sobre $40.000. Regiones paga envío.
 - Poleras: logo chico arriba en el pecho (lado del corazón) y diseño mediano en la parte alta de la espalda, sin ocupar toda la polera. Hay poleras básicas con solo logo en el pecho.
-- Logo oficial: **"THE WHITE HILUX · CL SHOP"** (`logo-shop.svg` horizontal, `cl-shop.svg` cuadrado).
+- Logo oficial de la tienda (desde 2026-11-18): **race-dept** (TWH + franjas + "4WD Race Dept."), archivo recortado `web/assets/logos/logo-oficial.svg`: encabezado, portada, pie, panel y configurador. `logo-shop.svg` / `cl-shop.svg` ("The White Hilux · CL Shop") quedan como diseños, no como logo de la web.
 - No usar textos de "preventa" ni "hecho en Chile". No usar eslóganes chilenos tipo "Pa' la cordillera" o "Fierro viejo".
 
 ## Configurador de colección (flujo principal para poleras, polerones y jockeys)

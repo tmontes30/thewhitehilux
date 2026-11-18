@@ -387,7 +387,7 @@ for (const n of names) {
 
 // Logo oficial (Race Dept.) recortado para el encabezado de la tienda
 const off = LOGOS['race-dept']();
-const crop = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 70 256 190" width="256" height="190">${inner}</svg>
+const crop = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 62 290 200" width="290" height="200">${inner}</svg>
 `;
 fs.writeFileSync(path.join(webDir, 'logo-oficial.svg'), crop(off));
 fs.writeFileSync(path.join(webDir, 'logo-oficial-claro.svg'), crop(off.split(INK).join('#1C1D1A')));
