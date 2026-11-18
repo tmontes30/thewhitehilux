@@ -1,13 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="60mm" height="40mm">
-  <defs><mask id="m-clara-M"><rect x="0" y="0" width="566" height="120" fill="#fff"/><g transform="translate(470 97) skewX(-12)"><text x="0" y="0" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="24" fill="#000" text-anchor="middle" letter-spacing="4">CL SHOP</text></g></mask></defs>
-  <g transform="translate(37 22) scale(0.93) translate(0 -8)">
-    <g transform="translate(14 58) skewX(-12)"><text x="0" y="0" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="50" fill="#F2F0E8" textLength="510" lengthAdjust="spacingAndGlyphs">THE WHITE HILUX</text></g>
-    <path d="M8 74 H372 L366 80 H8 Z" fill="#F2F0E8"/>
-    <path d="M8 83 H362 L356 89 H8 Z" fill="#F2F0E8"/>
-    <path d="M8 92 H352 L346 98 H8 Z" fill="#F2F0E8"/>
-    <path d="M392 72 H556 L546 104 H382 Z" fill="#F2F0E8" mask="url(#m-clara-M)"/>
-    
-  </g>
-  <rect x="60" y="148" width="480" height="4" fill="#F2F0E8" opacity=".9"/>
-  <text x="300" y="352" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="190" fill="#F2F0E8" text-anchor="middle">M</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="60mm" height="40mm"><defs><mask id="twh-et-clara-M-2"><rect x="0" y="0" width="566" height="120" fill="#fff"/><g transform="translate(470 97) skewX(-12)"><text x="0" y="0" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="24" fill="#000" text-anchor="middle" letter-spacing="4">CL SHOP</text></g></mask></defs><g transform="translate(37 22) scale(0.93) translate(0 -8)"><g transform="translate(14 58) skewX(-12)"><text x="0" y="0" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="50" fill="#F2F0E8" textLength="510" lengthAdjust="spacingAndGlyphs">THE WHITE HILUX</text></g><path d="M8 74 H372 L366 80 H8 Z" fill="#F2F0E8"/><path d="M8 83 H362 L356 89 H8 Z" fill="#F2F0E8"/><path d="M8 92 H352 L346 98 H8 Z" fill="#F2F0E8"/><path d="M392 72 H556 L546 104 H382 Z" fill="#F2F0E8" mask="url(#twh-et-clara-M-2)"/></g><rect x="60" y="148" width="480" height="4" fill="#F2F0E8" opacity=".9"/><text x="300" y="352" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-size="190" fill="#F2F0E8" text-anchor="middle">M</text></svg>

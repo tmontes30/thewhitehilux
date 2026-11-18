@@ -14,7 +14,7 @@ html = html.split('../../web/assets/').join('../../assets/');
 html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex, nofollow">\n<!-- COPIA GENERADA por disenos/configurador/copiar-al-panel.js: no editar aquí -->');
 fs.writeFileSync(path.join(OUT, 'configurador.html'), html);
 
-for (const f of ['posiciones.js', 'datos.js']) fs.copyFileSync(path.join(HERE, f), path.join(OUT, f));
+for (const f of ['posiciones.js', 'datos.js', 'etiqueta.js']) fs.copyFileSync(path.join(HERE, f), path.join(OUT, f));
 
 // Fotos base (solo las que cambian)
 const bases = fs.readdirSync(path.join(HERE, 'bases')).filter((f) => /\.(png|jpe?g|webp)$/i.test(f));

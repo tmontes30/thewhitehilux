@@ -76,7 +76,7 @@ const arr = (a) => '[' + a.map(q).join(', ') + ']';
 const cfgOf = (d) => {
   const o = { tipo: d.tipo, nombre: d.nombre, colores: d.colores };
   if (d.tipo === 'jockey') o.jockey = d.jockey;
-  else { o.frente = d.frente || null; o.espalda = d.espalda || null; }
+  else { o.frente = d.frente || null; o.espalda = d.espalda || null; o.etiqueta = d.etiqueta !== false; }
   return o;
 };
 const entries = [];
@@ -110,9 +110,11 @@ for (const d of items) {
     if (d.frente) partes.push(`${nameOf(d.frente.logo)} ${d.frente.pos === 'centro' ? 'al centro del pecho' : 'chico en el pecho'}`);
     desc = `${d.tipo === 'polera' ? 'Polera' : 'Polerón con capucha'} con ${partes.join(' y ') || 'diseño TWH'}.`;
     const est = d.espalda && d.frente ? 'DTF espalda y pecho' : d.espalda ? 'DTF espalda' : 'DTF pecho';
+    // Etiqueta de cuello estampada (logo + talla): la llevan salvo que se desmarque en el configurador
+    const et = d.etiqueta !== false ? `, ['Etiqueta', 'Estampada en el cuello (logo + talla, sin roce)']` : '';
     features = d.tipo === 'polera'
-      ? `[['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', ${q(est)}]]`
-      : `[['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', ${q(est)}]]`;
+      ? `[['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', ${q(est)}]${et}]`
+      : `[['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', ${q(est)}]${et}]`;
   }
   entries.push(`      {
         id: ${q(d._id)}, name: ${q(d.nombre)}, type: ${q(d.tipo)}, price: ${P.PRICES[d.tipo]},

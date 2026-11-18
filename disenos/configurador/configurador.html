@@ -41,6 +41,9 @@
   .picked b { color: var(--ink); }
   input[type=range] { flex: 1; }
   .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .et-view .et-stage { aspect-ratio: 3 / 4; display: grid; place-items: center; padding: 18px; }
+  .et-view .et-stage svg { width: 78%; height: auto; }
+  .et-check { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
   .view { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .view .cap { padding: 8px 12px; font-size: 12.5px; color: var(--muted); }
   .stage { position: relative; width: 100%; }
@@ -105,6 +108,13 @@
       <div class="row"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1"><span id="e-alto-v"></span></div>
     </div>
 
+    <div class="group" id="g-etiqueta">
+      <h2>Etiqueta en el cuello</h2>
+      <div class="row"><label class="et-check"><input type="checkbox" id="et-on"> Estampar etiqueta (logo + talla)</label></div>
+      <p class="picked" id="et-info"></p>
+      <div class="row"><label>Ver talla</label><div class="seg" id="et-talla"><button data-v="S">S</button><button data-v="M">M</button><button data-v="L">L</button><button data-v="XL">XL</button><button data-v="XXL">XXL</button></div></div>
+    </div>
+
     <div class="group" id="g-jockey">
       <h2>Logo del jockey</h2>
       <p class="picked" id="jockey-name"></p>
@@ -145,6 +155,7 @@
 
 <script src="posiciones.js"></script>
 <script src="datos.js"></script>
+<script src="etiqueta.js"></script>
 <script>
 (function () {
   var P = TWHPos, CFG = TWH_CFG, KEY = 'twh-cfg-coleccion';
@@ -155,18 +166,23 @@
 
   function load() { try { var v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v) && v.length) return v; } catch (e) {} return JSON.parse(JSON.stringify(CFG.seed)); }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(coll)); } catch (e) {} }
-  var coll = load(), cur = 0, color = 'negro';
+  var coll = load(), cur = 0, color = 'negro', etTalla = 'M';
+  var E = window.TWHEtiqueta;
+  // Etiqueta: poleras y polerones la llevan salvo que se desmarque (las colecciones antiguas no tenían el dato)
+  function conEtiqueta(d) { return d.tipo !== 'jockey' && d.etiqueta !== false; }
 
   function nameOf(id) { return id && LOGOS[id] ? LOGOS[id].name : ''; }
   function autoName(d) {
     if (d.tipo === 'jockey') return 'Jockey 5 Paneles ' + nameOf(d.jockey && d.jockey.logo) + (d.jockey && d.jockey.estilo === 'parche' ? ' Parche Tejido' : ' Bordado');
     var main = d.espalda ? nameOf(d.espalda.logo) : nameOf(d.frente && d.frente.logo);
-    return (d.tipo === 'polera' ? 'Polera ' : 'Polerón Canguro ') + (d.espalda ? '' : 'Básico ') + main;
+    main = main.replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); });
+    if (d.tipo === 'poleron') return 'Polerón Canguro ' + main;
+    return (d.espalda ? 'Polera ' : 'Polera Básica ') + main;
   }
   function blank(tipo) {
     var d = { id: tipo + '-' + Date.now().toString(36), tipo: tipo, colores: P.COLORS[tipo].slice() };
     if (tipo === 'jockey') d.jockey = { logo: 'logo-header', estilo: 'parche', tam: 'm' };
-    else { d.frente = { logo: 'logo-header', pos: 'pecho', tam: 'm' }; d.espalda = tipo === 'polera' ? { logo: 'race-dept', tam: 'm', alto: 0 } : null; }
+    else { d.frente = { logo: 'logo-header', pos: 'pecho', tam: 'm' }; d.espalda = tipo === 'polera' ? { logo: 'race-dept', tam: 'm', alto: 0 } : null; d.etiqueta = true; }
     d.nombre = autoName(d);
     return d;
   }
@@ -214,6 +230,15 @@
 
     var ropa = d.tipo !== 'jockey';
     $('g-frente').classList.toggle('hidden', !ropa); $('g-espalda').classList.toggle('hidden', !ropa); $('g-jockey').classList.toggle('hidden', ropa);
+    $('g-etiqueta').classList.toggle('hidden', !ropa);
+    if (ropa) {
+      $('et-on').checked = conEtiqueta(d);
+      $('et-info').innerHTML = conEtiqueta(d)
+        ? 'Se elige sola según el color: <b>negra → etiqueta clara</b> · <b>blanca → etiqueta oscura</b>.'
+        : 'Sin etiqueta estampada.';
+      seg($('et-talla'), etTalla, function (v) { etTalla = v; render(); });
+      $('et-talla').parentNode.classList.toggle('hidden', !conEtiqueta(d));
+    }
     if (ropa) {
       $('frente-name').innerHTML = 'Elegido: <b>' + (d.frente ? nameOf(d.frente.logo) : 'sin logo') + '</b>';
       $('espalda-name').innerHTML = 'Elegido: <b>' + (d.espalda ? nameOf(d.espalda.logo) : 'espalda lisa') + '</b>';
@@ -239,7 +264,12 @@
     $('views').innerHTML = P.viewsFor(d, color).map(function (v) {
       var k = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
       return '<div class="view">' + stage(d, v) + '<div class="cap">' + (VIEW_LABEL[k] || 'Jockey') + '</div></div>';
-    }).join('');
+    }).join('') + (conEtiqueta(d) && E ? (function () {
+      // etiqueta del cuello sobre el color de la prenda que se está mirando
+      var ver = E.versionPara(color);
+      return '<div class="view et-view"><div class="et-stage" style="background:' + E.VERSIONES[ver].fondo + '">' + E.svg(etTalla, ver, { width: '100%', height: 'auto' }) + '</div>' +
+        '<div class="cap">Etiqueta cuello · ' + (ver === 'clara' ? 'clara (prenda negra)' : 'oscura (prenda blanca)') + ' · talla ' + etTalla + '</div></div>';
+    })() : '');
 
     // colección
     $('count').textContent = coll.length;
@@ -250,7 +280,7 @@
       html += '<div class="cat">' + TIPOS[t] + 's (' + items.length + ')</div>';
       items.forEach(function (p) {
         var x = p[0], i = p[1], v = P.viewsFor(x, x.colores[0] || 'negro')[0];
-        var sub = x.tipo === 'jockey' ? (x.jockey.estilo === 'parche' ? 'Parche' : 'Bordado') : ((x.frente ? 'Frente: ' + nameOf(x.frente.logo) : 'Sin frente') + ' · ' + (x.espalda ? 'Espalda: ' + nameOf(x.espalda.logo) : 'Espalda lisa'));
+        var sub = x.tipo === 'jockey' ? (x.jockey.estilo === 'parche' ? 'Parche' : 'Bordado') : ((x.frente ? 'Frente: ' + nameOf(x.frente.logo) : 'Sin frente') + ' · ' + (x.espalda ? 'Espalda: ' + nameOf(x.espalda.logo) : 'Espalda lisa') + (conEtiqueta(x) ? ' · con etiqueta' : ' · sin etiqueta'));
         html += '<div class="item' + (i === cur ? ' sel' : '') + '" data-i="' + i + '"><div class="thumb">' + stage(x, v) + '</div><div><div class="name">' + x.nombre + '</div><div class="sub">' + sub + (x.tipo === 'polera' ? ' · ' + x.colores.join(' y ') : '') + '</div></div></div>';
       });
     });
@@ -269,6 +299,7 @@
       d.colores = ['negro', 'blanco'].filter(function (x) { return s.indexOf(x) >= 0; }); save(); render();
     };
   });
+  $('et-on').onchange = function () { var v = this.checked; update(function (x) { x.etiqueta = v; }); };
   $('e-alto').oninput = function () { var v = +this.value; update(function (x) { if (x.espalda) x.espalda.alto = v; }); };
   document.querySelectorAll('[data-new]').forEach(function (b) { b.onclick = function () { coll.push(blank(b.getAttribute('data-new'))); cur = coll.length - 1; save(); render(); }; });
   $('dup').onclick = function () { var c = JSON.parse(JSON.stringify(coll[cur])); c.id = c.tipo + '-' + Date.now().toString(36); c.nombre += ' (copia)'; coll.splice(cur + 1, 0, c); cur++; save(); render(); };
