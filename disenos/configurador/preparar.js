@@ -36,7 +36,10 @@ const NAMES = {
   'sunset': 'Sunset', 'patente': 'Patente TWH·4X4', 'rally-plate': 'Placa Rally 01', 'off-road-script': 'Off Road (manuscrita)',
   'coordenadas': 'Off Road Team', 'supply-co': 'TWH Supply Co.', 'iron-cross': 'Cruz Chopper', 'warp-text': 'Warp',
   'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'tire-blueprint': 'Plano 35"', 'round-stamp': 'Sello Off Road Supply',
-  'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst'
+  'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst',
+  // nuevos 2026-11: deporte en línea fina y mecánica
+  'kite-club': 'Kite Club', 'mtb-trail': 'Trail Club MTB', 'mx-moto': 'Motocross TWH MX', 'andes-outdoor': 'Andes Outdoor Co.',
+  'enduro-plate': 'Placa Enduro 01', 'piston-skull': 'Calavera Pistones', 'winged-piston': 'Pistón Alado', 'condor-plugs': 'Cóndor Bujías'
 };
 const ids = fs.readdirSync(LOGOS).filter((f) => f.endsWith('.svg') && !f.endsWith('-claro.svg') && f !== 'logo-oficial.svg').map((f) => f.replace('.svg', ''));
 const srcs = ids.map((id) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, id + '.svg'), 'utf8')));

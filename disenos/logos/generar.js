@@ -27,6 +27,52 @@ const stripesKick = (dy = 0) =>
   `<path transform="translate(17 ${dy + 34})" d="M3 150 H196 L244 86 H259 L202 162 H3 Z" fill="${DRED}"/>`;
 const r2 = (n) => Math.round(n * 100) / 100;
 
+// Piezas de motor dibujadas con su anatomía real (centradas en 0,0; el pistón mira hacia arriba).
+// Sombreado tipo grabado: rayas finas del color de fondo sobre la tinta.
+const pieza = {
+  piston(conBiela) {
+    const hatch = (x0, x1, y0, y1, step) => {
+      let h = '';
+      for (let x = x0; x <= x1; x += step) h += `<path d="M${x} ${y0} V${y1}" stroke="${BG}" stroke-width="1" opacity=".5"/>`;
+      return h;
+    };
+    let rod = '';
+    if (conBiela) {
+      rod = `<path d="M-9 -8 L-12 52 Q0 56 12 52 L9 -8 Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>` +
+        `<path d="M0 0 V46" stroke="${BG}" stroke-width="2.2"/>` +                           // canal en I de la biela
+        `<circle cx="0" cy="70" r="21" fill="${INK}" stroke="${BG}" stroke-width="2"/><circle cx="0" cy="70" r="11.5" fill="${BG}"/>` +
+        `<path d="M-21 70 H21" stroke="${BG}" stroke-width="2"/>` +                           // tapa de biela
+        `<rect x="-20" y="78" width="7" height="12" rx="1.5" fill="${INK}" stroke="${BG}" stroke-width="1.5"/><rect x="13" y="78" width="7" height="12" rx="1.5" fill="${INK}" stroke="${BG}" stroke-width="1.5"/>`;
+    }
+    return rod +
+      // falda con leve barril y pasador
+      `<path d="M-29 -30 H29 L27 8 Q0 15 -27 8 Z" fill="${INK}" stroke="${BG}" stroke-width="2.2"/>` +
+      hatch(15, 25, -28, 6, 3.4) +
+      `<circle cx="0" cy="-10" r="10" fill="${BG}"/><circle cx="0" cy="-10" r="6" fill="${INK}"/><circle cx="0" cy="-10" r="2.4" fill="${BG}"/>` +
+      // corona con domo y 3 canales de anillos
+      `<path d="M-31 -56 Q0 -66 31 -56 V-30 H-31 Z" fill="${INK}" stroke="${BG}" stroke-width="2.2"/>` +
+      `<path d="M-31 -49 H31 M-31 -42 H31 M-31 -35 H31" stroke="${BG}" stroke-width="2.2"/>` +
+      hatch(17, 28, -58, -31, 3.4) +
+      `<path d="M-24 -60 Q0 -66 22 -61" stroke="${BG}" stroke-width="1" fill="none" opacity=".6"/>`; // brillo del domo
+  },
+  // Bujía: terminal, aislador con nervaduras, tuerca hexagonal, rosca y electrodo (punta hacia abajo)
+  bujia() {
+    let threads = '';
+    for (let y = 40; y < 72; y += 4.5) threads += `<path d="M-11 ${y} L11 ${y + 3}" stroke="${BG}" stroke-width="1.5"/>`;
+    let ribs = '';
+    for (let k = 0; k < 5; k++) ribs += `<path d="M${-11 + k * .4} ${-72 + k * 9} H${11 - k * .4}" stroke="${BG}" stroke-width="2"/>`;
+    return `<rect x="-5" y="-104" width="10" height="16" rx="2" fill="${INK}" stroke="${BG}" stroke-width="1.6"/>` +   // terminal
+      `<rect x="-7.5" y="-90" width="15" height="6" rx="1" fill="${INK}" stroke="${BG}" stroke-width="1.4"/>` +
+      `<path d="M-9 -84 L-13 -30 H13 L9 -84 Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>` + ribs +              // aislador de cerámica
+      `<path d="M5 -82 L8 -32" stroke="${BG}" stroke-width="1" opacity=".55"/>` +
+      `<path d="M-19 -30 H19 L22 -20 L19 -10 H-19 L-22 -20 Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>` +      // tuerca hexagonal
+      `<path d="M-7 -30 V-10 M7 -30 V-10" stroke="${BG}" stroke-width="1.4"/>` +
+      `<rect x="-15" y="-10" width="30" height="6" fill="${INK}" stroke="${BG}" stroke-width="1.6"/>` +                 // asiento
+      `<rect x="-11" y="-4" width="22" height="76" fill="${INK}" stroke="${BG}" stroke-width="2"/>` + threads +          // cuerpo roscado
+      `<path d="M-2 72 V82 M-8 72 V88 H4" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"/>`;      // electrodos
+  }
+};
+
 const LOGOS = {
   // 1. El que te gustó: TWH + franjas de rally
   'rally-stripes': () =>
@@ -343,6 +389,239 @@ const LOGOS = {
       `<rect x="70" y="232" width="160" height="34" fill="${INK}"/>` +
       t(150, 256, 'OFF ROAD', 20, BG, BLACK, mid + ' letter-spacing="4"') +
       t(150, 290, 'SINCE 2001 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+
+  // ===== NUEVOS 2026-11: deporte en línea fina (inspiración outdoor, diseños propios) =====
+
+  // 27. Kite Club: cometa de kitesurf en línea, con costillas y líneas al rider
+  'kite-club': () => {
+    const cx = 150, cy = 196, R = 118, r = 92;
+    const P = (rad, deg) => [r2(cx + rad * Math.cos(deg * Math.PI / 180)), r2(cy - rad * Math.sin(deg * Math.PI / 180))];
+    // canopy: borde de ataque (externo) y de fuga (interno) con puntas afinadas
+    const a0 = 18, a1 = 162;
+    const [ox0, oy0] = P(R, a0), [ox1, oy1] = P(R, a1);
+    const [ix0, iy0] = P(r, a0 + 8), [ix1, iy1] = P(r, a1 - 8);
+    const [tx0, ty0] = P((R + r) / 2 - 4, a0 - 4), [tx1, ty1] = P((R + r) / 2 - 4, a1 + 4);
+    let ribs = '';
+    for (let a = a0 + 14; a <= a1 - 14; a += 14) {
+      const [x1, y1] = P(r + 2, a), [x2, y2] = P(R - 1, a);
+      ribs += `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${INK}" stroke-width="1.6"/>`;
+    }
+    const canopy = `<path d="M${tx0} ${ty0} Q${ox0} ${oy0 + 6} ${ox0} ${oy0} A${R} ${R} 0 0 0 ${ox1} ${oy1} Q${ox1} ${oy1 + 6} ${tx1} ${ty1} Q${ix1 - 4} ${iy1 + 6} ${ix1} ${iy1} A${r} ${r} 0 0 1 ${ix0} ${iy0} Q${ix0 + 4} ${iy0 + 6} ${tx0} ${ty0} Z" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>`;
+    // borde de ataque inflado (doble línea) y líneas que bajan a la barra
+    const lead = `<path d="M${P(R - 5, a0 + 3).join(' ')} A${R - 5} ${R - 5} 0 0 0 ${P(R - 5, a1 - 3).join(' ')}" fill="none" stroke="${INK}" stroke-width="1.2"/>`;
+    const bar = [150, 236];
+    const lines = [P(r, a0 + 10), P(r, 60), P(r, 120), P(r, a1 - 10)].map(([x, y]) => `<path d="M${x} ${y} L${bar[0] + (x < 150 ? -9 : 9)} ${bar[1]}" stroke="${INK}" stroke-width=".7" opacity=".8"/>`).join('');
+    return canopy + lead + ribs + lines +
+      `<path d="M139 ${bar[1]} H161" stroke="${MUST}" stroke-width="3" stroke-linecap="round"/>` +
+      t(150, 50, 'TWH', 15, MUST, COND, mid + ' ' + cond('letter-spacing="10"')) +
+      t(150, 276, 'Kite Club.', 40, INK, "Georgia, 'Times New Roman', serif", mid + ' font-style="italic"') +
+      t(150, 294, 'TWH 01 · KITEBOARDING · CHILE', 10.5, INK, COND, mid + ' ' + cond('letter-spacing="3.5" opacity=".75"'));
+  },
+
+  // 28. Trail Club: MTB doble suspensión en línea
+  'mtb-trail': () => {
+    const s = `stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+    const wheel = (x, y) => {
+      let knobs = '';
+      for (let k = 0; k < 28; k++) {
+        const a = k * Math.PI * 2 / 28;
+        knobs += `<path d="M${r2(x + 36 * Math.cos(a))} ${r2(y + 36 * Math.sin(a))} L${r2(x + 40 * Math.cos(a))} ${r2(y + 40 * Math.sin(a))}" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>`;
+      }
+      let spokes = '';
+      for (let k = 0; k < 16; k++) {
+        const a = k * Math.PI / 8;
+        spokes += `<path d="M${r2(x + 4 * Math.cos(a))} ${r2(y + 4 * Math.sin(a))} L${r2(x + 31 * Math.cos(a + .35))} ${r2(y + 31 * Math.sin(a + .35))}" stroke="${INK}" stroke-width=".7" opacity=".7"/>`;
+      }
+      return `<circle cx="${x}" cy="${y}" r="36" ${s}/><circle cx="${x}" cy="${y}" r="31" stroke="${INK}" stroke-width="1.4" fill="none"/>${knobs}${spokes}<circle cx="${x}" cy="${y}" r="4" fill="${INK}"/>`;
+    };
+    const RW = [92, 186], FW = [214, 186], BB = [146, 190], ST = [130, 124], HT = [188, 120];
+    const frame =
+      `<path d="M${BB} L${ST}" ${s}/>` +                                   // tubo de asiento
+      `<path d="M${ST[0] + 4} ${ST[1] + 10} L${HT[0]} ${HT[1] + 6}" ${s}/>` + // tubo superior
+      `<path d="M${BB} L${HT[0] - 2} ${HT[1] + 14}" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>` + // diagonal gruesa
+      `<path d="M${BB} L${RW} L${ST[0] + 2} ${ST[1] + 26}" ${s}/>` +          // basculante
+      `<rect x="${ST[0] + 4}" y="${ST[1] + 28}" width="22" height="7" rx="3.5" transform="rotate(28 ${ST[0] + 4} ${ST[1] + 28})" fill="${MUST}"/>` + // amortiguador
+      `<path d="M${HT[0]} ${HT[1]} L${HT[0] + 6} ${HT[1] + 26}" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>` + // tubo de dirección
+      `<path d="M${HT[0] + 6} ${HT[1] + 22} L${FW}" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>` + // horquilla
+      `<path d="M${HT[0] - 2} ${HT[1] - 2} L${HT[0] + 2} ${HT[1] - 12} M${HT[0] - 14} ${HT[1] - 12} L${HT[0] + 18} ${HT[1] - 12}" ${s}/>` + // manubrio
+      `<path d="M${ST[0] - 4} ${ST[1] - 8} L${ST} M${ST[0] - 14} ${ST[1] - 10} Q${ST[0]} ${ST[1] - 16} ${ST[0] + 14} ${ST[1] - 10}" ${s}/>` + // sillín
+      `<circle cx="${BB[0]}" cy="${BB[1]}" r="8" ${s}/><path d="M${BB[0]} ${BB[1]} L${BB[0] + 12} ${BB[1] + 12} M${BB[0] + 7} ${BB[1] + 12} H${BB[0] + 18}" ${s}/>`; // plato y pedal
+    return t(150, 52, 'TRAIL CLUB', 22, INK, BLACK, mid + ' letter-spacing="6"') +
+      `<path d="M40 64 H260" stroke="${MUST}" stroke-width="2"/>` +
+      `<path d="M30 226 Q90 208 150 222 T270 214" stroke="${INK}" stroke-width="1.3" fill="none" opacity=".6"/>` +
+      wheel(...RW) + wheel(...FW) + frame +
+      t(150, 262, 'Ride the Andes', 28, INK, "Georgia, 'Times New Roman', serif", mid + ' font-style="italic"') +
+      t(150, 285, 'TWH · MTB · EST. 2001', 11, INK, COND, mid + ' ' + cond('letter-spacing="5" opacity=".75"'));
+  },
+
+  // 29. Motocross: moto MX de perfil (silueta continua: guardabarros-asiento-estanque) + motor y suspensiones en línea
+  'mx-moto': () => {
+    const s = (w = 3) => `stroke="${INK}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+    const wheel = (x, y, R) => {
+      let knobs = '';
+      for (let k = 0; k < 26; k++) {
+        const a = k * Math.PI * 2 / 26;
+        const p = (rr, da = 0) => `${r2(x + rr * Math.cos(a + da))} ${r2(y + rr * Math.sin(a + da))}`;
+        knobs += `<path d="M${p(R - 1, -.055)} L${p(R + 5, -.045)} L${p(R + 5, .045)} L${p(R - 1, .055)} Z" fill="${INK}"/>`;
+      }
+      let spokes = '';
+      for (let k = 0; k < 18; k++) {
+        const a = k * Math.PI / 9;
+        spokes += `<path d="M${r2(x + 6 * Math.cos(a))} ${r2(y + 6 * Math.sin(a))} L${r2(x + (R - 9) * Math.cos(a + .3))} ${r2(y + (R - 9) * Math.sin(a + .3))}" stroke="${INK}" stroke-width=".6" opacity=".6"/>`;
+      }
+      return `<circle cx="${x}" cy="${y}" r="${R}" ${s(3)}/><circle cx="${x}" cy="${y}" r="${R - 8}" ${s(1.4)}/>${spokes}<circle cx="${x}" cy="${y}" r="6" ${s(2.4)}/>${knobs}`;
+    };
+    const RW = [84, 196], FW = [222, 196];
+    // carrocería en una sola pieza: cola alta, asiento largo y plano, estanque y tapas del radiador
+    const body = `<path d="M44 106 L58 102 L150 104 Q166 92 186 92 L204 104 L196 122 L176 128 L162 120 L150 120 L134 140 L112 142 L104 124 L70 120 Z" fill="${INK}"/>`;
+    // placa lateral con número (calada en la carrocería)
+    const plate = `<path d="M108 122 L132 120 L130 136 L113 138 Z" fill="${BG}"/>` + t(121, 134, '74', 13, INK, IMPACT, mid);
+    // motor: cilindro con aletas + cárter
+    let fins = '';
+    for (let k = 0; k < 5; k++) fins += `<path d="M${160 + k * 1.5} ${128 + k * 5} H${186 + k * 1.5}" stroke="${INK}" stroke-width="2.2"/>`;
+    const engine = `<path d="M158 124 L188 126 L192 152 L160 152 Z" ${s(2.4)}/>${fins}` +
+      `<path d="M140 150 Q140 176 166 178 Q190 176 192 152 Z" fill="${INK}"/><circle cx="160" cy="164" r="6" fill="${BG}"/>`;
+    // chasis, basculante y amortiguador trasero
+    const frame = `<path d="M196 106 L184 150 L170 178" ${s(3.4)}/>` +
+      `<path d="M150 174 L${RW}" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>` +
+      `<path d="M140 126 L126 168" ${s(2.4)}/><path d="M134 140 L130 152" stroke="${MUST}" stroke-width="7" stroke-linecap="round"/>`;
+    // horquilla invertida, manubrio y guardabarros delantero tipo pico
+    const front = `<path d="M200 96 L${FW[0] - 2} ${FW[1]}" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>` +
+      `<path d="M204 112 L${FW[0] + 1} ${FW[1] - 30}" stroke="${BG}" stroke-width="2"/>` +
+      `<path d="M194 92 L200 80 M184 80 Q198 74 214 78" ${s(3)}/>` +
+      `<path d="M198 150 Q222 138 254 150 L248 155 Q224 146 202 157 Z" fill="${INK}"/>` +
+      `<path d="M204 92 L226 98 L216 112 L202 106 Z" fill="${MUST}"/>`;
+    // escape: sale del cilindro, pasa bajo el asiento y termina en el silenciador
+    const pipe = `<path d="M188 140 Q176 160 150 158 Q128 156 118 130" ${s(4)}/><path d="M118 128 L72 114" stroke="${INK}" stroke-width="8" stroke-linecap="round"/>`;
+    return t(150, 50, 'MOTOCROSS', 24, INK, BLACK, mid + ' letter-spacing="4"') +
+      t(150, 68, 'DIRT · SAND · MUD', 11, MUST, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      wheel(...RW, 33) + wheel(...FW, 33) + pipe + frame + engine + body + plate + front +
+      `<path d="M24 238 Q80 226 150 234 T278 230" stroke="${INK}" stroke-width="1.3" fill="none" opacity=".6"/>` +
+      t(150, 268, 'TWH MX', 30, INK, BLACK, mid + ' font-style="italic" letter-spacing="2"') +
+      t(150, 289, 'OFF ROAD RACING · CHILE', 11, INK, COND, mid + ' ' + cond('letter-spacing="5" opacity=".75"'));
+  },
+
+  // 30. Andes Outdoor: cordillera, sol y lago en línea + bloque de texto de marca outdoor
+  'andes-outdoor': () => {
+    let water = '';
+    [0, 1, 2, 3, 4].forEach((k) => {
+      const y = 214 + k * 9, w = 150 - k * 22;
+      water += `<path d="M${150 - w} ${y} H${150 + w}" stroke="${MUST}" stroke-width="${2 - k * .25}" stroke-dasharray="${k ? `${40 - k * 6} 6` : '0'}"/>`;
+    });
+    const mtn = `<path d="M10 208 L62 150 L80 166 L118 112 L146 146 L170 120 L208 168 L232 146 L290 208" fill="none" stroke="${MUST}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M106 129 L118 112 L130 128 L123 124 L117 131 L111 125 Z" fill="${MUST}"/><path d="M162 130 L170 120 L180 133 L173 130 L168 135 Z" fill="${MUST}"/>` +
+      `<path d="M118 112 L102 150 M118 112 L110 156 M170 120 L160 160 M62 150 L56 176 M232 146 L238 170" stroke="${MUST}" stroke-width="1.3"/>`;
+    return t(32, 52, 'TWH', 30, INK, "Georgia, 'Times New Roman', serif", '') +
+      t(32, 78, 'Off Road Outdoor Co.', 21, RED, "Georgia, 'Times New Roman', serif", '') +
+      t(268, 50, 'Andes, Chile', 12, INK, "Georgia, 'Times New Roman', serif", 'text-anchor="end" font-style="italic" opacity=".8"') +
+      `<circle cx="212" cy="122" r="16" fill="none" stroke="${MUST}" stroke-width="2.6"/>` +
+      mtn + water +
+      t(32, 284, 'EST. 2001', 11, INK, COND, cond('letter-spacing="4" opacity=".75"')) +
+      t(270, 284, '4X4 · TRAIL · CAMP', 11, INK, COND, 'text-anchor="end" ' + cond('letter-spacing="4" opacity=".75"'));
+  },
+
+  // 31. Enduro: placa de número de carrera
+  'enduro-plate': () => {
+    const screw = (x, y) => `<circle cx="${x}" cy="${y}" r="5" fill="${BG}"/><path d="M${x - 3} ${y} H${x + 3}" stroke="${INK}" stroke-width="1.4"/>`;
+    return `<path d="M58 70 Q150 44 242 70 L250 216 Q150 240 50 216 Z" fill="${INK}"/>` +
+      `<path d="M66 80 Q150 58 234 80 L240 206 Q150 228 60 206 Z" fill="none" stroke="${BG}" stroke-width="2.5"/>` +
+      screw(80, 196) + screw(220, 196) +
+      t(150, 102, 'TWH ENDURO', 16, BG, BLACK, mid + ' letter-spacing="3"') +
+      t(150, 196, '01', 96, BG, IMPACT, mid + ' letter-spacing="2"') +
+      `<rect x="40" y="244" width="220" height="5" fill="${ORANGE}"/><rect x="40" y="253" width="220" height="5" fill="${RED}"/><rect x="40" y="262" width="220" height="5" fill="${DRED}"/>` +
+      t(150, 288, 'TEAM · 4X4 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="7"'));
+  },
+
+  // ===== NUEVOS 2026-11: mecánica estilo garage (pistones, bujías) con calavera y animales =====
+
+  // 32. Calavera + pistones cruzados
+  'piston-skull': () => {
+    const rod = (rot) => `<g transform="translate(150 136) rotate(${rot}) translate(0 -22) scale(1.22)">${pieza.piston(true)}</g>`;
+    const skull =
+      // cráneo y pómulos
+      `<path d="M150 66 C103 66 90 104 92 130 C93 148 101 160 108 166 L111 188 Q150 196 189 188 L192 166 C199 160 207 148 208 130 C210 104 197 66 150 66 Z" fill="${INK}" stroke="${BG}" stroke-width="4"/>` +
+      // sombreado lateral (grabado)
+      [0, 1, 2, 3, 4].map((k) => `<path d="M${100 + k * 3} ${108 + k * 2} Q${98 + k * 3} ${136} ${108 + k * 2} ${160 - k}" stroke="${BG}" stroke-width="1.1" fill="none" opacity=".55"/>`).join('') +
+      [0, 1, 2, 3, 4].map((k) => `<path d="M${200 - k * 3} ${108 + k * 2} Q${202 - k * 3} ${136} ${192 - k * 2} ${160 - k}" stroke="${BG}" stroke-width="1.1" fill="none" opacity=".55"/>`).join('') +
+      // cuencas, nariz y grieta
+      `<path d="M110 132 Q112 112 133 113 Q147 117 145 134 Q141 150 126 150 Q110 148 110 132 Z" fill="${BG}"/>` +
+      `<path d="M190 132 Q188 112 167 113 Q153 117 155 134 Q159 150 174 150 Q190 148 190 132 Z" fill="${BG}"/>` +
+      `<path d="M150 152 L141 172 Q150 176 159 172 Z" fill="${BG}"/><path d="M150 158 V173" stroke="${INK}" stroke-width="1.5"/>` +
+      `<path d="M160 70 L156 84 L163 92 L158 104" stroke="${BG}" stroke-width="1.6" fill="none"/>` +
+      // dientes superiores y mandíbula
+      `<path d="M116 186 Q150 194 184 186 L182 202 Q150 208 118 202 Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>` +
+      [126, 136, 146, 156, 166, 176].map((x) => `<path d="M${x - 3} 189 V203" stroke="${BG}" stroke-width="1.8"/>`).join('') +
+      `<path d="M114 204 Q116 226 134 230 H166 Q184 226 186 204 Q150 212 114 204 Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>` +
+      [128, 140, 152, 164, 174].map((x) => `<path d="M${x} 208 V216" stroke="${BG}" stroke-width="1.8"/>`).join('');
+    const ribbon = `<path d="M44 248 H256 L246 262 L256 276 H44 L54 262 Z" fill="${MUST}"/>` +
+      t(150, 267, 'TWH ENGINE CLUB', 14.5, BG, BLACK, mid + ' letter-spacing="1.5"');
+    return rod(-38) + rod(38) + skull + ribbon +
+      t(150, 294, 'BUILT NOT BOUGHT · CHILE', 10, INK, COND, mid + ' ' + cond('letter-spacing="4" opacity=".75"'));
+  },
+
+  // 33. Pistón alado: pistón con biela al centro y alas de águila
+  'winged-piston': () => {
+    const wing = () => {
+      let f = '';
+      // plumas primarias: largas, apuntando afuera y abajo
+      for (let k = 0; k < 7; k++) {
+        const bx = 118 - k * 11, by = 116 - k * 3.2, len = 34 + k * 5, ang = (200 + k * 5) * Math.PI / 180;
+        const tx = r2(bx + len * Math.cos(ang)), ty = r2(by - len * Math.sin(ang) + 30);
+        f += `<path d="M${bx} ${by} Q${r2((bx + tx) / 2 - 6)} ${r2((by + ty) / 2 - 10)} ${tx} ${ty} Q${r2((bx + tx) / 2 + 8)} ${r2((by + ty) / 2 + 4)} ${bx + 9} ${by + 3} Z" fill="${INK}" stroke="${BG}" stroke-width="2"/>`;
+        f += `<path d="M${bx + 3} ${by + 2} L${r2(tx + 4)} ${r2(ty - 2)}" stroke="${BG}" stroke-width=".8" opacity=".6"/>`;
+      }
+      // cobertoras: escamas cortas sobre el borde del ala
+      for (let k = 0; k < 7; k++) {
+        const x = 122 - k * 11, y = 104 - k * 3.4;
+        f += `<path d="M${x} ${y} Q${x - 10} ${y + 2} ${x - 14} ${y + 14} Q${x - 2} ${y + 14} ${x + 4} ${y + 6} Z" fill="${INK}" stroke="${BG}" stroke-width="1.8"/>`;
+      }
+      return f + `<path d="M128 102 Q90 82 44 86 Q70 96 92 104" fill="${INK}" stroke="${BG}" stroke-width="2"/>`;
+    };
+    return `<g>${wing()}</g><g transform="translate(300 0) scale(-1 1)">${wing()}</g>` +
+      `<g transform="translate(150 132) scale(.95)">${pieza.piston(true)}</g>` +
+      t(150, 58, 'TWH', 30, INK, BLACK, mid + ' font-style="italic" letter-spacing="4"') +
+      `<rect x="70" y="238" width="160" height="4" fill="${ORANGE}"/><rect x="70" y="246" width="160" height="4" fill="${RED}"/><rect x="70" y="254" width="160" height="4" fill="${DRED}"/>` +
+      t(150, 282, 'POWER GARAGE', 20, INK, BLACK, mid + ' letter-spacing="3"');
+  },
+
+  // 34. Cóndor + bujías cruzadas
+  'condor-plugs': () => {
+    const plug = (rot) => `<g transform="translate(150 138) rotate(${rot}) scale(.92)">${pieza.bujia()}</g>`;
+    // cabeza de cóndor de perfil (mirando a la izquierda): pelada y alargada, cresta plana, pico ganchudo
+    const head =
+      `<path d="M170 192 Q176 168 170 146 Q164 124 150 112 Q136 100 118 102 Q104 104 98 114 Q86 114 79 124 Q75 133 80 139 Q84 133 92 133 Q98 138 108 137 Q118 146 128 150 Q140 160 140 192 Z" fill="${INK}" stroke="${BG}" stroke-width="3"/>` +
+      // cresta: lámina carnosa plana desde la frente hasta la base del pico
+      `<path d="M98 113 Q100 100 110 96 Q118 88 130 92 Q140 90 146 100 Q132 98 122 104 Q110 106 98 113 Z" fill="${INK}" stroke="${BG}" stroke-width="2.4"/>` +
+      `<path d="M108 100 Q116 96 124 97 M120 94 Q128 92 136 96" stroke="${BG}" stroke-width="1" fill="none" opacity=".7"/>` +
+      // pico: comisura y gancho con punta clara
+      `<path d="M92 126 Q100 127 108 124" stroke="${BG}" stroke-width="1.8" fill="none"/>` +
+      `<path d="M79 125 Q74 134 80 140 Q81 133 87 131 Q83 127 79 125 Z" fill="${MUST}"/>` +
+      // ojo
+      `<circle cx="117" cy="114" r="4.6" fill="${BG}"/><circle cx="116" cy="114" r="2.1" fill="${MUST}"/>` +
+      // arrugas del cuello pelado (grabado)
+      [0, 1, 2, 3, 4, 5, 6].map((k) => `<path d="M${134 + k * 4} ${120 + k * 9} Q${146 + k * 3} ${128 + k * 9} ${160 + k * 2} ${122 + k * 9}" stroke="${BG}" stroke-width="1.2" fill="none" opacity=".7"/>`).join('');
+    // collar de plumón blanco que rodea la base del cuello: nube de círculos fundidos (sin bordes) + textura fina
+    let fluff = '', tex = '';
+    const arc = (cx, cy, R, a0, a1, n, rr) => {
+      for (let k = 0; k <= n; k++) {
+        const ang = (a0 + (a1 - a0) * k / n) * Math.PI / 180, r = rr + (k % 3 === 1 ? 2.5 : 0);
+        fluff += `<circle cx="${r2(cx + R * Math.cos(ang))}" cy="${r2(cy + R * Math.sin(ang))}" r="${r}" fill="${INK}"/>`;
+      }
+    };
+    arc(146, 168, 44, 20, 160, 14, 12);   // fila exterior
+    arc(146, 168, 34, 30, 150, 10, 11);   // fila interior (rellena)
+    for (let k = 0; k < 16; k++) {
+      const ang = (24 + k * 8.4) * Math.PI / 180;
+      const x1 = 146 + 34 * Math.cos(ang), y1 = 168 + 34 * Math.sin(ang), x2 = 146 + 52 * Math.cos(ang + .05), y2 = 168 + 52 * Math.sin(ang + .05);
+      tex += `<path d="M${r2(x1)} ${r2(y1)} Q${r2((x1 + x2) / 2 + 3)} ${r2((y1 + y2) / 2)} ${r2(x2)} ${r2(y2)}" stroke="${BG}" stroke-width="1" fill="none" opacity=".5"/>`;
+    }
+    const ruff = fluff + tex;
+    const body = '';
+    return plug(-36) + plug(36) + head + ruff + body +
+      t(150, 270, 'CÓNDOR 4X4', 24, INK, BLACK, mid + ' letter-spacing="3"') +
+      t(150, 288, 'TWH · ANDES · SPARK &amp; DIRT', 11, MUST, COND, mid + ' ' + cond('letter-spacing="4"'));
   },
 
   // 17. LOGO OFICIAL: The White Hilux · CL Shop (versión cuadrada)
