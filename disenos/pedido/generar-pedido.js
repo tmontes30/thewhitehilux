@@ -5,9 +5,20 @@
 // Reglas de este pedido (editar aquí para el próximo):
 //   - Poleras con logo adelante y atrás → solo NEGRO
 //   - Poleras solo con logo adelante    → NEGRO y BLANCO
-//   - Curva por modelo y color: 1 M · 3 L · 4 XL · 4 XXL
+//   - Curva por modelo y color: CURVA (general) o CURVA_MODELO (para modelos puntuales)
 // Medidas de estampado (ancho de lo impreso, referenciales; confirmar con el proveedor):
-const CURVA = { M: 1, L: 3, XL: 4, XXL: 4 };
+const CURVA = { M: 1, L: 2, XL: 3, XXL: 3 };
+// Modelos con otra curva (id del producto → curva). Pedido 2026-11-18: estos 6 solo en L, XL y XXL
+const CURVA_SIN_M = { M: 0, L: 2, XL: 2, XXL: 2 };
+const CURVA_MODELO = {
+  'polera-mud-terrain-twh-algodon': CURVA_SIN_M,        // Race Shop
+  'polera-low-range-club-4wd': CURVA_SIN_M,             // Low Range Club
+  'polera-twh-cruz-white-hilux-algodon': CURVA_SIN_M,   // Sunset
+  'polera-twh-recovery': CURVA_SIN_M,                   // Recovery Crew
+  'polera-twh': CURVA_SIN_M,                            // Warp
+  'polera-twh-aired-down': CURVA_SIN_M,                 // Aired Down
+};
+const curvaDe = (m) => CURVA_MODELO[m.p.id] || CURVA;
 const ANCHO_CM = { pecho: { s: 8, m: 10, l: 12 }, centro: { s: 10, m: 14, l: 18 }, espalda: { s: 22, m: 26, l: 30 } };
 const UBICACION = {
   pecho: 'Pecho izquierdo (lado del corazón), centro del logo a ~9 cm de la costura del cuello y ~9 cm del centro de la polera',
@@ -37,7 +48,8 @@ fs.mkdirSync(path.join(OUT, 'etiquetas'), { recursive: true });
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const TALLAS = Object.keys(CURVA);
-const POR_CURVA = TALLAS.reduce((s, t) => s + CURVA[t], 0);
+const suma = (cv) => TALLAS.reduce((s, t) => s + (cv[t] || 0), 0);
+const txtCurva = (cv) => TALLAS.filter((t) => cv[t]).map((t) => `${cv[t]} ${t}`).join(' · ') + ` = ${suma(cv)}`;
 const COLOR = { negro: 'Negro', blanco: 'Blanco' };
 
 // ---------- modelos del pedido ----------
@@ -85,7 +97,7 @@ function svgLogo(a) {
 
 // ---------- cantidades ----------
 const filas = [];
-modelos.forEach((m) => m.colores.forEach((col) => filas.push({ m, col, cant: { ...CURVA }, total: POR_CURVA })));
+modelos.forEach((m) => m.colores.forEach((col) => filas.push({ m, col, cant: { ...curvaDe(m) }, total: suma(curvaDe(m)) })));
 const total = filas.reduce((s, f) => s + f.total, 0);
 const porColorTalla = {};
 filas.forEach((f) => TALLAS.forEach((t) => { porColorTalla[f.col] = porColorTalla[f.col] || {}; porColorTalla[f.col][t] = (porColorTalla[f.col][t] || 0) + f.cant[t]; }));
@@ -120,7 +132,7 @@ const fichas = modelos.map((m) => {
           <p class="col"><span class="dot ${col}"></span> Polera <b>${COLOR[col]}</b> · algodón 100% 220 g · corte oversize · estampado DTF</p>
           <table class="specs"><tr><th>Frente</th><th>Espalda</th></tr><tr>${logoCell(m[col].frente, m.c.frente && (m.c.frente.pos === 'centro' ? 'centro' : 'pecho'))}${logoCell(m[col].espalda, 'espalda')}</tr></table>
           <p class="et">Etiqueta cuello: ${m.etiqueta ? `<b>sí</b> · etiqueta-${E.versionPara(col)}-&lt;talla&gt;.pdf` : 'no'}</p>
-          ${tabla([`<tr><td>${COLOR[col]}</td>${TALLAS.map((t) => `<td>${CURVA[t]}</td>`).join('')}<td><b>${POR_CURVA}</b></td></tr>`], ['Color', ...TALLAS, 'Total'])}
+          ${tabla([`<tr><td>${COLOR[col]}</td>${TALLAS.map((t) => `<td>${curvaDe(m)[t] || '—'}</td>`).join('')}<td><b>${suma(curvaDe(m))}</b></td></tr>`], ['Color', ...TALLAS, 'Total'])}
         </div></div>`;
     }).join('')}
   </section>`;
@@ -174,7 +186,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 
 <div class="kpis"><div class="kpi"><b>${total}</b>poleras</div><div class="kpi"><b>${modelos.length}</b>modelos</div><div class="kpi"><b>${estampados.frente}</b>estampados pecho</div><div class="kpi"><b>${estampados.espalda}</b>estampados espalda</div><div class="kpi"><b>${Object.values(etiquetas).reduce((s, o) => s + Object.values(o).reduce((a, b) => a + b, 0), 0)}</b>etiquetas cuello</div></div>
 
-<div class="note"><b>Curva por modelo y color:</b> ${TALLAS.map((t) => `${CURVA[t]} ${t}`).join(' · ')} = ${POR_CURVA} poleras. Modelos con logo adelante y atrás: solo negro. Modelos solo con logo adelante: negro y blanco.<br>
+<div class="note"><b>Curvas (por modelo y color):</b> ${[...new Set(modelos.map((m) => txtCurva(curvaDe(m))))].map((c) => `modelos ${modelos.filter((m) => txtCurva(curvaDe(m)) === c).map((m) => m.n).join(', ')} → <b>${c}</b>`).join(' &nbsp;|&nbsp; ')}. Modelos con logo adelante y atrás: solo negro. Modelos solo con logo adelante: negro y blanco.<br>
 <b>Prenda:</b> polera algodón 100% 220 g, corte oversize. <b>Técnica:</b> DTF. Los logos van en PDF vectorial a tamaño real (ancho indicado = ancho impreso). <b>Medidas y ubicaciones referenciales: confirmar con el proveedor antes de imprimir.</b></div>
 
 <h3>Resumen por modelo</h3>${resumen}
