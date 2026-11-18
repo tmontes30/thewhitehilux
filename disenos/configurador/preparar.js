@@ -65,6 +65,9 @@ const logos = ids.map((id) => ({ id, name: NAMES[id] || id, ...box[id] })).sort(
 const { products } = require('../../web/data/catalog.js');
 const backOf = (p, shape) => (p.views.find((v) => v.shape === shape) || {}).logo || null;
 const seed = products.filter((p) => ['polera', 'poleron', 'jockey'].includes(p.type)).map((p) => {
+  // Si aplicar.js guardó el diseño completo (cfg), se usa tal cual: tamaños, posición, altura y estilo exactos
+  if (p.cfg) return JSON.parse(JSON.stringify({ id: p.id, ...p.cfg, tipo: p.type, nombre: p.name, colores: p.colors.slice() }));
+  // Productos antiguos sin cfg: se reconstruye lo que se puede desde las vistas (tamaño medio por defecto)
   const d = { id: p.id, tipo: p.type, nombre: p.name, colores: p.colors.slice() };
   if (p.type === 'jockey') {
     const parche = /Parche/i.test(p.name);

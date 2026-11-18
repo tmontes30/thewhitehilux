@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estrategia TWH</title>
+<style>
+  :root {
+    --page: #F0F0EE; --card: #fff; --text: #1F2321; --muted: #6B706C; --line: #E4E4E0;
+    --ink: #1B1C1A; --cream: #F2F0E8; --accent: #E39B2D; --accent-2: #E4572E; --accent-3: #B3202A;
+    --blue: #2968C8; --green: #0A8A4A; --red: #C8382A; --soft: #F7F6F2;
+    --font: 'Segoe UI', system-ui, Roboto, Arial, sans-serif; --display: 'Arial Black', 'Segoe UI Black', Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text); font: 14px/1.45 var(--font); }
+  @media (min-width: 1100px) { body { zoom: .85; } }
+  .stripes { height: 6px; background: linear-gradient(var(--accent) 0 33%, var(--accent-2) 33% 66%, var(--accent-3) 66%); }
+  header { background: var(--ink); color: var(--cream); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+  .top { display: flex; align-items: center; gap: 16px; padding: 14px 0; flex-wrap: wrap; }
+  .top h1 { font: 22px var(--display); margin: 0; letter-spacing: -.01em; }
+  .top h1 span { color: var(--accent); }
+  .top .sp { flex: 1; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { background: none; border: 0; color: rgba(242,240,232,.75); font: 600 14px var(--font); padding: 10px 14px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { color: #fff; border-bottom-color: var(--accent); }
+  main { padding: 20px 0 60px; }
+  section[hidden] { display: none; }
+  .card { background: var(--card); border-radius: 10px; box-shadow: 0 1px 2px rgba(20,20,18,.06), 0 1px 8px rgba(20,20,18,.05); padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; }
+  .card h3 { font-size: 14px; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .kpi { background: var(--card); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(20,20,18,.06); }
+  .kpi small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .kpi b { display: block; font: 24px var(--display); margin-top: 4px; }
+  .kpi em { font-style: normal; font-size: 12px; color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--soft); position: sticky; top: 0; }
+  th:first-child, td:first-child, .l { text-align: left; }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--ink); }
+  .ok { color: var(--green); font-weight: 700; } .bad { color: var(--red); font-weight: 700; } .warn { color: #B26B00; font-weight: 700; }
+  input[type=number], input[type=text], input[type=date] { width: 90px; padding: 5px 7px; border: 1px solid #CFCFC9; border-radius: 6px; font: inherit; text-align: right; background: #fff; }
+  input.wide { width: 220px; text-align: left; }
+  input.sup { background: #FFF6E5; border-color: #E8C98E; }
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+  .field label { flex: 1; }
+  .btn { border: 0; border-radius: 8px; padding: 9px 14px; font: 700 13px var(--font); cursor: pointer; background: var(--accent); color: var(--ink); }
+  .btn.ghost { background: rgba(255,255,255,.1); color: var(--cream); border: 1px solid rgba(255,255,255,.25); }
+  .btn.line { background: #fff; border: 1px solid #CFCFC9; color: var(--text); }
+  .bar { height: 14px; background: var(--soft); border-radius: 99px; overflow: hidden; position: relative; margin-top: 8px; }
+  .bar i { display: block; height: 100%; background: var(--green); border-radius: 99px; }
+  .bar.over i { background: var(--red); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--soft); color: var(--muted); }
+  .tag.neg { background: #1B1C1A; color: #fff; } .tag.bla { background: #fff; border: 1px solid #ccc; color: #333; }
+  .legend { font-size: 12px; color: var(--muted); }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #FFF6E5; border: 1px solid #E8C98E; vertical-align: -2px; }
+  textarea { width: 100%; min-height: 110px; font: 12px Consolas, monospace; border: 1px solid #CFCFC9; border-radius: 8px; padding: 8px; }
+  .mini { display: inline-block; height: 8px; background: var(--accent); border-radius: 2px; vertical-align: middle; }
+  .mini.b { background: var(--blue); }
+  .note { background: #FFF6E5; border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin: 0 0 14px; font-size: 13px; }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>THE WHITE HILUX <span>· ESTRATEGIA</span></h1>
+      <div class="sp"></div>
+      <span class="legend" style="color:rgba(242,240,232,.7)" id="estado"></span>
+      <button class="btn ghost" id="bajar">Descargar costos.js</button>
+      <button class="btn ghost" id="reset">Volver a costos.js</button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button data-tab="resumen" aria-selected="true">Resumen</button>
+      <button data-tab="costos">Costos y márgenes</button>
+      <button data-tab="compra">Plan de compra</button>
+      <button data-tab="escenarios">Escenarios y utilidad</button>
+      <button data-tab="calendario">Cuándo comprar</button>
+      <button data-tab="ventas">Ventas reales</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ============ RESUMEN ============ -->
+  <section id="tab-resumen">
+    <div class="kpis" id="kpis"></div>
+    <div class="card" style="margin-top:16px">
+      <h2>Inversión del drop vs presupuesto</h2>
+      <p class="hint">Presupuesto: <input type="number" data-k="presupuesto" step="50000"> · rango conversado $500.000 – $1.500.000</p>
+      <div id="presu"></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h2>Margen por producto del drop</h2><p class="hint">Margen después de prenda, estampado, empaque, comisión Mercado Pago y envío que absorbes.</p><div id="res-margen"></div></div>
+      <div class="card"><h2>Lo que hay que mirar</h2><div id="alertas"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ COSTOS ============ -->
+  <section id="tab-costos" hidden>
+    <p class="note">Los campos <b>amarillos</b> son supuestos de referencia. Reemplázalos por tus cotizaciones; se guardan en este navegador. Para dejarlos fijos: <b>Descargar costos.js</b> y reemplazar el archivo en <code>estrategia/</code>.</p>
+    <div class="grid g2">
+      <div class="card"><h2>Prenda lisa</h2><p class="hint">Costo por unidad, por tipo y color.</p><div id="in-prenda"></div>
+        <h3>Estampado / bordado</h3><div id="in-deco"></div></div>
+      <div class="card"><h2>Empaque y flete</h2><div id="in-empaque"></div>
+        <h3>Venta</h3><div id="in-venta"></div></div>
+    </div>
+    <div class="card"><h2>Margen por producto y color</h2><p class="hint">Cambia el precio en la columna "Precio" para simular (no toca la tienda; el precio real se cambia en el panel).</p>
+      <div class="table-wrap" id="tabla-margen"></div></div>
+  </section>
+
+  <!-- ============ PLAN DE COMPRA ============ -->
+  <section id="tab-compra" hidden>
+    <div class="grid g2">
+      <div class="card"><h2>Unidades por modelo</h2><p class="hint">Cuántas unidades compras de cada producto en este drop (0 = no entra). Se reparten solas por color y talla.</p><div id="in-drop"></div></div>
+      <div class="card"><h2>Curva de tallas</h2><p class="hint">% de unidades por talla. Después de las primeras ventas, ajústala con la pestaña <b>Ventas reales</b>.</p>
+        <div id="in-curva"></div>
+        <h3>Color (poleras)</h3><div id="in-color"></div>
+        <div class="field"><label>Mínimo por talla en cada color</label><input type="number" data-k="minimoPorTalla" min="0" step="1"></div>
+      </div>
+    </div>
+    <div class="card"><h2>Pedido al proveedor de prendas lisas</h2><p class="hint">Lo que tienes que comprar, sumando todos los modelos. Esto es lo que mandas a cotizar.</p><div class="table-wrap" id="orden-lisas"></div></div>
+    <div class="card"><h2>Pedido de estampado / bordado</h2><div class="table-wrap" id="orden-deco"></div></div>
+    <div class="card"><h2>Detalle por modelo, color y talla</h2><p class="hint">Unidades por SKU (mismo código que usa el panel). Cárgalas como stock en el panel cuando llegue la mercadería.</p><div class="table-wrap" id="detalle-compra"></div></div>
+  </section>
+
+  <!-- ============ ESCENARIOS ============ -->
+  <section id="tab-escenarios" hidden>
+    <div class="kpis" id="kpis-be"></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2>Escenarios de venta</h2><p class="hint">% del drop vendido acumulado a 30, 60 y 90 días.</p><div id="in-esc"></div></div>
+      <div class="card"><h2>Gastos fijos mensuales</h2><div id="in-fijos"></div></div>
+    </div>
+    <div class="card"><h2>Resultado</h2><p class="hint"><b>Utilidad</b>: ventas − costo de lo vendido − comisiones/envíos − gastos fijos. <b>Caja</b>: plata en el bolsillo comparado con antes de comprar (negativo = todavía estás recuperando la inversión; el stock que queda vale lo de la columna "Stock a costo").</p>
+      <div class="table-wrap" id="tabla-esc"></div></div>
+  </section>
+
+  <!-- ============ CALENDARIO ============ -->
+  <section id="tab-calendario" hidden>
+    <div class="card"><h2>Reposición: cuándo volver a comprar</h2>
+      <p class="hint">Punto de reorden = venta diaria × (días de producción del proveedor + días de seguridad). Cuando el stock de un modelo baja a ese número, pide de nuevo. Venta diaria estimada con el escenario <b>Base</b> (primeros 30 días); cámbiala cuando tengas datos reales.</p>
+      <div id="in-prod"></div>
+      <div class="table-wrap" id="tabla-reorden" style="margin-top:12px"></div></div>
+    <div class="card"><h2>Fechas clave</h2><div class="table-wrap" id="tabla-cal"></div></div>
+  </section>
+
+  <!-- ============ VENTAS REALES ============ -->
+  <section id="tab-ventas" hidden>
+    <div class="card"><h2>Cargar ventas del panel</h2>
+      <p class="hint">En el panel: pestaña <b>Ventas</b> → "Descargar ventas por SKU (CSV)". Abre el archivo aquí o pega su contenido.</p>
+      <div class="pill-row"><input type="file" id="csv-file" accept=".csv,text/csv"><button class="btn line" id="csv-go">Analizar texto pegado</button></div>
+      <textarea id="csv-text" placeholder="SKU;Producto;Variante;Categoría;Unidades;Pedidos;Ventas;Stock actual"></textarea>
+    </div>
+    <div class="card"><h2>Curva real vs planificada</h2><div id="ventas-out"><p class="hint">Todavía no hay datos cargados.</p></div></div>
+  </section>
+</main>
+
+<script src="../web/data/catalog.js"></script>
+<script src="../web/assets/js/core.js"></script>
+<script src="costos.js"></script>
+<script src="calc.js"></script>
+<script>
+(function () {
+  var CAT = window.TWH_DATA, CORE = window.TWHCore, P = window.TWHPlan, BASE = window.TWH_COSTOS;
+  var STORE = 'twh-estrategia-v1';
+  var K, simPrice = {};
+  var SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+  var TYPE = (CAT.config && CAT.config.categories) || {};
+  var products = CAT.products.filter(function (p) { return p.active !== false; });
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() {
+    K = clone(BASE);
+    try { var s = localStorage.getItem(STORE); if (s) { var saved = JSON.parse(s); if (saved && saved.base === BASE.actualizado) K = saved.data; } } catch (e) {}
+    try { simPrice = JSON.parse(localStorage.getItem(STORE + '-precios') || '{}'); } catch (e) { simPrice = {}; }
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify({ base: BASE.actualizado, data: K })); localStorage.setItem(STORE + '-precios', JSON.stringify(simPrice)); } catch (e) {}
+    estado();
+  }
+  function changed() { return JSON.stringify(K) !== JSON.stringify(BASE) || Object.keys(simPrice).length; }
+  function estado() { document.getElementById('estado').textContent = changed() ? '● Cambios guardados en este navegador (no en costos.js)' : 'Usando costos.js tal cual'; }
+
+  function $(s) { return document.querySelector(s); }
+  function clp(n) { if (!isFinite(n)) return '—'; return (n < 0 ? '−$' : '$') + Math.round(Math.abs(n)).toLocaleString('es-CL'); }
+  function pct(n, d) { if (!isFinite(n)) return '—'; return n.toFixed(d == null ? 0 : d).replace('.', ',') + '%'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function get(path) { return path.split('.').reduce(function (o, k) { return o == null ? o : o[k]; }, K); }
+  function set(path, v) { var ks = path.split('.'), o = K; for (var i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null) o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = v; }
+  function baseVal(path) { return path.split('.').reduce(function (o, k) { return o == null ? o : o[k]; }, BASE); }
+  function colorTag(c) { return c ? '<span class="tag ' + (c === 'negro' ? 'neg' : c === 'blanco' ? 'bla' : '') + '">' + esc(c) + '</span>' : ''; }
+
+  // supuestos marcados en costos.js (línea con "SUPUESTO")
+  var SUP = ['prenda', 'decoracion', 'empaque', 'fletePorCompra', 'mercadoPago', 'unidadesPorPedido', 'despacho', 'curva', 'colorSplit', 'gastosFijos', 'diasProduccion'];
+  function inp(path, opts) {
+    opts = opts || {};
+    var sup = SUP.indexOf(path.split('.')[0]) >= 0 && get(path) === baseVal(path);
+    return '<input type="' + (opts.text ? 'text' : 'number') + '" data-k="' + path + '"' + (opts.step ? ' step="' + opts.step + '"' : ' step="any"') +
+      (opts.cls || sup ? ' class="' + (opts.cls || '') + (sup ? ' sup' : '') + '"' : '') + ' value="' + esc(get(path)) + '">';
+  }
+  function field(label, path, opts) { return '<div class="field"><label>' + label + '</label>' + inp(path, opts) + '</div>'; }
+
+  // ---------- Entradas (se dibujan una vez; los cálculos se redibujan al escribir) ----------
+  function renderInputs() {
+    var h = '';
+    Object.keys(K.prenda).forEach(function (t) { Object.keys(K.prenda[t]).forEach(function (c) {
+      if (t === 'stickers') return;
+      h += field((TYPE[t] || t) + (c !== '_' ? ' ' + colorTag(c) : ''), 'prenda.' + t + '.' + c, { step: 100 }); }); });
+    $('#in-prenda').innerHTML = h;
+    var names = { 'tee-front': 'Polera: pecho (logo chico)', 'tee-back': 'Polera: espalda (diseño mediano)', 'hoodie-front': 'Polerón: pecho', 'cap-parche': 'Jockey: parche tejido', 'cap-bordado': 'Jockey: bordado', sticker: 'Sticker (unidad completa)' };
+    $('#in-deco').innerHTML = Object.keys(K.decoracion).map(function (k) { return field(names[k] || k, 'decoracion.' + k, { step: 50 }); }).join('');
+    h = '';
+    Object.keys(K.empaque).forEach(function (t) { K.empaque[t].forEach(function (e, i) { h += field((TYPE[t] || t) + ': ' + esc(e[0]), 'empaque.' + t + '.' + i + '.1', { step: 10 }); }); });
+    h += field('Flete / traslados por cada compra', 'fletePorCompra', { step: 1000 });
+    $('#in-empaque').innerHTML = h;
+    $('#in-venta').innerHTML = field('Comisión Mercado Pago (%)', 'mercadoPago.pct', { step: 0.01 }) + field('Cargo fijo MP por pedido ($)', 'mercadoPago.fijo', { step: 10 }) +
+      field('Prendas promedio por pedido', 'unidadesPorPedido', { step: 0.1 }) + field('Costo real envío RM', 'despacho.rm', { step: 100 }) +
+      field('Costo real envío regiones', 'despacho.regiones', { step: 100 }) + field('% pedidos de la RM', 'despacho.mixRM', { step: 5 }) +
+      field('% pedidos RM con envío gratis (&gt; ' + clp(CAT.config.freeShippingFrom) + ')', 'despacho.pctGratisRM', { step: 5 }) + field('Margen objetivo (%)', 'margenObjetivo', { step: 1 });
+
+    $('#in-drop').innerHTML = '<div class="table-wrap"><table><thead><tr><th>Producto</th><th>Precio</th><th>Unidades</th></tr></thead><tbody>' +
+      products.map(function (p) { if (K.drop[p.id] == null) K.drop[p.id] = 0;
+        return '<tr><td class="l">' + esc(p.name) + ' <span class="tag">' + esc(TYPE[p.type] || p.type) + '</span></td><td>' + clp(p.price) + '</td><td>' + inp('drop.' + p.id, { step: 1 }) + '</td></tr>'; }).join('') +
+      '</tbody></table></div>';
+    h = '<table><thead><tr><th></th>' + SIZES.map(function (s) { return '<th>' + s + '</th>'; }).join('') + '<th>Suma</th></tr></thead><tbody>';
+    Object.keys(K.curva).forEach(function (t) { h += '<tr><td class="l">' + esc(TYPE[t] || t) + '</td>' + SIZES.map(function (s) { return '<td>' + inp('curva.' + t + '.' + s, { step: 1, cls: 'c' }) + '</td>'; }).join('') + '<td id="suma-' + t + '"></td></tr>'; });
+    $('#in-curva').innerHTML = h + '</tbody></table>';
+    $('#in-color').innerHTML = Object.keys(K.colorSplit.polera).map(function (c) { return field(colorTag(c) + ' % de las unidades', 'colorSplit.polera.' + c, { step: 5 }); }).join('');
+
+    $('#in-esc').innerHTML = '<table><thead><tr><th>Escenario</th><th>30 días</th><th>60 días</th><th>90 días</th></tr></thead><tbody>' +
+      K.escenarios.map(function (e, i) { return '<tr><td class="l">' + esc(e.nombre) + '</td>' + ['d30', 'd60', 'd90'].map(function (d) { return '<td>' + inp('escenarios.' + i + '.' + d, { step: 5 }) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    $('#in-fijos').innerHTML = K.gastosFijos.map(function (g, i) { return field(esc(g[0]), 'gastosFijos.' + i + '.1', { step: 1000 }); }).join('');
+    $('#in-prod').innerHTML = '<div class="pill-row">' + Object.keys(K.diasProduccion).map(function (t) { return '<span>' + esc(TYPE[t] || t) + ': ' + inp('diasProduccion.' + t, { step: 1 }) + ' días</span>'; }).join('') +
+      '<span>Seguridad: ' + inp('diasSeguridad', { step: 1 }) + ' días</span></div>';
+    document.querySelectorAll('input[data-k="presupuesto"],input[data-k="minimoPorTalla"]').forEach(function (el) { el.value = get(el.dataset.k); });
+  }
+
+  // ---------- Cálculos ----------
+  function priceOf(p) { return simPrice[p.id] != null ? Number(simPrice[p.id]) : p.price; }
+  function colorsOf(p) { return p.colors && p.colors.length ? p.colors : [null]; }
+
+  function renderAll() {
+    var pl = P.plan(CAT, K, CORE), units = pl.units;
+    var dropProducts = products.filter(function (p) { return Number(K.drop[p.id]) > 0; });
+    var obj = Number(K.margenObjetivo);
+    var be1 = P.breakEven(CAT, K, CORE, 1), be3 = P.breakEven(CAT, K, CORE, 3);
+    var sc = P.scenarios(CAT, K, CORE);
+    var base = sc.filter(function (s) { return s.nombre === 'Base'; })[0] || sc[0];
+    var mTot = 0, mRev = 0;
+    pl.rows.forEach(function (r) { var m = P.margin(r.product, r.color || null, K, units); mTot += m.margen * r.qty; mRev += m.price * r.qty; });
+
+    // Resumen
+    $('#kpis').innerHTML = [
+      ['Inversión del drop', clp(pl.inversion), units + ' unidades'],
+      ['Venta si vendes todo', clp(pl.ventaPotencial), 'a precio de lista'],
+      ['Ganancia si vendes todo', clp(mTot - P.fixedMonthly(K) * 3), 'menos 3 meses de gastos fijos'],
+      ['Margen promedio', pct(mRev ? mTot / mRev * 100 : 0), 'objetivo ' + pct(obj)],
+      ['Equilibrio (3 meses)', be3.unidades + ' u.', pct(be3.pct) + ' del drop'],
+      ['Utilidad 90 días (Base)', clp(base ? base.cortes[2].utilidad : 0), base ? pct(base.cortes[2].pct) + ' vendido' : '']
+    ].map(function (k) { return '<div class="kpi"><small>' + k[0] + '</small><b>' + k[1] + '</b><em>' + k[2] + '</em></div>'; }).join('');
+    var pres = Number(K.presupuesto) || 0, ratio = pres ? pl.inversion / pres : 0;
+    $('#presu').innerHTML = '<div class="bar' + (ratio > 1 ? ' over' : '') + '"><i style="width:' + Math.min(100, ratio * 100) + '%"></i></div><p class="hint" style="margin-top:6px">' +
+      clp(pl.inversion) + ' de ' + clp(pres) + ' (' + pct(ratio * 100) + ') · ' + (ratio > 1 ? '<span class="bad">te pasas por ' + clp(pl.inversion - pres) + '</span>' : '<span class="ok">quedan ' + clp(pres - pl.inversion) + '</span> para reponer o publicidad') + '</p>';
+    $('#res-margen').innerHTML = '<div class="table-wrap"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Margen c/u</th><th>%</th><th></th></tr></thead><tbody>' +
+      dropProducts.map(function (p) { var m = P.margin(p, colorsOf(p)[0], K, units, priceOf(p));
+        return '<tr><td class="l">' + esc(p.name) + '</td><td>' + K.drop[p.id] + '</td><td>' + clp(m.margen) + '</td><td class="' + (m.margenPct < obj ? 'bad' : 'ok') + '">' + pct(m.margenPct) + '</td><td class="l"><span class="mini" style="width:' + Math.max(0, m.margenPct) + 'px"></span></td></tr>'; }).join('') + '</tbody></table></div>';
+
+    var al = [];
+    if (ratio > 1) al.push('<span class="bad">La compra supera el presupuesto.</span> Baja unidades o saca modelos.');
+    products.forEach(function (p) { colorsOf(p).forEach(function (c) { var m = P.margin(p, c, K, units, priceOf(p)); if (m.margenPct < obj && Number(K.drop[p.id]) > 0) al.push('<b>' + esc(p.name) + '</b> ' + colorTag(c) + ' deja ' + pct(m.margenPct) + ' (bajo el objetivo).'); }); });
+    var supCount = document.querySelectorAll('#tab-costos input.sup').length;
+    if (supCount) al.push('<span class="warn">' + supCount + ' costos todavía son supuestos</span> (amarillos en Costos y márgenes).');
+    Object.keys(K.curva).forEach(function (t) { var s = SIZES.reduce(function (a, z) { return a + (Number(K.curva[t][z]) || 0); }, 0); if (Math.abs(s - 100) > 0.5) al.push('La curva de ' + esc(TYPE[t] || t) + ' suma ' + pct(s) + ' (se reparte proporcional igual).'); });
+    var mes = new Date().getMonth() + 1, polerones = dropProducts.filter(function (p) { return p.type === 'poleron'; }).reduce(function (s, p) { return s + Number(K.drop[p.id]); }, 0);
+    if (mes >= 10 || mes <= 3) { if (polerones > units * 0.15) al.push('Es temporada de calor: ' + polerones + ' polerones es harto. Conviene comprarlos en abril.'); }
+    else if (polerones < units * 0.2) al.push('Se viene el frío: considera más polerones.');
+    al.push('Equilibrio: vendiendo <b>' + be1.unidades + '</b> unidades recuperas la inversión + 1 mes de gastos; con <b>' + be3.unidades + '</b>, + 3 meses.');
+    $('#alertas').innerHTML = '<ul style="margin:0;padding-left:18px">' + al.map(function (a) { return '<li style="margin-bottom:6px">' + a + '</li>'; }).join('') + '</ul>';
+
+    // Tabla de márgenes
+    var h = '<table><thead><tr><th>Producto</th><th>Color</th><th>Costo unit.</th><th>Desglose</th><th>Precio</th><th>Comisión MP</th><th>Envío absorbido</th><th>Margen $</th><th>Margen %</th><th>Markup</th></tr></thead><tbody>';
+    products.forEach(function (p) { colorsOf(p).forEach(function (c, i) {
+      var m = P.margin(p, c, K, units, priceOf(p));
+      h += '<tr><td class="l">' + (i ? '' : esc(p.name)) + '</td><td class="l">' + colorTag(c) + '</td><td>' + clp(m.costo) + '</td><td class="l" style="white-space:normal;min-width:220px;font-size:11px;color:var(--muted)">' +
+        m.lines.map(function (l) { return esc(l[0]) + ' ' + clp(l[1]); }).join(' · ') + '</td><td>' +
+        (i ? clp(m.price) : '<input type="number" step="1000" data-price="' + p.id + '" value="' + priceOf(p) + '">') + '</td><td>' + clp(m.comision) + '</td><td>' + clp(m.envio) + '</td><td>' + clp(m.margen) +
+        '</td><td class="' + (m.margenPct < obj ? 'bad' : 'ok') + '">' + pct(m.margenPct) + '</td><td>' + m.markup.toFixed(1).replace('.', ',') + 'x</td></tr>'; }); });
+    var tm = $('#tabla-margen'), focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.price : null;
+    if (!focused) tm.innerHTML = h + '</tbody></table>';
+
+    // Plan de compra
+    Object.keys(K.curva).forEach(function (t) { var s = SIZES.reduce(function (a, z) { return a + (Number(K.curva[t][z]) || 0); }, 0); var el = $('#suma-' + t); if (el) el.innerHTML = '<span class="' + (Math.abs(s - 100) > 0.5 ? 'warn' : 'ok') + '">' + pct(s) + '</span>'; });
+    var lisas = {}, deco = {};
+    pl.rows.forEach(function (r) {
+      var key = r.type + '|' + r.color; lisas[key] = lisas[key] || { type: r.type, color: r.color, sizes: {}, total: 0 };
+      lisas[key].sizes[r.size] = (lisas[key].sizes[r.size] || 0) + r.qty; lisas[key].total += r.qty;
+      P.decoKeys(r.product).forEach(function (k) { deco[k] = (deco[k] || 0) + r.qty; });
+    });
+    var cols = SIZES.concat(['Única']);
+    h = '<table><thead><tr><th>Prenda lisa</th><th>Color</th>' + cols.map(function (s) { return '<th>' + s + '</th>'; }).join('') + '<th>Total</th><th>Costo unit.</th><th>Costo total</th></tr></thead><tbody>';
+    var tl = 0, tc = 0;
+    Object.keys(lisas).forEach(function (k) { var o = lisas[k]; var pr = (K.prenda[o.type] || {}); var uc = Number(pr[o.color || '_'] != null ? pr[o.color || '_'] : 0);
+      tl += o.total; tc += uc * o.total;
+      h += '<tr><td class="l">' + esc(TYPE[o.type] || o.type) + '</td><td class="l">' + colorTag(o.color) + '</td>' + cols.map(function (s) { return '<td>' + (o.sizes[s] || '') + '</td>'; }).join('') + '<td><b>' + o.total + '</b></td><td>' + clp(uc) + '</td><td>' + clp(uc * o.total) + '</td></tr>'; });
+    $('#orden-lisas').innerHTML = h + '</tbody><tfoot><tr><td class="l" colspan="' + (cols.length + 2) + '">Total</td><td>' + tl + '</td><td></td><td>' + clp(tc) + '</td></tr></tfoot></table>';
+    var dn = { 'tee-front': 'DTF pecho polera', 'tee-back': 'DTF espalda polera', 'hoodie-front': 'DTF pecho polerón', 'cap-parche': 'Parche tejido jockey', 'cap-bordado': 'Bordado jockey', sticker: 'Stickers' };
+    var td = 0;
+    h = '<table><thead><tr><th>Trabajo</th><th>Unidades</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>' + Object.keys(deco).map(function (k) { var u = Number(K.decoracion[k]) || 0; td += u * deco[k];
+      return '<tr><td class="l">' + (dn[k] || k) + '</td><td>' + deco[k] + '</td><td>' + clp(u) + '</td><td>' + clp(u * deco[k]) + '</td></tr>'; }).join('');
+    $('#orden-deco').innerHTML = h + '</tbody><tfoot><tr><td class="l">Total</td><td></td><td></td><td>' + clp(td) + '</td></tr></tfoot></table><p class="hint" style="margin-top:8px">Empaque + flete del drop: ' + clp(pl.inversion - tc - td) + ' · Inversión total: <b>' + clp(pl.inversion) + '</b></p>';
+    h = '<table><thead><tr><th>Producto</th><th>Color</th>' + cols.map(function (s) { return '<th>' + s + '</th>'; }).join('') + '<th>Total</th><th>Inversión</th><th>Venta potencial</th></tr></thead><tbody>';
+    dropProducts.forEach(function (p) { colorsOf(p).forEach(function (c) {
+      var rs = pl.rows.filter(function (r) { return r.id === p.id && (r.color || null) === (c || null); }); if (!rs.length) return;
+      var by = {}; rs.forEach(function (r) { by[r.size] = r; });
+      h += '<tr><td class="l">' + esc(p.name) + '</td><td class="l">' + colorTag(c) + '</td>' + cols.map(function (s) { return '<td title="' + (by[s] ? by[s].sku : '') + '">' + (by[s] ? by[s].qty : '') + '</td>'; }).join('') +
+        '<td><b>' + rs.reduce(function (a, r) { return a + r.qty; }, 0) + '</b></td><td>' + clp(rs.reduce(function (a, r) { return a + r.cost; }, 0)) + '</td><td>' + clp(rs.reduce(function (a, r) { return a + r.revenue; }, 0)) + '</td></tr>'; }); });
+    $('#detalle-compra').innerHTML = h + '</tbody><tfoot><tr><td class="l" colspan="' + (cols.length + 2) + '">Total</td><td>' + units + '</td><td>' + clp(pl.inversion) + '</td><td>' + clp(pl.ventaPotencial) + '</td></tr></tfoot></table>' +
+      '<details style="margin-top:10px"><summary class="hint" style="cursor:pointer">Ver lista por SKU</summary><table><thead><tr><th>SKU</th><th>Producto</th><th>Color</th><th>Talla</th><th>Unid.</th></tr></thead><tbody>' +
+      pl.rows.map(function (r) { return '<tr><td class="l">' + r.sku + '</td><td class="l">' + esc(r.name) + '</td><td class="l">' + r.color + '</td><td class="l">' + r.size + '</td><td>' + r.qty + '</td></tr>'; }).join('') + '</tbody></table></details>';
+
+    // Escenarios
+    $('#kpis-be').innerHTML = [
+      ['Inversión', clp(pl.inversion), units + ' unidades'],
+      ['Gastos fijos / mes', clp(P.fixedMonthly(K)), ''],
+      ['Equilibrio 1 mes', be1.unidades + ' u.', pct(be1.pct) + ' del drop'],
+      ['Equilibrio 3 meses', be3.unidades + ' u.', pct(be3.pct) + ' del drop']
+    ].map(function (k) { return '<div class="kpi"><small>' + k[0] + '</small><b>' + k[1] + '</b><em>' + k[2] + '</em></div>'; }).join('');
+    h = '<table><thead><tr><th>Escenario</th><th>Días</th><th>% vendido</th><th>Unidades</th><th>Ventas</th><th>Utilidad</th><th>Caja</th><th>Stock a costo</th></tr></thead><tbody>';
+    sc.forEach(function (s) { s.cortes.forEach(function (c, i) {
+      h += '<tr' + (i === 2 ? ' style="border-bottom:2px solid #ccc"' : '') + '><td class="l">' + (i ? '' : '<b>' + esc(s.nombre) + '</b>') + '</td><td>' + c.dias + '</td><td>' + pct(c.pct) + '</td><td>' + c.unidades + '</td><td>' + clp(c.ventas) +
+        '</td><td class="' + (c.utilidad < 0 ? 'bad' : 'ok') + '">' + clp(c.utilidad) + '</td><td class="' + (c.caja < 0 ? 'bad' : 'ok') + '">' + clp(c.caja) + '</td><td>' + clp(c.stockRestante) + '</td></tr>'; }); });
+    $('#tabla-esc').innerHTML = h + '</tbody></table>';
+
+    // Reposición
+    var e30 = base ? base.cortes[0].pct / 100 : 0.3;
+    h = '<table><thead><tr><th>Producto</th><th>Compra</th><th>Venta diaria est.</th><th>Días producción + seg.</th><th>Pedir de nuevo cuando queden</th><th>Se acaba en ~</th></tr></thead><tbody>';
+    dropProducts.forEach(function (p) { var q = Number(K.drop[p.id]); var daily = q * e30 / 30; var rp = P.reorder(daily, p.type, K); var dias = Number(K.diasProduccion[p.type] || 0) + Number(K.diasSeguridad || 0);
+      h += '<tr><td class="l">' + esc(p.name) + '</td><td>' + q + '</td><td>' + daily.toFixed(2).replace('.', ',') + '</td><td>' + dias + ' días</td><td><b>' + rp + ' unidades</b></td><td>' + (daily ? Math.round(q / daily) + ' días' : '—') + '</td></tr>'; });
+    $('#tabla-reorden').innerHTML = h + '</tbody></table><p class="hint" style="margin-top:8px">Regla práctica: si una talla (no el modelo entero) llega a 0–1 unidad en los primeros 15 días, repón esa talla aunque el resto tenga stock.</p>';
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    $('#tabla-cal').innerHTML = '<table><thead><tr><th>Fecha</th><th>Evento</th><th>Faltan</th><th>Qué hacer</th><th>Comprar a más tardar</th></tr></thead><tbody>' +
+      K.calendario.slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; }).map(function (c) {
+        var d = new Date(c.fecha + 'T00:00:00'), dd = Math.round((d - today) / 864e5);
+        var buy = new Date(d.getTime() - (Number(K.diasProduccion.polera || 10) * 1.4 + 7) * 864e5);
+        return '<tr' + (dd < 0 ? ' style="opacity:.45"' : '') + '><td class="l">' + d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }) + '</td><td class="l"><b>' + esc(c.evento) + '</b></td><td>' + (dd < 0 ? 'pasó' : dd + ' días') +
+          '</td><td class="l" style="white-space:normal">' + esc(c.nota) + '</td><td class="' + (buy < today && dd >= 0 ? 'bad' : '') + '">' + buy.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) + '</td></tr>'; }).join('') + '</tbody></table>';
+  }
+
+  // ---------- Ventas reales ----------
+  function analyze(text) {
+    var rows = P.parseSalesCsv(text);
+    if (!rows.length) { $('#ventas-out').innerHTML = '<p class="bad">No se reconocieron filas. ¿Es el CSV "ventas por SKU" del panel?</p>'; return; }
+    var by = {};
+    rows.forEach(function (r) { var t = /poler[oó]n/i.test(r.categoria + r.producto) ? 'poleron' : /polera/i.test(r.categoria + r.producto) ? 'polera' : null;
+      if (!t || SIZES.indexOf(r.size) < 0) return; by[t] = by[t] || {}; by[t][r.size] = (by[t][r.size] || 0) + r.unidades; });
+    var h = '';
+    Object.keys(by).forEach(function (t) {
+      var tot = SIZES.reduce(function (a, s) { return a + (by[t][s] || 0); }, 0); if (!tot) return;
+      var plan = K.curva[t] || {};
+      h += '<h3>' + esc(TYPE[t] || t) + ' · ' + tot + ' unidades vendidas</h3><table><thead><tr><th>Talla</th><th>Vendidas</th><th>% real</th><th>% planificado</th><th></th></tr></thead><tbody>' +
+        SIZES.map(function (s) { var r = (by[t][s] || 0) / tot * 100; return '<tr><td class="l">' + s + '</td><td>' + (by[t][s] || 0) + '</td><td>' + pct(r) + '</td><td>' + pct(Number(plan[s]) || 0) +
+          '</td><td class="l"><span class="mini" style="width:' + r * 2 + 'px"></span><br><span class="mini b" style="width:' + (Number(plan[s]) || 0) * 2 + 'px"></span></td></tr>'; }).join('') + '</tbody></table>' +
+        (tot < 30 ? '<p class="hint">Con menos de 30 unidades es poca muestra: mezcla 50% real + 50% plan.</p>' : '') +
+        '<button class="btn line" data-curve="' + t + '" data-vals="' + SIZES.map(function (s) { var r = (by[t][s] || 0) / tot * 100; var w = tot < 30 ? 0.5 : 0.8; return Math.round(r * w + (Number(plan[s]) || 0) * (1 - w)); }).join(',') + '">Usar curva sugerida para ' + esc(TYPE[t] || t) + '</button>';
+    });
+    var colors = {}; rows.forEach(function (r) { if (r.color && /polera/i.test(r.categoria + r.producto)) colors[r.color] = (colors[r.color] || 0) + r.unidades; });
+    var ct = (colors.negro || 0) + (colors.blanco || 0);
+    if (ct) h += '<h3>Color en poleras</h3><p>Negro ' + pct((colors.negro || 0) / ct * 100) + ' · Blanco ' + pct((colors.blanco || 0) / ct * 100) + ' (plan: ' + K.colorSplit.polera.negro + ' / ' + K.colorSplit.polera.blanco + ')</p>';
+    var top = rows.slice().sort(function (a, b) { return b.unidades - a.unidades; }).slice(0, 10);
+    h += '<h3>Top 10 SKU</h3><table><thead><tr><th>SKU</th><th>Producto</th><th>Unidades</th><th>Ventas</th></tr></thead><tbody>' + top.map(function (r) { return '<tr><td class="l">' + esc(r.sku) + '</td><td class="l">' + esc(r.producto) + '</td><td>' + r.unidades + '</td><td>' + clp(r.ventas) + '</td></tr>'; }).join('') + '</tbody></table>';
+    $('#ventas-out').innerHTML = h || '<p class="hint">El archivo no tiene ventas de poleras o polerones con talla.</p>';
+  }
+
+  // ---------- Eventos ----------
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.dataset.k) { var v = el.value === '' ? 0 : Number(el.value); set(el.dataset.k, isFinite(v) ? v : 0); el.classList.remove('sup'); save(); renderAll(); }
+    else if (el.dataset.price) { simPrice[el.dataset.price] = Number(el.value) || 0; save(); renderAll(); }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tab]');
+    if (b) { document.querySelectorAll('.tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
+      document.querySelectorAll('main > section').forEach(function (s) { s.hidden = s.id !== 'tab-' + b.dataset.tab; });
+      try { localStorage.setItem(STORE + '-tab', b.dataset.tab); } catch (err) {} return; }
+    var c = e.target.closest('[data-curve]');
+    if (c) { var vals = c.dataset.vals.split(',').map(Number); SIZES.forEach(function (s, i) { K.curva[c.dataset.curve][s] = vals[i]; }); save(); renderInputs(); renderAll(); c.textContent = 'Curva aplicada ✓'; }
+  });
+  $('#reset').onclick = function () { if (!confirm('¿Descartar los cambios de este navegador y volver a los valores de costos.js?')) return; try { localStorage.removeItem(STORE); localStorage.removeItem(STORE + '-precios'); } catch (e) {} load(); renderInputs(); renderAll(); estado(); };
+  $('#bajar').onclick = function () {
+    var src = '// Datos de la estrategia de negocio. Generado desde planificador.html el ' + new Date().toISOString().slice(0, 10) + '.\n// Reemplaza estrategia/costos.js con este archivo. (Los comentarios SUPUESTO se pierden: anota en README.md qué es real.)\n' +
+      '(function (root) {\n  var costos = ' + JSON.stringify(Object.assign({}, K, { actualizado: new Date().toISOString().slice(0, 10) }), null, 2).replace(/\n/g, '\n  ') +
+      ';\n  if (typeof module !== \'undefined\' && module.exports) module.exports = costos;\n  else root.TWH_COSTOS = costos;\n})(this);\n';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); a.download = 'costos.js'; a.click();
+  };
+  $('#csv-file').onchange = function () { var f = this.files[0]; if (!f) return; var r = new FileReader(); r.onload = function () { $('#csv-text').value = r.result; analyze(r.result); }; r.readAsText(f, 'utf-8'); };
+  $('#csv-go').onclick = function () { analyze($('#csv-text').value); };
+
+  load(); renderInputs(); renderAll(); estado();
+  var tab = location.hash.slice(1); try { tab = tab || localStorage.getItem(STORE + '-tab'); } catch (e) {}
+  if (tab) { var t = document.querySelector('[data-tab="' + tab + '"]'); if (t) t.click(); }
+})();
+</script>
+</body>
+</html>

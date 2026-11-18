@@ -342,7 +342,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "race-dept",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": {
     "logo": "recovery-crew",
@@ -414,7 +414,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "checkered-shield",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },
@@ -429,7 +429,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "race-dept",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },
@@ -443,7 +443,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "round-stamp",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },
@@ -457,7 +457,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "checkered-shield",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },
@@ -471,7 +471,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "script-checker",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },

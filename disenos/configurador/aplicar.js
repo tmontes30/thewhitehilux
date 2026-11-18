@@ -66,6 +66,14 @@ const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () =>
 const nameOf = (id) => (LMETA[id] ? LMETA[id].name : id);
 const q = (s) => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 const arr = (a) => '[' + a.map(q).join(', ') + ']';
+// Diseño completo tal como se armó en el configurador (logos, tamaños, posición, altura, estilo del jockey).
+// Se guarda en el catálogo para que "Volver a la tienda actual" lo recupere exacto (preparar.js lo usa).
+const cfgOf = (d) => {
+  const o = { tipo: d.tipo, nombre: d.nombre, colores: d.colores };
+  if (d.tipo === 'jockey') o.jockey = d.jockey;
+  else { o.frente = d.frente || null; o.espalda = d.espalda || null; }
+  return o;
+};
 const entries = [];
 const keep = new Set();
 
@@ -107,7 +115,8 @@ for (const d of items) {
         views: ${views},
         images: [], imagesByColor: { ${Object.entries(byColor).map(([c, l]) => c + ': ' + arr(l)).join(', ')} }, sizeGuide: ${guide}, active: true,
         desc: ${q(desc)},
-        features: ${features}
+        features: ${features},
+        cfg: ${JSON.stringify(cfgOf(d))}
       },
 `);
 }
