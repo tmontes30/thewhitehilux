@@ -11,6 +11,7 @@ const CURVA = { M: 1, L: 2, XL: 3, XXL: 3 };
 // Modelos con otra curva (id del producto → curva). Pedido 2026-11-18: estos 6 solo en L, XL y XXL
 const CURVA_SIN_M = { M: 0, L: 2, XL: 2, XXL: 2 };
 const CURVA_MODELO = {
+  'polera-twh-4x4-rally-team-algodon': CURVA_SIN_M,     // White Hilux Script
   'polera-mud-terrain-twh-algodon': CURVA_SIN_M,        // Race Shop
   'polera-low-range-club-4wd': CURVA_SIN_M,             // Low Range Club
   'polera-twh-cruz-white-hilux-algodon': CURVA_SIN_M,   // Sunset
