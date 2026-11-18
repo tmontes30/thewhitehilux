@@ -208,3 +208,11 @@ table.data tfoot td { font-weight: 700; border-top: 2px solid var(--line); borde
 .cfg-steps code { background: #fff; border-radius: 4px; padding: 0 4px; font-size: 12.5px; }
 .cfg-frame { display: block; width: 100%; height: calc(100vh - 110px); border: 0; background: #EEEEEC; }
 body.wide main.wrap { max-width: none; padding-bottom: 0; }
+
+/* ---------- Escala en computador: el panel se ve como al 70% de zoom ---------- */
+@media (min-width: 1100px) {
+  html { zoom: .7; }
+  .wrap, .top-in { max-width: 1700px; }
+  /* con zoom, 100vh también se achica: se compensa para que el configurador use todo el alto */
+  .cfg-frame { height: calc(100vh / .7 - 110px); }
+}
