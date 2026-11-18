@@ -13,6 +13,8 @@
       dropNote: '', // franja amarilla arriba de la tienda (vacío = no se muestra)
       whatsapp: '56992259960', // botón flotante de WhatsApp (sin + ni espacios)
       email: 'tmontes30@gmail.com', // correo de contacto en Ayuda (pie de página)
+      // Datos de quien vende (Ley del Consumidor: identificación del proveedor). Completar antes de vender.
+      legal: { titular: '', rut: '', ciudad: 'Santiago, Chile', actualizado: '2026-11-18' },
       freeShippingZones: ['rm'],
       freeShippingFrom: 40000,
       maxQtyPerLine: 10,

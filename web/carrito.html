@@ -57,6 +57,7 @@
     </div>
     <p class="eta" id="eta"></p>
     <p class="msg-err" id="err" role="alert" hidden></p>
+    <label class="acepto"><input type="checkbox" id="acepto"> Acepto los <a href="terminos.html" target="_blank">términos y condiciones</a> y la <a href="cambios.html" target="_blank">política de cambios y devoluciones</a>.</label>
     <button class="btn primary" type="submit" id="pay">Pagar con Mercado Pago</button>
     <p class="secure">Te llevamos a Mercado Pago para pagar de forma segura. No guardamos datos de tarjetas.</p>
   </form>
@@ -222,6 +223,7 @@
       if ($('comuna').value.trim().length < 2) return showErr('Escribe tu comuna.');
       if ($('address').value.trim().length < 5) return showErr('Escribe tu dirección con número.');
     }
+    if (!$('acepto').checked) return showErr('Para pagar debes aceptar los términos y condiciones.');
     var payload = {
       items: TWH.Cart.items(),
       coupon: coupon ? coupon.code : '',
