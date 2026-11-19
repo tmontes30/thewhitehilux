@@ -4,7 +4,7 @@
 //  - webhook: Mercado Pago avisa los pagos (evento "Order"); si está aprobado (processed/accredited) marca el pedido
 //    pagado, calcula la promesa de entrega, descuenta stock y manda correos. Es idempotente: un aviso repetido no
 //    descuenta ni manda correos dos veces.
-//  - alertaEntregas: cada mañana avisa (correo + notificación push) los pedidos que vencen en 2 días o menos.
+//  - alertaEntregas: cada mañana avisa (solo notificación push) los pedidos que vencen en 2 días o menos.
 //  - probarPush: manda una notificación de prueba a los dispositivos del admin (pide sesión de admin).
 //  Push: los dispositivos se suscriben desde el panel (Ajustes → Notificaciones) y quedan en pushSubs/*.
 //
@@ -23,7 +23,7 @@ const webpush = require('web-push');
 const base = require('./shared/catalog.js');
 const core = require('./shared/core.js');
 const { buildOrder, priceCart, couponCode, newOrderId, toMercadoPagoItems, OrderError } = require('./shared/order.js');
-const { orderHtml, alertHtml, statusEmail, sendEmail } = require('./shared/email.js');
+const { orderHtml, statusEmail, sendEmail } = require('./shared/email.js');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -412,7 +412,7 @@ exports.simularPago = onRequest({ cors: true, secrets: [VAPID_PRIVATE_KEY] }, as
 
 // ---------- alertaEntregas ----------
 exports.alertaEntregas = onSchedule(
-  { schedule: 'every day 09:00', timeZone: 'America/Santiago', secrets: [RESEND_API_KEY, VAPID_PRIVATE_KEY] },
+  { schedule: 'every day 09:00', timeZone: 'America/Santiago', secrets: [VAPID_PRIVATE_KEY] },
   async () => {
     const { data } = await loadCatalog();
     const today = core.todayCL();
@@ -430,12 +430,7 @@ exports.alertaEntregas = onSchedule(
       url: './#o-' + first.id,
       tag: 'alerta-entregas',
     }).catch((err) => logger.error('[push] error', err.message));
-    await sendEmail({
-      ...mail(),
-      to: ORDER_EMAIL.value(),
-      subject: `⚠ ${due.length} pedido${due.length > 1 ? 's' : ''} por entregar pronto`,
-      html: alertHtml(due, today),
-    });
+    // Sin correo: el dueño pidió solo la notificación push (2026-11-19)
   }
 );
 
