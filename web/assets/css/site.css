@@ -288,9 +288,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .eta { font-size: 13.5px; color: var(--green); font-weight: 600; margin: 10px 0 0; }
 .eta:empty { display: none; }
 
-/* ---------- Escala en computador: la tienda se ve como al 70-80% de zoom ---------- */
-@media (min-width: 1100px) { html { zoom: .78; } .wrap, .about-hero .wrap { max-width: 1440px; } .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1600px) { html { zoom: .72; } .wrap, .about-hero .wrap { max-width: 1760px; } .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* ---------- Escala en computador: se adapta al ancho de la pantalla ----------
+   La tienda se diseña para un ancho de ~1970 px y el zoom crece con la pantalla (zoom ≈ ancho / 1970),
+   así se ve con la misma proporción en un notebook Windows (≈78%) que en un Mac o un monitor grande
+   (más zoom = letras y fotos más grandes). Mínimo 72% en pantallas chicas. */
+@media (min-width: 1100px) { html { zoom: .72; } .wrap, .about-hero .wrap { max-width: 1560px; } .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1500px) { html { zoom: .78; } }
+@media (min-width: 1650px) { html { zoom: .84; } }
+@media (min-width: 1800px) { html { zoom: .9; } }
+@media (min-width: 1950px) { html { zoom: .97; } }
+@media (min-width: 2200px) { html { zoom: 1.05; } }
+@media (min-width: 2500px) { html { zoom: 1.15; } }
 
 /* ---------- Portada más compacta (sin título grande) ---------- */
 .hero.photo-bg .hero-in { min-height: 340px; padding-block: 36px 56px; }
