@@ -24,11 +24,11 @@ if (F.useEmulators) {
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
 const COURIERS = ['Starken', 'Chilexpress', 'Blue Express', 'Correos de Chile', 'Despacho propio', 'Otro'];
-const TABS = ['pedidos', 'ventas', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
+const TABS = ['pedidos', 'ventas', 'utilidades', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = (n) => '$' + Math.round(Number(n) || 0).toLocaleString('es-CL');
+const money = (n) => { const v = Math.round(Number(n) || 0); return (v < 0 ? '−' : '') + '$' + Math.abs(v).toLocaleString('es-CL'); };
 const fmtDate = (ymd) => (ymd ? ymd.split('-').reverse().join('-') : '—');
 const plural = (n, a, b) => n + ' ' + (n === 1 ? a : b);
 
@@ -104,15 +104,22 @@ onAuthStateChanged(auth, async (user) => {
       renderSales();
       renderDiscounts();
       renderBuys();
+      renderProfit();
+    }, fail),
+    onSnapshot(doc(db, 'privado', 'utilidades'), (s) => {
+      if (s.exists()) profitCfg = { ...profitCfg, ...s.data() };
+      renderProfit();
     }, fail),
     onSnapshot(collection(db, 'compras'), (s) => {
       compras = s.docs.map((d) => ({ ...d.data(), key: d.id }));
       renderBuys();
+      renderProfit();
     }, fail),
     onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(2000)), (s) => {
       orders = s.docs.map((d) => ({ ...d.data(), id: d.id }));
       renderOrders();
       renderSales();
+      renderProfit();
     }, fail),
     onSnapshot(collection(db, 'cupones'), (s) => {
       coupons = s.docs.map((d) => ({ ...d.data(), code: d.id }));
@@ -222,6 +229,7 @@ function orderCard(o) {
         <select data-act="courier" aria-label="Courier"><option value="">Courier…</option>${COURIERS.map((c) => `<option${c === o.courier ? ' selected' : ''}>${c}</option>`).join('')}</select>
         <input data-act="trackingCode" value="${esc(o.trackingCode || '')}" placeholder="N° de seguimiento" maxlength="60">
         <input data-act="trackingUrl" value="${esc(o.trackingUrl || '')}" placeholder="Link de seguimiento (opcional)" maxlength="300">
+        <input data-act="shipCostReal" type="number" min="0" value="${o.shipCostReal != null ? esc(o.shipCostReal) : ''}" placeholder="Costo real del envío $ (para Utilidades)" title="Lo que te cobró el courier (para calcular utilidades)">
       </div>
     </div>` : ''}
     <div class="order-foot">
@@ -346,6 +354,11 @@ $('orders').addEventListener('change', async (e) => {
     if (act === 'note') {
       await updateDoc(ref, { adminNote: e.target.value.slice(0, 1000) });
       toast('Nota guardada');
+    }
+    if (act === 'shipCostReal') {
+      const v = e.target.value === '' ? deleteField() : Math.max(0, Math.round(Number(e.target.value) || 0));
+      await updateDoc(ref, { shipCostReal: v });
+      toast('Costo de envío guardado');
     }
     if (act === 'courier' || act === 'trackingCode' || act === 'trackingUrl') {
       let v = e.target.value.trim().slice(0, 300);
@@ -1513,4 +1526,202 @@ $('buy-export').addEventListener('click', () => {
         r.price ? Math.round(((r.price - unit) / r.price) * 100) : ''];
     }));
   toast('Costos descargados');
+});
+
+// ---------- Utilidades (ventas − costo de lo vendido − envíos − comisión Mercado Pago − empaque − otros gastos) ----------
+// Costo de cada unidad vendida = costo promedio ponderado de ese SKU en Compras (o del producto, o el promedio general).
+// Supuestos editables en privado/utilidades: { feePct, packCost, otherMonthly }.
+const PRIV = doc(db, 'privado', 'utilidades');
+let profitCfg = { feePct: 3.2, packCost: 0, otherMonthly: 0 }; // tarjeta de crédito al instante 2,69% + IVA ≈ 3,2% (débito 2,19% + IVA ≈ 2,6%)
+let pfPeriod = 'mes';
+let pfRows = [];
+
+function costIndex() {
+  const bySku = {}, byProd = {}, byType = {};
+  compras.forEach((b) => (b.lines || []).forEach((l) => {
+    const p = productById(l.id);
+    const sku = p ? C.variantSku(p, l.color, l.size) : l.sku || l.id;
+    const c = lineCost(b, l) * l.qty;
+    (bySku[sku] = bySku[sku] || { q: 0, c: 0 }).q += l.qty; bySku[sku].c += c;
+    (byProd[l.id] = byProd[l.id] || { q: 0, c: 0 }).q += l.qty; byProd[l.id].c += c;
+    const t = p ? p.type : '';
+    (byType[t] = byType[t] || { q: 0, c: 0 }).q += l.qty; byType[t].c += c;
+  }));
+  return {
+    invested: compras.reduce((s, b) => s + (Number(b.costTotal) || 0), 0),
+    unit(l) {
+      const sku = skuOfLine(l);
+      if (bySku[sku] && bySku[sku].q) return { v: bySku[sku].c / bySku[sku].q, src: 'sku' };
+      if (byProd[l.id] && byProd[l.id].q) return { v: byProd[l.id].c / byProd[l.id].q, src: 'producto' };
+      // sin compras de ese producto: promedio de su categoría (ej. otra polera); si no hay, costo 0 y se avisa
+      const p = productById(l.id);
+      const t = byType[p ? p.type : ''];
+      return t && t.q ? { v: t.c / t.q, src: 'promedio' } : { v: 0, src: 'sin', name: p ? p.name : l.name };
+    },
+  };
+}
+
+// Resultado de un pedido pagado
+function orderProfit(o, ci) {
+  const ship = o.shipping || {};
+  const revenue = orderPaid(o);
+  const shipCharged = Number(ship.cost) || 0;
+  const products = revenue - shipCharged;
+  let cogs = 0, noCost = 0, avgCost = 0;
+  const missing = [];
+  const lines = (o.lines || []).map((l) => {
+    const u = ci.unit(l);
+    if (u.src === 'sin') { noCost += l.qty; missing.push(l.name); }
+    if (u.src === 'promedio') avgCost += l.qty;
+    cogs += u.v * l.qty;
+    return { l, unit: u.v };
+  });
+  const shipPaid = ship.method === 'retiro' ? 0 : (o.shipCostReal != null && o.shipCostReal !== '' ? Number(o.shipCostReal) : ((CFG.shipping[ship.zone] || {}).price || 0));
+  const fee = o.mpFee != null ? Number(o.mpFee) : revenue * (profitCfg.feePct / 100);
+  const pack = Number(profitCfg.packCost) || 0;
+  return { revenue, products, shipCharged, cogs, shipPaid, fee, feeReal: o.mpFee != null, pack, noCost, avgCost, missing, lines,
+    profit: revenue - cogs - shipPaid - fee - pack };
+}
+
+function renderProfit() {
+  if (!$('tab-utilidades')) return;
+  const keys = Object.keys(PERIODS).filter((k) => k !== 'rango');
+  $('pf-period').innerHTML = keys.map((k) => `<button type="button" class="chip" data-pp="${k}" aria-pressed="${k === pfPeriod}">${PERIODS[k]}</button>`).join('');
+  const [from, to] = periodRange(pfPeriod);
+  const list = orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= from && o.paidDate <= to);
+  const ci = costIndex();
+  const R = list.map((o) => ({ o, r: orderProfit(o, ci) }));
+  const sum = (f) => R.reduce((s, x) => s + f(x.r), 0);
+  const months = new Set();
+  for (let d = from; d <= to; d = addDays(d, 1)) months.add(d.slice(0, 7));
+  const other = (Number(profitCfg.otherMonthly) || 0) * (pfPeriod === 'hoy' || pfPeriod === '7d' ? 0 : months.size);
+  const T = {
+    products: sum((r) => r.products), shipCharged: sum((r) => r.shipCharged), revenue: sum((r) => r.revenue),
+    cogs: sum((r) => r.cogs), shipPaid: sum((r) => r.shipPaid), fee: sum((r) => r.fee), pack: sum((r) => r.pack),
+    noCost: sum((r) => r.noCost), avgCost: sum((r) => r.avgCost), feeReal: R.filter((x) => x.r.feeReal).length,
+  };
+  T.gross = T.revenue - T.cogs;
+  T.profit = T.revenue - T.cogs - T.shipPaid - T.fee - T.pack - other;
+  const pctOf = (a) => (T.revenue ? Math.round((a / T.revenue) * 1000) / 10 + '%' : '—');
+
+  $('pf-kpis').innerHTML = [
+    [money(T.revenue), 'Ingresos (total pagado)'],
+    [money(T.profit), 'Utilidad'],
+    [pctOf(T.profit), 'Margen neto'],
+    [money(list.length ? T.profit / list.length : 0), 'Utilidad por pedido'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  const row = (label, v, cls) => `<tr class="${cls || ''}"><td>${label}</td><td class="n">${v < 0 ? '−' + money(-v) : money(v)}</td><td class="n">${pctOf(Math.abs(v))}</td></tr>`;
+  $('pf-pnl').innerHTML = `<thead><tr><th></th><th class="n">Monto</th><th class="n">% ingresos</th></tr></thead><tbody>
+    ${row('Ventas de productos (con descuentos)', T.products)}
+    ${row('Envíos cobrados', T.shipCharged)}
+    ${row('<b>Ingresos</b>', T.revenue, 'sub')}
+    ${row('− Costo de lo vendido', -T.cogs)}
+    ${row('<b>Utilidad bruta</b>', T.gross, 'sub')}
+    ${row('− Envíos pagados al courier', -T.shipPaid)}
+    ${row(`− Comisión Mercado Pago${T.feeReal ? ` (${T.feeReal} de ${R.length} reales)` : ' (estimada)'}`, -T.fee)}
+    ${row('− Empaque', -T.pack)}
+    ${other ? row('− Otros gastos', -other) : ''}
+    ${row('<b>Utilidad</b>', T.profit, 'total')}
+    ${row('Utilidad sin IVA (÷ 1,19)', T.profit / 1.19, 'muted')}
+  </tbody>`;
+  $('pf-notes').innerHTML = [
+    `${plural(list.length, 'pedido pagado', 'pedidos pagados')} entre ${fmtDate(from)} y ${fmtDate(to)}. Montos con IVA incluido.`,
+    T.noCost ? `⚠ Sin costo registrado (se contó como $0): ${esc([...new Set(R.flatMap((x) => x.r.missing))].join(', '))}. Regístralos en Compras para que la utilidad sea real.` : '',
+    T.avgCost ? `${plural(T.avgCost, 'unidad usó', 'unidades usaron')} el costo promedio de su categoría (ese modelo no está en Compras).` : '',
+  ].filter(Boolean).join(' ');
+
+  // Recuperación de la inversión (todo el historial) y valor del inventario a costo
+  const allPaid = orders.filter((o) => PAID.includes(o.status));
+  const allProfit = allPaid.reduce((s, o) => s + orderProfit(o, ci).profit, 0);
+  const allCogs = allPaid.reduce((s, o) => s + orderProfit(o, ci).cogs, 0);
+  let invUnits = 0, invValue = 0;
+  data.products.forEach((p) => {
+    if (!p.stock) return;
+    (p.colors.length ? p.colors : ['']).forEach((c) => p.sizes.forEach((s) => {
+      const q = C.stockOf(p, c, s) || 0;
+      if (!q) return;
+      invUnits += q;
+      invValue += q * ci.unit({ id: p.id, color: c, size: s, sku: C.variantSku(p, c, s) }).v;
+    }));
+  });
+  const recovered = ci.invested ? Math.min(100, Math.round(((allCogs + Math.max(0, allProfit)) / ci.invested) * 100)) : 0;
+  $('pf-roi').innerHTML = ci.invested
+    ? `<div class="roi-bar"><span style="width:${recovered}%"></span></div>
+       <p><b>${recovered}%</b> de lo invertido en mercadería ya volvió en ventas (costo recuperado + utilidad).</p>
+       <table class="data"><tbody>
+         <tr><td>Invertido en compras</td><td class="n">${money(ci.invested)}</td></tr>
+         <tr><td>Costo de lo ya vendido</td><td class="n">${money(allCogs)}</td></tr>
+         <tr><td>Utilidad acumulada</td><td class="n">${money(allProfit)}</td></tr>
+         <tr><td>Inventario en bodega a costo (${invUnits} u.)</td><td class="n">${money(invValue)}</td></tr>
+       </tbody></table>
+       <p class="hint" style="margin-top:6px">El inventario solo cuenta productos con stock cargado en el panel.</p>`
+    : '<p class="empty">Registra tus compras en la pestaña Compras para ver cuánto has recuperado.</p>';
+
+  // Por mes (todo el historial)
+  const byMonth = {};
+  allPaid.forEach((o) => {
+    const m = (o.paidDate || '').slice(0, 7);
+    const r = orderProfit(o, ci);
+    const x = byMonth[m] || (byMonth[m] = { n: 0, rev: 0, cogs: 0, other: 0, profit: 0 });
+    x.n++; x.rev += r.revenue; x.cogs += r.cogs; x.other += r.shipPaid + r.fee + r.pack; x.profit += r.profit;
+  });
+  const mk = Object.keys(byMonth).sort().reverse();
+  $('pf-month').innerHTML = mk.length
+    ? `<thead><tr><th>Mes</th><th class="n">Pedidos</th><th class="n">Ingresos</th><th class="n">Costo productos</th><th class="n">Envíos, comisión y empaque</th><th class="n">Utilidad</th><th class="n">Margen</th></tr></thead><tbody>${mk.map((m) => {
+      const x = byMonth[m];
+      const pr = x.profit - (Number(profitCfg.otherMonthly) || 0);
+      return `<tr><td>${m.split('-').reverse().join('-')}</td><td class="n">${x.n}</td><td class="n">${money(x.rev)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.other)}</td><td class="n"><b>${money(pr)}</b></td><td class="n">${x.rev ? Math.round((pr / x.rev) * 100) + '%' : '—'}</td></tr>`;
+    }).join('')}</tbody>`
+    : '<tbody><tr><td class="empty">Todavía no hay ventas pagadas.</td></tr></tbody>';
+
+  // Por producto (período elegido): el envío, la comisión y el empaque se reparten según lo que aporta cada línea
+  const byProd = {};
+  R.forEach(({ r }) => {
+    const extra = r.shipPaid + r.fee + r.pack - r.shipCharged; // costo variable neto del pedido
+    r.lines.forEach(({ l, unit }) => {
+      const share = r.products ? lineNet(l) / r.products : 0;
+      const x = byProd[l.id] || (byProd[l.id] = { name: l.name, q: 0, sales: 0, cogs: 0, extra: 0 });
+      x.q += l.qty; x.sales += lineNet(l); x.cogs += unit * l.qty; x.extra += extra * share;
+    });
+  });
+  pfRows = Object.values(byProd).map((x) => ({ ...x, profit: x.sales - x.cogs - x.extra })).sort((a, b) => b.profit - a.profit);
+  $('pf-prod').innerHTML = pfRows.length
+    ? `<thead><tr><th>Producto</th><th class="n">Unidades</th><th class="n">Ventas</th><th class="n">Costo</th><th class="n">Envío/comisión</th><th class="n">Utilidad</th><th class="n">Margen</th><th class="n">Utilidad por unidad</th></tr></thead><tbody>${pfRows.map((x) =>
+      `<tr><td>${esc(x.name)}</td><td class="n">${x.q}</td><td class="n">${money(x.sales)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.extra)}</td><td class="n"><b>${money(x.profit)}</b></td><td class="n">${x.sales ? Math.round((x.profit / x.sales) * 100) + '%' : '—'}</td><td class="n">${money(x.q ? x.profit / x.q : 0)}</td></tr>`).join('')}</tbody>`
+    : '<tbody><tr><td class="empty">No hay ventas en este período.</td></tr></tbody>';
+
+  if (!$('pf-settings').contains(document.activeElement)) {
+    $('pf-fee').value = profitCfg.feePct;
+    $('pf-pack').value = profitCfg.packCost;
+    $('pf-other').value = profitCfg.otherMonthly;
+  }
+}
+
+$('pf-period').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pp]');
+  if (!b) return;
+  pfPeriod = b.dataset.pp;
+  renderProfit();
+});
+$('pf-settings').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await setDoc(PRIV, {
+      feePct: Math.max(0, Number($('pf-fee').value) || 0),
+      packCost: Math.max(0, Math.round(Number($('pf-pack').value) || 0)),
+      otherMonthly: Math.max(0, Math.round(Number($('pf-other').value) || 0)),
+    }, { merge: true });
+    toast('Supuestos guardados ✓');
+    document.activeElement.blur();
+  } catch (err) {
+    fail(err);
+  }
+});
+$('pf-export').addEventListener('click', () => {
+  downloadCsv(`utilidades-por-producto-twh-${C.todayCL()}.csv`,
+    ['Producto', 'Unidades', 'Ventas', 'Costo productos', 'Envío/comisión/empaque', 'Utilidad', 'Margen %', 'Utilidad por unidad'],
+    pfRows.map((x) => [x.name, x.q, Math.round(x.sales), Math.round(x.cogs), Math.round(x.extra), Math.round(x.profit),
+      x.sales ? Math.round((x.profit / x.sales) * 100) : '', x.q ? Math.round(x.profit / x.q) : '']));
+  toast('Utilidades descargadas');
 });

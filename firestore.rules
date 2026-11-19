@@ -25,6 +25,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Ajustes privados (comisión estimada, empaque): solo el admin
+    match /privado/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Compras a proveedores (costos): solo el admin
     match /compras/{id} {
       allow read, write: if isAdmin();

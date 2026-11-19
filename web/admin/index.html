@@ -22,6 +22,7 @@
     <nav class="tabs" id="tabs" hidden>
       <button type="button" data-tab="pedidos" aria-pressed="true">Pedidos <span class="count" id="count-alert" hidden></span></button>
       <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
+      <button type="button" data-tab="utilidades" aria-pressed="false">Utilidades</button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
       <button type="button" data-tab="compras" aria-pressed="false">Compras</button>
       <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
@@ -51,6 +52,29 @@
       <button type="button" class="btn ghost" id="export">Exportar CSV</button>
     </div>
     <div id="orders"></div>
+  </section>
+
+  <!-- UTILIDADES -->
+  <section id="tab-utilidades" hidden>
+    <div class="toolbar"><div class="filters" id="pf-period"></div>
+      <button type="button" class="btn ghost" id="pf-export">Descargar utilidades por producto (CSV)</button></div>
+    <div class="stats" id="pf-kpis"></div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Estado de resultados</h2><div class="table-wrap"><table class="data pnl" id="pf-pnl"></table></div><p class="hint" id="pf-notes" style="margin-top:8px"></p></div>
+      <div class="card"><h2 class="card-title">Recuperación de la inversión</h2><div id="pf-roi"></div></div>
+    </div>
+    <div class="card"><h2 class="card-title">Utilidad por mes</h2><div class="table-wrap"><table class="data" id="pf-month"></table></div></div>
+    <div class="card"><h2 class="card-title">Utilidad por producto</h2><div class="table-wrap"><table class="data" id="pf-prod"></table></div></div>
+    <form class="card settings" id="pf-settings">
+      <h2>Supuestos del cálculo</h2>
+      <p class="hint">Cuando Mercado Pago informa la comisión real de una venta se usa esa; si no, se estima con este %. El envío usa el costo real que anotes en cada pedido; si no lo anotaste, se asume lo que cobra la tienda por esa zona (aunque el cliente lo haya tenido gratis).</p>
+      <div class="grid3">
+        <label>Comisión Mercado Pago estimada (% con IVA)<input type="number" id="pf-fee" min="0" max="20" step="0.01" required></label>
+        <label>Empaque por pedido ($)<input type="number" id="pf-pack" min="0" step="1" required></label>
+        <label>Otros gastos del mes ($, publicidad, etc.)<input type="number" id="pf-other" min="0" step="1" required></label>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Guardar supuestos</button></div>
+    </form>
   </section>
 
   <!-- PRODUCTOS -->

@@ -332,6 +332,22 @@ async function notifyPaid(order) {
   ]).catch((err) => logger.error('[email] error', err.message));
 }
 
+// Comisión real que cobró Mercado Pago (para la pestaña Utilidades). Busca el pago aprobado por N° de pedido.
+async function saveMpFee(orderId, token) {
+  try {
+    const url = 'https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&external_reference=' + encodeURIComponent(orderId);
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) return logger.warn('[comisión] búsqueda respondió', r.status);
+    const pay = ((await r.json()).results || []).find((p) => p.status === 'approved');
+    if (!pay) return;
+    const fee = (pay.fee_details || []).reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const net = pay.transaction_details && pay.transaction_details.net_received_amount;
+    await ORDERS.doc(orderId).update({ mpFee: Math.round(fee), mpNet: net != null ? Math.round(Number(net)) : null, mpInstallments: pay.installments || 1 });
+  } catch (err) {
+    logger.warn('[comisión] no se pudo leer', orderId, err.message);
+  }
+}
+
 const isOrderEvent = (type, action) => /^order/i.test(type || '') || /^order\./i.test(action || '');
 
 // ---------- webhook ----------
@@ -375,7 +391,7 @@ exports.webhook = onRequest({ secrets: [MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, RESE
     }
     const r = await confirmPaid(orderId, payment);
     if (r.missing) logger.error('[webhook] pago aprobado de un pedido que no existe', orderId, dataId);
-    if (r.paid) await notifyPaid(r.order);
+    if (r.paid) await Promise.all([notifyPaid(r.order), saveMpFee(orderId, secret(MP_ACCESS_TOKEN))]);
     return res.json({ ok: true });
   } catch (err) {
     logger.error('[webhook] error', (err && err.message) || err);
