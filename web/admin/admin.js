@@ -24,7 +24,7 @@ if (F.useEmulators) {
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
 const COURIERS = ['Starken', 'Chilexpress', 'Blue Express', 'Correos de Chile', 'Despacho propio', 'Otro'];
-const TABS = ['pedidos', 'ventas', 'productos', 'descuentos', 'configurador', 'ajustes'];
+const TABS = ['pedidos', 'ventas', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -36,6 +36,7 @@ let raw = null; // documento tienda/catalogo tal cual
 let data = C.mergeCatalog(BASE, null); // catálogo mezclado
 let orders = [];
 let coupons = [];
+let compras = [];
 let orderFilter = 'abiertos';
 let prodFilter = 'todos';
 const dirty = new Set(); // productos con cambios sin guardar
@@ -102,6 +103,11 @@ onAuthStateChanged(auth, async (user) => {
       renderOrders();
       renderSales();
       renderDiscounts();
+      renderBuys();
+    }, fail),
+    onSnapshot(collection(db, 'compras'), (s) => {
+      compras = s.docs.map((d) => ({ ...d.data(), key: d.id }));
+      renderBuys();
     }, fail),
     onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(2000)), (s) => {
       orders = s.docs.map((d) => ({ ...d.data(), id: d.id }));
@@ -791,7 +797,7 @@ function renderOtd(list) {
   const r = C.otd(list);
   const groups = [['rm', 'RM'], ['regiones', 'Regiones'], ['retiro', 'Retiro']].map(([z, label]) => {
     const g = C.otd(list.filter((o) => ((o.shipping || {}).zone || 'rm') === z));
-    return `<tr><td>${label}</td><td class="num">${g.total}</td><td class="num">${g.onTime}</td><td class="num">${g.late}</td><td class="num"><b>${g.pct == null ? '—' : g.pct + '%'}</b></td></tr>`;
+    return `<tr><td>${label}</td><td class="n">${g.total}</td><td class="n">${g.onTime}</td><td class="n">${g.late}</td><td class="n"><b>${g.pct == null ? '—' : g.pct + '%'}</b></td></tr>`;
   }).join('');
   const lateList = list.filter((o) => C.onTime(o) === false).map((o) => {
     const days = C.daysUntil(o.promisedDate, C.fulfilledDate(o)) * -1;
@@ -800,7 +806,7 @@ function renderOtd(list) {
   const color = r.pct == null ? '' : r.pct >= 95 ? 'var(--green)' : r.pct >= 85 ? '#B7791F' : 'var(--red)';
   $('otd').innerHTML = `<div class="otd-row">
       <div class="otd-big" style="color:${color || 'inherit'}">${r.pct == null ? '—' : r.pct + '%'}<span>${r.total ? `${r.onTime} de ${r.total} a tiempo` : 'Aún no hay entregas en este período'}</span></div>
-      <div class="table-wrap"><table class="data"><thead><tr><th>Entrega</th><th class="num">Entregados</th><th class="num">A tiempo</th><th class="num">Atrasados</th><th class="num">OTD</th></tr></thead><tbody>${groups}</tbody></table></div>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Entrega</th><th class="n">Entregados</th><th class="n">A tiempo</th><th class="n">Atrasados</th><th class="n">OTD</th></tr></thead><tbody>${groups}</tbody></table></div>
     </div>
     ${r.openLate ? `<p class="warn">⚠ ${plural(r.openLate, 'pedido', 'pedidos')} de este período ya pasó la fecha límite y aún no se entrega: contará como atrasado.</p>` : ''}
     ${lateList.length ? `<details><summary>Ver entregas atrasadas (${lateList.length})</summary><ul class="otd-late">${lateList.join('')}</ul></details>` : ''}
@@ -1224,4 +1230,285 @@ async function discAction(e) {
 ['offers-list', 'coupons-list'].forEach((id) => {
   $(id).addEventListener('click', discAction);
   $(id).addEventListener('change', discAction);
+});
+
+// ---------- Compras (registro de compras a proveedores, costo unitario por SKU y ETA) ----------
+// compras/{id} = { date, supplier, eta, costTotal (IVA incl.), note, status: 'en_camino'|'recibida', receivedDate,
+//                  stockAdded, lines: [{ id, name, color, size, qty, sku, unitCost? }] }
+let buyEdit = null; // { key, data } compra que se está editando en el formulario
+
+const buyUnits = (b) => (b.lines || []).reduce((s, l) => s + (Number(l.qty) || 0), 0);
+// Costo unitario de una línea: el propio, o el total de la compra repartido parejo entre las unidades sin costo propio
+function lineCost(b, l) {
+  if (Number(l.unitCost) > 0) return Number(l.unitCost);
+  const own = (b.lines || []).filter((x) => Number(x.unitCost) > 0);
+  const ownTotal = own.reduce((s, x) => s + x.unitCost * x.qty, 0);
+  const rest = buyUnits(b) - own.reduce((s, x) => s + x.qty, 0);
+  return rest > 0 ? Math.max(0, (Number(b.costTotal) || 0) - ownTotal) / rest : 0;
+}
+const money1 = (n) => '$' + (Math.round((Number(n) || 0) * 10) / 10).toLocaleString('es-CL', { maximumFractionDigits: 1 });
+
+function buyEta(b) {
+  if (b.status === 'recibida') return { cls: 'gray', text: 'Recibida ' + fmtDate(b.receivedDate) };
+  if (!b.eta) return { cls: 'amber', text: 'En camino · sin ETA' };
+  const d = C.daysUntil(b.eta);
+  if (d < 0) return { cls: 'red', text: `Atrasada ${plural(-d, 'día', 'días')} (ETA ${fmtDate(b.eta)})` };
+  if (d === 0) return { cls: 'amber', text: 'Llega hoy' };
+  return { cls: 'green', text: `Llega en ${plural(d, 'día', 'días')} · ${C.dayName(b.eta)}` };
+}
+
+function renderBuys() {
+  if (!$('tab-compras')) return;
+  const all = compras.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const units = all.reduce((s, b) => s + buyUnits(b), 0);
+  const cost = all.reduce((s, b) => s + (Number(b.costTotal) || 0), 0);
+  const coming = all.filter((b) => b.status !== 'recibida');
+  const nextEta = coming.map((b) => b.eta).filter(Boolean).sort()[0];
+  $('buy-kpis').innerHTML = [
+    [money(cost), 'Total invertido (IVA incl.)'],
+    [units, 'Unidades compradas'],
+    [money(units ? cost / units : 0), 'Costo unitario promedio'],
+    [coming.reduce((s, b) => s + buyUnits(b), 0), `Unidades en camino${nextEta ? ' · próxima ETA ' + fmtDate(nextEta) : ''}`],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  $('buy-list').innerHTML = all.length ? all.map((b) => {
+    const e = buyEta(b);
+    const u = buyUnits(b);
+    const byColor = {};
+    (b.lines || []).forEach((l) => { const k = l.color ? CFG.colors[l.color] || l.color : 'Único'; byColor[k] = (byColor[k] || 0) + l.qty; });
+    return `<article class="card buy" data-buy="${esc(b.key)}">
+      <div class="buy-head">
+        <b>${fmtDate(b.date)}</b>${b.supplier ? ` · ${esc(b.supplier)}` : ''}
+        <span class="pill ${e.cls}">${e.text}</span>
+        <span class="buy-total">${money(b.costTotal)}</span>
+      </div>
+      ${b.note ? `<p class="hint">${esc(b.note)}</p>` : ''}
+      <p>${plural(u, 'unidad', 'unidades')} (${Object.keys(byColor).map((k) => `${byColor[k]} ${k.toLowerCase()}`).join(' · ')}) · costo unitario promedio <b>${money1(u ? b.costTotal / u : 0)}</b></p>
+      <div class="buy-actions">
+        ${b.status !== 'recibida' ? '<button type="button" class="btn primary small" data-buy-act="receive">Llegó: sumar al stock</button>' : (b.stockAdded ? '<span class="hint">✓ Sumada al stock</span>' : '')}
+        <button type="button" class="btn ghost small" data-buy-act="edit">Ver / editar</button>
+        <button type="button" class="btn ghost small" data-buy-act="delete">Eliminar</button>
+      </div>
+    </article>`;
+  }).join('') : '<p class="empty">Todavía no hay compras. Usa "Importar pedido a proveedor" o "+ Nueva compra".</p>';
+
+  // Resumen por SKU y talla (todas las compras)
+  const rows = {};
+  all.forEach((b) => (b.lines || []).forEach((l) => {
+    const p = productById(l.id);
+    const sku = p ? C.variantSku(p, l.color, l.size) : l.sku || l.id;
+    const r = rows[sku] || (rows[sku] = { sku, name: p ? p.name : l.name, color: l.color, size: l.size, qty: 0, cost: 0, price: p ? p.listPrice : 0 });
+    r.qty += l.qty;
+    r.cost += lineCost(b, l) * l.qty;
+  }));
+  const q = ($('buy-search').value || '').trim().toLowerCase();
+  const list = Object.values(rows).filter((r) => !q || (r.sku + ' ' + r.name).toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name) || (a.color || '').localeCompare(b.color || '') || C_SIZE(a.size) - C_SIZE(b.size));
+  buyRows = list;
+  $('buy-sku').innerHTML = list.length
+    ? `<thead><tr><th>SKU</th><th>Producto</th><th>Color</th><th>Talla</th><th class="n">Unidades</th><th class="n">Costo unit.</th><th class="n">Costo total</th><th class="n">Precio venta</th><th class="n">Margen bruto</th></tr></thead><tbody>${list.map((r) => {
+      const unit = r.qty ? r.cost / r.qty : 0;
+      const mg = r.price ? Math.round(((r.price - unit) / r.price) * 100) : null;
+      return `<tr><td><span class="sku">${esc(r.sku)}</span></td><td>${esc(r.name)}</td><td>${r.color ? esc(CFG.colors[r.color] || r.color) : '—'}</td><td>${esc(r.size)}</td><td class="n">${r.qty}</td><td class="n">${money1(unit)}</td><td class="n">${money(r.cost)}</td><td class="n">${r.price ? money(r.price) : '—'}</td><td class="n">${mg == null ? '—' : mg + '%'}</td></tr>`;
+    }).join('')}</tbody>`
+    : '<tbody><tr><td class="empty">Sin compras registradas.</td></tr></tbody>';
+}
+let buyRows = [];
+const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Única'];
+function C_SIZE(s) { const i = SIZE_ORDER.indexOf(s); return i < 0 ? 99 : i; }
+
+// ----- Formulario -----
+function buyLineHtml(l, i) {
+  const p = productById(l.id);
+  const prodOpts = data.products.filter((x) => x.type !== 'stickers' || x.id === l.id)
+    .map((x) => `<option value="${esc(x.id)}"${x.id === l.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  const colors = p && p.colors.length ? p.colors : [];
+  const sizes = p ? p.sizes : [];
+  return `<tr data-i="${i}">
+    <td><select data-f="id" aria-label="Producto"><option value="">Producto…</option>${prodOpts}${!p && l.id ? `<option value="${esc(l.id)}" selected>${esc(l.name || l.id)} (ya no existe)</option>` : ''}</select></td>
+    <td>${colors.length ? `<select data-f="color" aria-label="Color">${colors.map((c) => `<option value="${c}"${c === l.color ? ' selected' : ''}>${esc(CFG.colors[c])}</option>`).join('')}</select>` : '—'}</td>
+    <td><select data-f="size" aria-label="Talla">${sizes.map((s) => `<option${s === l.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></td>
+    <td><input type="number" data-f="qty" min="1" value="${esc(l.qty)}" aria-label="Cantidad" class="qty-in"></td>
+    <td><input type="number" data-f="unitCost" min="0" value="${l.unitCost ? esc(l.unitCost) : ''}" placeholder="auto" aria-label="Costo unitario propio" class="qty-in"></td>
+    <td><button type="button" class="link" data-f="del" aria-label="Quitar línea">✕</button></td>
+  </tr>`;
+}
+function buyFormSummary() {
+  const b = buyEdit.data;
+  const u = buyUnits(b);
+  $('bf-sum').innerHTML = `${plural(u, 'unidad', 'unidades')} · costo unitario promedio <b>${money1(u ? (Number(b.costTotal) || 0) / u : 0)}</b>`;
+}
+function openBuyForm(key, d) {
+  buyEdit = { key, data: JSON.parse(JSON.stringify(d)) };
+  const b = buyEdit.data;
+  const f = $('buy-form');
+  f.hidden = false;
+  f.innerHTML = `<h2>${key ? 'Editar compra' : 'Nueva compra'}</h2>
+    <div class="grid3">
+      <label>Fecha de compra<input type="date" id="bf-date" value="${esc(b.date || C.todayCL())}" required></label>
+      <label>Proveedor<input id="bf-supplier" value="${esc(b.supplier || '')}" maxlength="80" placeholder="Ej: Taller X"></label>
+      <label>ETA (cuándo llega)<input type="date" id="bf-eta" value="${esc(b.eta || '')}"></label>
+    </div>
+    <div class="grid3">
+      <label>Costo total (IVA incluido)<input type="number" id="bf-cost" min="0" value="${esc(b.costTotal || '')}" required></label>
+      <label style="grid-column:span 2">Nota<input id="bf-note" value="${esc(b.note || '')}" maxlength="200" placeholder="Ej: incluye estampado y etiquetas"></label>
+    </div>
+    <div class="table-wrap"><table class="data buy-lines"><thead><tr><th>Producto</th><th>Color</th><th>Talla</th><th>Cant.</th><th>Costo unit. propio</th><th></th></tr></thead>
+      <tbody id="bf-lines">${(b.lines || []).map(buyLineHtml).join('')}</tbody></table></div>
+    <p><button type="button" class="btn ghost small" id="bf-add">+ Agregar línea</button></p>
+    <p id="bf-sum"></p>
+    <p class="hint">Deja "costo unit. propio" vacío para repartir el costo total parejo entre todas las unidades.</p>
+    <div class="actions"><button class="btn primary" type="submit">Guardar compra</button><button type="button" class="btn ghost" id="bf-cancel">Cancelar</button></div>`;
+  buyFormSummary();
+  f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function readBuyForm() {
+  const b = buyEdit.data;
+  b.date = $('bf-date').value || C.todayCL();
+  b.supplier = $('bf-supplier').value.trim().slice(0, 80);
+  b.eta = $('bf-eta').value || '';
+  b.costTotal = Math.max(0, Math.round(Number($('bf-cost').value) || 0));
+  b.note = $('bf-note').value.trim().slice(0, 200);
+}
+$('buy-new').addEventListener('click', () => openBuyForm(null, { status: 'en_camino', lines: [{ id: '', color: '', size: '', qty: 1 }] }));
+$('buy-form').addEventListener('input', (e) => {
+  if (!buyEdit) return;
+  const tr = e.target.closest('tr[data-i]');
+  if (tr && (e.target.dataset.f === 'qty' || e.target.dataset.f === 'unitCost')) {
+    const l = buyEdit.data.lines[Number(tr.dataset.i)];
+    l[e.target.dataset.f] = Math.max(0, Math.round(Number(e.target.value) || 0));
+  }
+  readBuyForm();
+  buyFormSummary();
+});
+$('buy-form').addEventListener('change', (e) => {
+  const tr = e.target.closest('tr[data-i]');
+  if (!tr || !buyEdit) return;
+  const i = Number(tr.dataset.i);
+  const l = buyEdit.data.lines[i];
+  const f = e.target.dataset.f;
+  if (f === 'id') {
+    const p = productById(e.target.value);
+    l.id = e.target.value;
+    l.name = p ? p.name : '';
+    l.color = p && p.colors.length ? p.colors[0] : '';
+    l.size = p ? p.sizes[0] : '';
+    tr.outerHTML = buyLineHtml(l, i);
+  }
+  if (f === 'color' || f === 'size') l[f] = e.target.value;
+});
+$('buy-form').addEventListener('click', (e) => {
+  if (!buyEdit) return;
+  if (e.target.id === 'bf-add') {
+    const last = buyEdit.data.lines[buyEdit.data.lines.length - 1];
+    buyEdit.data.lines.push(last ? { ...last, qty: 1, unitCost: 0 } : { id: '', color: '', size: '', qty: 1 });
+    $('bf-lines').innerHTML = buyEdit.data.lines.map(buyLineHtml).join('');
+    buyFormSummary();
+  }
+  if (e.target.dataset.f === 'del') {
+    buyEdit.data.lines.splice(Number(e.target.closest('tr').dataset.i), 1);
+    $('bf-lines').innerHTML = buyEdit.data.lines.map(buyLineHtml).join('');
+    buyFormSummary();
+  }
+  if (e.target.id === 'bf-cancel') { buyEdit = null; $('buy-form').hidden = true; }
+});
+$('buy-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  readBuyForm();
+  const b = buyEdit.data;
+  b.lines = (b.lines || []).filter((l) => l.id && l.qty > 0).map((l) => {
+    const p = productById(l.id);
+    const out = { id: l.id, name: p ? p.name : l.name || l.id, color: l.color || '', size: l.size || 'Única', qty: Math.round(l.qty) };
+    out.sku = p ? C.variantSku(p, out.color, out.size) : l.sku || '';
+    if (Number(l.unitCost) > 0) out.unitCost = Math.round(l.unitCost);
+    return out;
+  });
+  if (!b.lines.length) return toast('Agrega al menos un producto', true);
+  if (!b.costTotal) return toast('Escribe el costo total de la compra', true);
+  try {
+    const ref = buyEdit.key ? doc(db, 'compras', buyEdit.key) : doc(collection(db, 'compras'));
+    const { key, ...clean } = b;
+    await setDoc(ref, { ...clean, status: b.status || 'en_camino', updatedAt: serverTimestamp() });
+    toast('Compra guardada ✓');
+    buyEdit = null;
+    $('buy-form').hidden = true;
+  } catch (err) {
+    fail(err);
+  }
+});
+
+// Importar compra.json (lo genera node disenos/pedido/generar-pedido.js --costo=...)
+$('buy-import').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const j = JSON.parse(await file.text());
+    if (j.tipo !== 'twh-compra' || !Array.isArray(j.lineas)) throw new Error('Este archivo no es un compra.json del pedido a proveedor');
+    const missing = j.lineas.filter((l) => !productById(l.id));
+    openBuyForm(null, {
+      date: j.fecha || C.todayCL(), supplier: j.proveedor || '', eta: j.eta || '', costTotal: Number(j.costoTotal) || 0, note: j.nota || '', status: 'en_camino',
+      lines: j.lineas.map((l) => ({ id: l.id, name: l.nombre, color: l.color || '', size: l.talla, qty: Number(l.cantidad) || 0 })),
+    });
+    toast(missing.length ? `Revisa: ${missing.length} línea(s) de productos que ya no existen` : 'Pedido cargado: revisa, pon la ETA y guarda', !!missing.length);
+  } catch (err) {
+    toast('No se pudo leer el archivo: ' + err.message, true);
+  }
+});
+
+$('buy-list').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-buy-act]');
+  if (!btn) return;
+  const key = btn.closest('[data-buy]').dataset.buy;
+  const b = compras.find((x) => x.key === key);
+  const act = btn.dataset.buyAct;
+  if (act === 'edit') return openBuyForm(key, b);
+  try {
+    if (act === 'delete') {
+      if (!confirm('¿Eliminar esta compra del registro? (no cambia el stock)')) return;
+      await deleteDoc(doc(db, 'compras', key));
+      return toast('Compra eliminada');
+    }
+    if (act === 'receive') {
+      const add = confirm(`¿Sumar las ${buyUnits(b)} unidades al stock de la tienda?\n\nAceptar = sumar al stock · Cancelar = solo marcarla como recibida`);
+      if (add) await addBuyToStock(b);
+      await updateDoc(doc(db, 'compras', key), { status: 'recibida', receivedDate: C.todayCL(), stockAdded: add || !!b.stockAdded });
+      toast(add ? 'Recibida y sumada al stock ✓' : 'Marcada como recibida');
+    }
+  } catch (err) {
+    fail(err);
+  }
+});
+
+// Suma las unidades al stock por talla (si el producto no controlaba stock, empieza a controlarlo con lo recibido)
+async function addBuyToStock(b) {
+  const rawProducts = (raw && raw.products) || {};
+  const args = [];
+  const fresh = {};
+  (b.lines || []).forEach((l) => {
+    if (!productById(l.id)) return;
+    const key = C.stockKey(l.color);
+    const st = rawProducts[l.id] && rawProducts[l.id].stock;
+    if (st && typeof st === 'object') args.push(new FieldPath('products', l.id, 'stock', key, l.size), increment(l.qty));
+    else {
+      fresh[l.id] = fresh[l.id] || {};
+      fresh[l.id][key] = fresh[l.id][key] || {};
+      fresh[l.id][key][l.size] = (fresh[l.id][key][l.size] || 0) + l.qty;
+    }
+  });
+  Object.keys(fresh).forEach((id) => args.push(new FieldPath('products', id, 'stock'), fresh[id]));
+  if (args.length) await updateDoc(CATALOG, ...args);
+}
+
+$('buy-search').addEventListener('input', renderBuys);
+$('buy-export').addEventListener('click', () => {
+  renderBuys();
+  downloadCsv(`costos-por-sku-twh-${C.todayCL()}.csv`,
+    ['SKU', 'Producto', 'Color', 'Talla', 'Unidades compradas', 'Costo unitario', 'Costo total', 'Precio venta', 'Margen bruto %'],
+    buyRows.map((r) => {
+      const unit = r.qty ? r.cost / r.qty : 0;
+      return [r.sku, r.name, r.color ? CFG.colors[r.color] || r.color : '', r.size, r.qty, Math.round(unit), Math.round(r.cost), r.price,
+        r.price ? Math.round(((r.price - unit) / r.price) * 100) : ''];
+    }));
+  toast('Costos descargados');
 });

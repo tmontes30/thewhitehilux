@@ -382,3 +382,4 @@ mark.falta { background: #FFE08A; color: #6b4a00; padding: 0 4px; border-radius:
 .pickup-tag svg { width: 20px; height: 20px; flex: none; color: var(--green); }
 .pickup-tag b { color: var(--green); }
 .eta b { font-weight: 700; }
+.pickup-list { display: grid; gap: 8px; }

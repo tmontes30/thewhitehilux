@@ -39,9 +39,9 @@ test('envío gratis solo en RM sobre el mínimo', () => {
 });
 
 test('retiro no pide dirección y no cobra envío', () => {
-  const o = buildOrder({ items: [{ id: JOCKEY, size: 'Única', color: 'negro', qty: 1 }], customer, shipping: { method: 'retiro', pickupPoint: 'Lo Barnechea' } }, products, config);
+  const o = buildOrder({ items: [{ id: JOCKEY, size: 'Única', color: 'negro', qty: 1 }], customer, shipping: { method: 'retiro', pickupPoint: config.pickupPoints[0] } }, products, config);
   assert.strictEqual(o.shipping.cost, 0);
-  assert.strictEqual(o.shipping.pickupPoint, 'Lo Barnechea');
+  assert.strictEqual(o.shipping.pickupPoint, config.pickupPoints[0]);
   assert.throws(() => buildOrder({ items: [{ id: JOCKEY, size: 'Única', color: 'negro', qty: 1 }], customer, shipping: { method: 'retiro' } }, products, config), /retirar/);
   assert.strictEqual(toMercadoPagoItems(o).length, 1);
 });

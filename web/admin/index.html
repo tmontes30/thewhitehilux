@@ -23,6 +23,7 @@
       <button type="button" data-tab="pedidos" aria-pressed="true">Pedidos <span class="count" id="count-alert" hidden></span></button>
       <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
+      <button type="button" data-tab="compras" aria-pressed="false">Compras</button>
       <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
       <button type="button" data-tab="configurador" aria-pressed="false">Configurador</button>
       <button type="button" data-tab="ajustes" aria-pressed="false">Ajustes</button>
@@ -91,6 +92,24 @@
     </div>
     <div class="card"><h2 class="card-title">Descuentos usados</h2><div class="table-wrap"><table class="data" id="sales-disc"></table></div></div>
     <p class="hint">Cuenta los pedidos pagados (pagado, preparando, despachado y entregado) según la fecha de pago. No incluye cancelados ni pagos pendientes.</p>
+  </section>
+
+  <!-- COMPRAS -->
+  <section id="tab-compras" hidden>
+    <div class="stats" id="buy-kpis"></div>
+    <div class="toolbar">
+      <button type="button" class="btn primary" id="buy-new">+ Nueva compra</button>
+      <label class="btn ghost file-btn">Importar pedido a proveedor (compra.json)<input type="file" id="buy-import" accept=".json,application/json" hidden></label>
+      <button type="button" class="btn ghost" id="buy-export">Descargar costos por SKU (CSV)</button>
+    </div>
+    <form class="card buy-form" id="buy-form" hidden novalidate></form>
+    <h2 class="cat-title">Compras</h2>
+    <div id="buy-list"></div>
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Costo por SKU y talla</h2><input type="search" id="buy-search" placeholder="Buscar SKU o producto…" aria-label="Buscar SKU"></div>
+      <div class="table-wrap"><table class="data" id="buy-sku"></table></div>
+      <p class="hint" style="margin-top:8px">Costo unitario = costo de la compra (IVA incluido) repartido parejo entre sus unidades, salvo que la línea tenga un costo propio. Margen bruto = (precio de venta − costo) ÷ precio de venta, antes de la comisión de Mercado Pago.</p>
+    </div>
   </section>
 
   <!-- DESCUENTOS -->

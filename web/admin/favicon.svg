@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Ícono del panel de admin (distinto al de la tienda): cuadrado mostaza con engranaje -->
-  <rect width="64" height="64" rx="14" fill="#E39B2D"/>
-  <g fill="#1B1C1A">
-    <path d="M28 8h8l1.6 7.2a18 18 0 0 1 5 2.1l6.2-4 5.7 5.7-4 6.2a18 18 0 0 1 2.1 5L60 28v8l-7.2 1.6a18 18 0 0 1-2.1 5l4 6.2-5.7 5.7-6.2-4a18 18 0 0 1-5 2.1L36 60h-8l-1.6-7.2a18 18 0 0 1-5-2.1l-6.2 4-5.7-5.7 4-6.2a18 18 0 0 1-2.1-5L4 36v-8l7.2-1.6a18 18 0 0 1 2.1-5l-4-6.2 5.7-5.7 6.2 4a18 18 0 0 1 5-2.1z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Ícono del panel de admin (y de la app en el inicio del iPhone): TWH negro sobre blanco -->
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <g transform="translate(242 310) skewX(-12)">
+    <text x="0" y="0" font-family="'Arial Black', 'Segoe UI Black', Arial, sans-serif" font-weight="900" font-size="150" fill="#111111" text-anchor="middle" letter-spacing="-4">TWH</text>
   </g>
-  <circle cx="32" cy="32" r="8.5" fill="#E39B2D"/>
 </svg>

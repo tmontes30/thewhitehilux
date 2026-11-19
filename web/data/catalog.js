@@ -24,7 +24,7 @@
         retiro: { label: 'Retiro gratis', price: 0 }
       },
       // Puntos de retiro gratis (el cliente elige uno; se coordina el lugar exacto por WhatsApp)
-      pickupPoints: ['Las Condes', 'Lo Barnechea'],
+      pickupPoints: ['Los Trapenses, Lo Barnechea (cerca del Líder Pie Andino)', 'Parque Araucano, Las Condes (Rosario Norte)'],
       colors: { negro: 'Negro', blanco: 'Blanco' },
       categories: { polera: 'Poleras', poleron: 'Polerones', jockey: 'Jockeys', stickers: 'Stickers' },
       regions: ['Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso', 'Región Metropolitana',

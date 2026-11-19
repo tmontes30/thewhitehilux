@@ -107,7 +107,7 @@ async function post(items, shipping = rm, cust = customer) {
     { method: 'despacho', region: 'Biobío', comuna: 'Concepción', address: 'O\'Higgins 820', notes: 'Dejar en conserjería' },
     { name: 'Diego Muñoz', email: 'diego@ejemplo.cl', phone: '987654321' });
   await fetch(`${API}/simularPago?id=${b.body.order_id}`);
-  const c = await post([{ id: polera.id, size: 'L', color: 'blanco', qty: 1 }], { method: 'retiro', pickupPoint: 'Las Condes' }, { name: 'Pedro Soto', email: 'pedro@ejemplo.cl', phone: '+56912341234' });
+  const c = await post([{ id: polera.id, size: 'L', color: 'blanco', qty: 1 }], { method: 'retiro', pickupPoint: 'Parque Araucano, Las Condes (Rosario Norte)' }, { name: 'Pedro Soto', email: 'pedro@ejemplo.cl', phone: '+56912341234' });
   await fetch(`${API}/simularPago?id=${c.body.order_id}`);
   await db.doc('pedidos/' + c.body.order_id).update({ promisedDate: '2026-11-16', paidDate: '2026-11-11' });
   await post([{ id: polera.id, size: 'XL', color: 'negro', qty: 1 }], rm, { name: 'Ana Pérez', email: 'ana@ejemplo.cl', phone: '+56911112222' });

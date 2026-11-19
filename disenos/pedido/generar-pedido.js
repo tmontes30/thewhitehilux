@@ -100,6 +100,17 @@ function svgLogo(a) {
 const filas = [];
 modelos.forEach((m) => m.colores.forEach((col) => filas.push({ m, col, cant: { ...curvaDe(m) }, total: suma(curvaDe(m)) })));
 const total = filas.reduce((s, f) => s + f.total, 0);
+// compra.json: para importar en el panel (pestaña Compras). El costo total se pasa al correr el script
+// (node disenos/pedido/generar-pedido.js --costo=909350) y queda solo en esta carpeta privada.
+const costoArg = (process.argv.find((a) => a.startsWith('--costo=')) || '').split('=')[1];
+fs.writeFileSync(path.join(OUT, 'compra.json'), JSON.stringify({
+  tipo: 'twh-compra',
+  fecha: hoy,
+  proveedor: '',
+  nota: `Pedido a proveedor ${hoy} (${total} poleras)`,
+  costoTotal: Number(String(costoArg || '').replace(/\D/g, '')) || 0,
+  lineas: filas.flatMap((f) => TALLAS.filter((t) => f.cant[t]).map((t) => ({ id: f.m.p.id, nombre: f.m.p.name, color: f.col, talla: t, cantidad: f.cant[t] }))),
+}, null, 2));
 const porColorTalla = {};
 filas.forEach((f) => TALLAS.forEach((t) => { porColorTalla[f.col] = porColorTalla[f.col] || {}; porColorTalla[f.col][t] = (porColorTalla[f.col][t] || 0) + f.cant[t]; }));
 const estampados = { frente: 0, espalda: 0 };

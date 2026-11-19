@@ -33,8 +33,8 @@
       <label class="radio"><input type="radio" name="method" id="m-retiro" value="retiro"><span>Retiro gratis en Las Condes o Lo Barnechea<small id="pickup-hint">Te escribimos por WhatsApp para coordinar</small></span></label>
     </div>
     <div class="field" id="pickup-fields" hidden>
-      <label for="pickup">¿Dónde retiras?</label>
-      <select id="pickup" name="pickup"><option value="">Elige…</option></select>
+      <label>¿Dónde retiras?</label>
+      <div class="pickup-list" id="pickup-list" role="radiogroup" aria-label="Punto de retiro"></div>
     </div>
 
     <div id="address-fields">
@@ -147,7 +147,7 @@
     $('pickup-hint').textContent = 'Retira ' + C.dayWord(pick.to) + ' · te escribimos por WhatsApp para coordinar';
     var r = zone ? C.promiseRange(new Date(), zone, data.settings) : null;
     $('eta').innerHTML = !r ? '' : retiro
-      ? 'Retiro gratis <b>' + C.dayWord(r.to) + '</b>' + ($('pickup').value ? ' en ' + TWH.esc($('pickup').value) : '') + '.'
+      ? 'Retiro gratis <b>' + C.dayWord(r.to) + '</b>' + (pickupVal() ? ' en ' + TWH.esc(pickupVal().split(' (')[0]) : '') + '.'
       : 'Llega <b>' + C.rangeText(r) + '</b>, si pagas hoy.';
     $('pay').disabled = problems > 0;
   }
@@ -201,10 +201,12 @@
   });
 
   // Recordar datos del formulario en este navegador
-  var FIELDS = ['name', 'email', 'phone', 'region', 'comuna', 'address', 'notes', 'pickup'];
+  var FIELDS = ['name', 'email', 'phone', 'region', 'comuna', 'address', 'notes'];
+  function pickupVal() { var r = document.querySelector('input[name="pickup"]:checked'); return r ? r.value : ''; }
   function saveDraft() {
     var d = {}; FIELDS.forEach(function (f) { d[f] = $(f).value; });
     d.method = $('m-retiro').checked ? 'retiro' : 'despacho';
+    d.pickup = pickupVal();
     try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {}
   }
   function loadDraft() {
@@ -212,6 +214,7 @@
       var d = JSON.parse(localStorage.getItem(DRAFT) || '{}');
       FIELDS.forEach(function (f) { if (d[f]) $(f).value = d[f]; });
       if (d.method === 'retiro') $('m-retiro').checked = true;
+      document.querySelectorAll('input[name="pickup"]').forEach(function (r) { if (r.value === d.pickup) r.checked = true; });
     } catch (e) {}
   }
 
@@ -233,13 +236,13 @@
       if ($('comuna').value.trim().length < 2) return showErr('Escribe tu comuna.');
       if ($('address').value.trim().length < 5) return showErr('Escribe tu dirección con número.');
     }
-    if (method === 'retiro' && !$('pickup').value) return showErr('Elige dónde quieres retirar.');
+    if (method === 'retiro' && !pickupVal()) return showErr('Elige dónde quieres retirar.');
     if (!$('acepto').checked) return showErr('Para pagar debes aceptar los términos y condiciones.');
     var payload = {
       items: TWH.Cart.items(),
       coupon: coupon ? coupon.code : '',
       customer: { name: name, email: email, phone: phone },
-      shipping: { method: method, region: $('region').value, comuna: $('comuna').value, address: $('address').value, notes: $('notes').value, pickupPoint: $('pickup').value }
+      shipping: { method: method, region: $('region').value, comuna: $('comuna').value, address: $('address').value, notes: $('notes').value, pickupPoint: pickupVal() }
     };
     if (location.protocol === 'file:') {
       return showErr('Estás viendo la tienda desde tu computador. El pago con Mercado Pago funciona en la tienda publicada (thewhitehilux.cavedevz.com).');
@@ -262,7 +265,11 @@
   TWH.loadData().then(function (d) {
     data = d;
     d.config.regions.forEach(function (r) { var o = document.createElement('option'); o.value = r; o.textContent = r; $('region').appendChild(o); });
-    (d.config.pickupPoints || []).forEach(function (r) { var o = document.createElement('option'); o.value = r; o.textContent = r; $('pickup').appendChild(o); });
+    $('pickup-list').innerHTML = (d.config.pickupPoints || []).map(function (r) {
+      var m = r.match(/^([^,]+), ([^(]+?)\s*\((.+)\)$/) || [r, r, '', ''];
+      return '<label class="radio"><input type="radio" name="pickup" value="' + TWH.esc(r) + '"><span>' + TWH.esc(m[1]) + (m[2] ? ' · ' + TWH.esc(m[2]) : '') +
+        (m[3] ? '<small>' + TWH.esc(m[3].charAt(0).toUpperCase() + m[3].slice(1)) + '</small>' : '') + '</span></label>';
+    }).join('');
     loadDraft();
     render();
     var saved = null; try { saved = localStorage.getItem(COUPON); } catch (e) {}

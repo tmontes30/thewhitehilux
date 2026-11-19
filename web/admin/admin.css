@@ -238,3 +238,16 @@ body.wide main.wrap { max-width: none; padding-bottom: 0; }
 .push-help summary { cursor: pointer; font-weight: 600; }
 .push-help ol { margin: 8px 0 0 20px; display: grid; gap: 6px; }
 .settings .grid3 + .grid3 { margin-top: 12px; }
+
+/* Compras */
+.file-btn { cursor: pointer; }
+.buy-form h2 { margin-bottom: 12px; }
+.buy-form .grid3 + .grid3 { margin-top: 12px; }
+.buy-form .table-wrap { margin-top: 14px; }
+.buy-lines select { min-width: 110px; }
+.buy-lines td:first-child select { min-width: 220px; }
+.buy-lines .qty-in { width: 90px; }
+.buy { display: grid; gap: 8px; margin-bottom: 12px; }
+.buy-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.buy-total { margin-left: auto; font-weight: 800; font-size: 17px; }
+.buy-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
