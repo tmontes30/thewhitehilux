@@ -470,7 +470,7 @@ exports.correoEstado = onDocumentUpdated(
     let kind = '';
     if (o.status === 'entregado' && !sent.entregado && before.status !== 'entregado') kind = 'entregado';
     else if (o.status === 'despachado' && !sent.despachado && (retiro || o.courier)) kind = 'despachado';
-    if (!kind || !(o.customer && o.customer.email)) return;
+    if (!kind || !(o.customer && o.customer.email) || o.noEmails) return; // venta manual sin correos
     const m = mail();
     if (!m.key) return; // correos desactivados
     // marca primero (transacción) para que dos disparos seguidos no manden el correo dos veces

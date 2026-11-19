@@ -199,12 +199,15 @@ function orderCard(o) {
   const wa = waLink(cust.phone);
   const paid = o.paidAmount != null ? o.paidAmount : o.total;
   const opts = Object.keys(C.ORDER_STATUS).map((k) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${C.ORDER_STATUS[k]}</option>`).join('');
-  const dest = ship.method === 'retiro'
+  const dest = ship.pickupPoint === 'Entrega en mano'
+    ? '<p><b>Entrega en mano</b> (acordada)</p>'
+    : ship.method === 'retiro'
     ? `<p><b>Retiro gratis${ship.pickupPoint ? ' en ' + esc(ship.pickupPoint) : ''}</b><br><span class="hint">Coordinar por WhatsApp</span></p>`
     : `<p>${esc(ship.address)}<br>${esc(ship.comuna)}, ${esc(ship.region)}</p>`;
   return `<article class="card order ${dd && dd.cls !== 'green' ? 'due-' + dd.cls : ''}" id="o-${esc(o.id)}" data-id="${esc(o.id)}">
     <div class="order-head">
       <span class="id">${esc(o.id)}</span>
+      ${o.source === 'manual' ? `<span class="pill gray">Venta manual · ${esc(PAY_METHODS[o.paymentMethod] || o.paymentMethod || '')}</span>` : ''}
       <span class="date">Creado ${fmtDate(o.createdDate)}${o.paidDate ? ' · pagado ' + fmtDate(o.paidDate) : ''}</span>
       <select data-act="status" aria-label="Estado del pedido">${opts}</select>
       ${dd ? `<span class="pill ${dd.cls}">${dd.text}</span>` : ''}
@@ -1829,3 +1832,183 @@ function setDF(key, value, label) {
   const key = t.dataset.df;
   setDF(key, key === 'range' ? t.dataset.v.split('|') : t.dataset.v, t.dataset.l);
 }));
+
+// ---------- Venta manual (transferencia, efectivo): sin comisión de Mercado Pago, descuenta stock y cuenta en tableros ----------
+// Crea un pedido igual a los de la tienda (pedidos/*) con source: 'manual', paymentMethod y mpFee: 0.
+const PAY_METHODS = { transferencia: 'Transferencia', efectivo: 'Efectivo', otro: 'Otro' };
+let manual = null; // { lines: [...] }
+
+function newManualId() {
+  const r = Array.from(crypto.getRandomValues(new Uint8Array(3))).map((b) => b.toString(36).toUpperCase().padStart(2, '0')).join('').slice(0, 4);
+  return 'TWH-' + Date.now().toString(36).toUpperCase() + '-' + r;
+}
+function mLineHtml(l, i) {
+  const p = productById(l.id);
+  const prodOpts = data.products.filter((x) => x.status !== 'oculto' || x.id === l.id)
+    .map((x) => `<option value="${esc(x.id)}"${x.id === l.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  const colors = p && p.colors.length ? p.colors : [];
+  const designs = p && p.designs ? p.designs : [];
+  const st = p && p.stock ? C.stockOf(p, l.color, l.size) : null;
+  return `<tr data-i="${i}">
+    <td><select data-f="id" aria-label="Producto"><option value="">Producto…</option>${prodOpts}</select></td>
+    <td>${designs.length ? `<select data-f="design" aria-label="Diseño">${designs.map((d) => `<option value="${esc(d.id)}"${d.id === l.design ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : '—'}</td>
+    <td>${colors.length ? `<select data-f="color" aria-label="Color">${colors.map((c) => `<option value="${c}"${c === l.color ? ' selected' : ''}>${esc(CFG.colors[c])}</option>`).join('')}</select>` : '—'}</td>
+    <td><select data-f="size" aria-label="Talla">${(p ? p.sizes : []).map((s) => `<option${s === l.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>${st != null ? `<small class="hint"> quedan ${st}</small>` : ''}</td>
+    <td><input type="number" data-f="qty" min="1" value="${esc(l.qty)}" class="qty-in" aria-label="Cantidad"></td>
+    <td><input type="number" data-f="price" min="0" value="${esc(l.price)}" class="qty-in" aria-label="Precio unitario"></td>
+    <td><button type="button" class="link" data-f="del" aria-label="Quitar">✕</button></td>
+  </tr>`;
+}
+function mDefaults(l) {
+  const p = productById(l.id);
+  if (!p) return l;
+  l.color = p.colors.length ? (p.colors.includes(l.color) ? l.color : p.colors[0]) : '';
+  l.size = p.sizes.includes(l.size) ? l.size : p.sizes[0];
+  l.design = p.designs && p.designs.length ? (p.designs.some((d) => d.id === l.design) ? l.design : p.designs[0].id) : '';
+  l.price = p.price;
+  return l;
+}
+function mTotals() {
+  const sub = manual.lines.reduce((s, l) => s + (Number(l.price) || 0) * (Number(l.qty) || 0), 0);
+  const ship = $('mv-ship').value === 'despacho' ? Math.max(0, Math.round(Number($('mv-shipcost').value) || 0)) : 0;
+  $('mv-total').innerHTML = `Productos ${money(sub)}${ship ? ' + envío ' + money(ship) : ''} = <b>${money(sub + ship)}</b> · sin comisión`;
+  return { sub, ship };
+}
+function openManual() {
+  manual = { lines: [mDefaults({ id: (data.products.find((p) => p.type === 'polera' && p.status !== 'oculto') || data.products[0]).id, qty: 1 })] };
+  const f = $('manual-form');
+  f.hidden = false;
+  const points = CFG.pickupPoints || [];
+  f.innerHTML = `<h2>Venta manual <small class="hint">(transferencia o efectivo, sin Mercado Pago)</small></h2>
+    <div class="grid3">
+      <label>Nombre del cliente<input id="mv-name" maxlength="80" required></label>
+      <label>Teléfono (opcional)<input id="mv-phone" maxlength="20" type="tel"></label>
+      <label>Correo (opcional)<input id="mv-email" maxlength="120" type="email"></label>
+    </div>
+    <div class="grid3">
+      <label>Medio de pago<select id="mv-pay">${Object.keys(PAY_METHODS).map((k) => `<option value="${k}">${PAY_METHODS[k]}</option>`).join('')}</select></label>
+      <label>Fecha de pago<input type="date" id="mv-date" value="${C.todayCL()}"></label>
+      <label>Entrega<select id="mv-ship">
+        <option value="mano">Entrega en mano (acordada)</option>
+        ${points.map((pt, i) => `<option value="p${i}">Retiro: ${esc(pt)}</option>`).join('')}
+        <option value="despacho">Despacho</option></select></label>
+    </div>
+    <div class="grid3" id="mv-addr" hidden>
+      <label>Región<select id="mv-region">${CFG.regions.map((r) => `<option${r === 'Región Metropolitana' ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+      <label>Comuna<input id="mv-comuna" maxlength="60"></label>
+      <label>Dirección<input id="mv-address" maxlength="160"></label>
+      <label>Envío cobrado al cliente ($)<input type="number" id="mv-shipcost" min="0" value="0"></label>
+    </div>
+    <div class="table-wrap" style="margin-top:12px"><table class="data buy-lines"><thead><tr><th>Producto</th><th>Diseño</th><th>Color</th><th>Talla</th><th>Cant.</th><th>Precio unit.</th><th></th></tr></thead>
+      <tbody id="mv-lines">${manual.lines.map(mLineHtml).join('')}</tbody></table></div>
+    <p><button type="button" class="btn ghost small" id="mv-add">+ Agregar producto</button></p>
+    <div class="grid3">
+      <label>Estado<select id="mv-status"><option value="entregado">Entregado (ya lo tiene)</option><option value="preparando">En preparación</option><option value="pagado">Pagado · por preparar</option></select></label>
+      <label class="check"><input type="checkbox" id="mv-stock" checked> Descontar del stock</label>
+      <label class="check"><input type="checkbox" id="mv-mails"> Mandarle correos de despacho/entrega</label>
+    </div>
+    <label style="margin-top:10px">Nota interna (opcional)<input id="mv-note" maxlength="300" placeholder="Ej: amigo de la U, pagó al Banco Estado"></label>
+    <p id="mv-total" class="mv-total"></p>
+    <div class="actions"><button class="btn primary" type="submit">Guardar venta</button><button type="button" class="btn ghost" id="mv-cancel">Cancelar</button></div>`;
+  mTotals();
+  f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('mv-name').focus();
+}
+$('manual-new').addEventListener('click', openManual);
+$('manual-form').addEventListener('change', (e) => {
+  if (!manual) return;
+  if (e.target.id === 'mv-ship') {
+    $('mv-addr').hidden = e.target.value !== 'despacho';
+    $('mv-status').value = e.target.value === 'mano' ? 'entregado' : 'preparando';
+  }
+  const tr = e.target.closest('tr[data-i]');
+  if (tr) {
+    const i = Number(tr.dataset.i);
+    const l = manual.lines[i];
+    const f = e.target.dataset.f;
+    if (f === 'id') { l.id = e.target.value; mDefaults(l); }
+    if (f === 'color' || f === 'size' || f === 'design') l[f] = e.target.value;
+    tr.outerHTML = mLineHtml(l, i);
+  }
+  mTotals();
+});
+$('manual-form').addEventListener('input', (e) => {
+  if (!manual) return;
+  const tr = e.target.closest('tr[data-i]');
+  if (tr && (e.target.dataset.f === 'qty' || e.target.dataset.f === 'price')) {
+    manual.lines[Number(tr.dataset.i)][e.target.dataset.f === 'qty' ? 'qty' : 'price'] = Math.max(0, Math.round(Number(e.target.value) || 0));
+  }
+  mTotals();
+});
+$('manual-form').addEventListener('click', (e) => {
+  if (!manual) return;
+  if (e.target.id === 'mv-add') {
+    const last = manual.lines[manual.lines.length - 1];
+    manual.lines.push(last ? { ...last, qty: 1 } : mDefaults({ id: data.products[0].id, qty: 1 }));
+    $('mv-lines').innerHTML = manual.lines.map(mLineHtml).join('');
+    mTotals();
+  }
+  if (e.target.dataset.f === 'del') {
+    manual.lines.splice(Number(e.target.closest('tr').dataset.i), 1);
+    $('mv-lines').innerHTML = manual.lines.map(mLineHtml).join('');
+    mTotals();
+  }
+  if (e.target.id === 'mv-cancel') { manual = null; $('manual-form').hidden = true; }
+});
+$('manual-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = $('mv-name').value.trim();
+  if (name.length < 2) return toast('Escribe el nombre del cliente', true);
+  const lines = manual.lines.filter((l) => productById(l.id) && l.qty > 0).map((l) => {
+    const p = productById(l.id);
+    const d = p.designs ? p.designs.find((x) => x.id === l.design) : null;
+    const price = Math.max(0, Math.round(Number(l.price) || 0));
+    return {
+      id: p.id, sku: C.variantSku(p, l.color, l.size, l.design), name: p.name, type: p.type, size: l.size,
+      color: l.color || '', color_name: l.color ? CFG.colors[l.color] || l.color : '', design: l.design || '', design_name: d ? d.name : '',
+      qty: l.qty, list_price: p.listPrice || p.price, unit_price: price, offer: price < (p.listPrice || p.price) ? 'Precio manual' : '',
+      total: price * l.qty, discount: 0, net: price * l.qty,
+    };
+  });
+  if (!lines.length) return toast('Agrega al menos un producto', true);
+  const { sub, ship } = mTotals();
+  const shipSel = $('mv-ship').value;
+  const points = CFG.pickupPoints || [];
+  const paidDate = $('mv-date').value || C.todayCL();
+  const status = $('mv-status').value;
+  let shipping;
+  if (shipSel === 'despacho') {
+    const region = $('mv-region').value;
+    const zone = region === 'Región Metropolitana' ? 'rm' : 'regiones';
+    shipping = { method: 'despacho', zone, zone_label: CFG.shipping[zone].label, cost: ship, free: !ship, region, comuna: $('mv-comuna').value.trim(), address: $('mv-address').value.trim(), notes: '', pickupPoint: '' };
+  } else {
+    const pt = shipSel === 'mano' ? 'Entrega en mano' : points[Number(shipSel.slice(1))] || '';
+    shipping = { method: 'retiro', zone: 'retiro', zone_label: shipSel === 'mano' ? 'Entrega en mano' : 'Retiro gratis' + (pt ? ' en ' + pt : ''), cost: 0, free: true, region: '', comuna: '', address: '', notes: '', pickupPoint: pt };
+  }
+  const range = C.promiseRange(paidDate, shipping.zone, data.settings);
+  const id = newManualId();
+  const order = {
+    id, source: 'manual', paymentMethod: $('mv-pay').value,
+    status, createdAt: serverTimestamp(), createdDate: paidDate,
+    customer: { name, email: $('mv-email').value.trim().toLowerCase(), phone: $('mv-phone').value.trim() },
+    shipping, lines, subtotal: sub, discount: null, total: sub + ship, paidAmount: sub + ship,
+    paidAt: serverTimestamp(), paidDate,
+    promisedFrom: shipSel === 'mano' ? paidDate : range.from, promisedDate: shipSel === 'mano' ? paidDate : range.to,
+    mpFee: 0, noEmails: !$('mv-mails').checked,
+    adminNote: $('mv-note').value.trim().slice(0, 300),
+    notifs: [{ at: new Date().toISOString(), kind: `venta manual (${PAY_METHODS[$('mv-pay').value]})`, channel: 'panel', to: auth.currentUser.email, ok: true, note: '' }],
+  };
+  if (status !== 'pagado') order.preparingDate = paidDate;
+  if (status === 'entregado') { order.shippedDate = paidDate; order.deliveredDate = paidDate; }
+  try {
+    await setDoc(doc(db, 'pedidos', id), order);
+    if ($('mv-stock').checked) await moveStock(order, -1);
+    toast(`Venta ${id} guardada ✓`);
+    manual = null;
+    $('manual-form').hidden = true;
+    orderFilter = status === 'entregado' ? 'entregado' : 'abiertos';
+    renderOrders();
+  } catch (err) {
+    fail(err);
+  }
+});

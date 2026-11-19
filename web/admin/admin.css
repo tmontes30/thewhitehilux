@@ -274,3 +274,10 @@ table.pnl tr.muted td { color: var(--muted); font-size: 12.5px; }
 tr[data-df]:hover td, .top-item[data-df]:hover { background: #F4F4F2; }
 .bar[data-df]:hover { filter: brightness(1.25); }
 tr.sel td { background: #FFF6E5; }
+
+/* Venta manual */
+#manual-form { margin-bottom: 14px; }
+#manual-form .grid3 + .grid3, #manual-form .table-wrap + p + .grid3 { margin-top: 12px; }
+label.check { display: flex; align-items: center; gap: 8px; align-self: end; padding-bottom: 8px; }
+label.check input { width: auto; }
+.mv-total { font-size: 15px; margin: 12px 0 4px; }

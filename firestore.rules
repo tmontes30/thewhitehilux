@@ -15,9 +15,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // El admin puede crear ventas manuales (transferencia/efectivo); los pedidos web los crean las funciones
     match /pedidos/{id} {
-      allow read, update, delete: if isAdmin();
-      allow create: if false;
+      allow read, update, delete, create: if isAdmin();
     }
 
     // Códigos de descuento: privados (el cliente solo los valida a través de la función validarCupon)
