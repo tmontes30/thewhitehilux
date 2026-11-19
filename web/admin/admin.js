@@ -205,6 +205,7 @@ function orderCard(o) {
         ${o.promisedFrom && o.promisedFrom < o.promisedDate ? `<p class="hint">Rango: ${C.dayName(o.promisedFrom)} a ${C.dayName(o.promisedDate)} · fecha límite:</p>` : ''}
         ${o.promisedDate || o.status !== 'pendiente_pago' ? `<input type="date" data-act="promise" value="${esc(o.promisedDate || '')}" aria-label="Fecha prometida">` : '<p class="hint">Se fija al confirmarse el pago.</p>'}
         ${o.deliveredDate ? `<span class="pill gray">Entregado ${fmtDate(o.deliveredDate)}</span>` : ''}
+        ${o.emails ? `<p class="hint">✉ Correo enviado: ${Object.keys(o.emails).map((k) => k === 'despachado' && ship.method === 'retiro' ? 'listo para retiro' : k).join(', ')}</p>` : ''}
         ${C.onTime(o) === true ? '<span class="pill green">A tiempo</span>' : C.onTime(o) === false ? '<span class="pill red">Entregado atrasado</span>' : ''}
       </div>
     </div>
@@ -216,6 +217,7 @@ function orderCard(o) {
     </div>
     ${o.status !== 'pendiente_pago' && o.status !== 'cancelado' && ship.method !== 'retiro' ? `<div class="ship-track">
       <h4>Despacho (lo ve el cliente en "Sigue tu pedido")</h4>
+      <p class="hint" style="margin:-2px 0 6px">Elige el courier y pon el N° <b>antes</b> de pasar a "Despachado": así el correo "va en camino" le llega al cliente con el seguimiento.</p>
       <div class="ship-fields">
         <select data-act="courier" aria-label="Courier"><option value="">Courier…</option>${COURIERS.map((c) => `<option${c === o.courier ? ' selected' : ''}>${c}</option>`).join('')}</select>
         <input data-act="trackingCode" value="${esc(o.trackingCode || '')}" placeholder="N° de seguimiento" maxlength="60">

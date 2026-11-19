@@ -12,6 +12,7 @@
 
 const { onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { defineSecret, defineString } = require('firebase-functions/params');
 const admin = require('firebase-admin');
@@ -22,7 +23,7 @@ const webpush = require('web-push');
 const base = require('./shared/catalog.js');
 const core = require('./shared/core.js');
 const { buildOrder, priceCart, couponCode, newOrderId, toMercadoPagoItems, OrderError } = require('./shared/order.js');
-const { orderHtml, alertHtml, sendEmail } = require('./shared/email.js');
+const { orderHtml, alertHtml, statusEmail, sendEmail } = require('./shared/email.js');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -51,7 +52,7 @@ const secret = (s) => {
   const v = (s.value() || '').trim();
   return v && v !== 'none' ? v : '';
 };
-const mail = () => ({ key: secret(RESEND_API_KEY), from: RESEND_FROM.value() });
+const mail = () => ({ key: secret(RESEND_API_KEY), from: RESEND_FROM.value(), replyTo: ORDER_EMAIL.value() });
 
 async function loadCatalog(tx) {
   const snap = tx ? await tx.get(CATALOG) : await CATALOG.get();
@@ -416,6 +417,43 @@ exports.alertaEntregas = onSchedule(
       subject: `⚠ ${due.length} pedido${due.length > 1 ? 's' : ''} por entregar pronto`,
       html: alertHtml(due, today),
     });
+  }
+);
+
+// ---------- correoEstado: avisa al cliente los cambios de estado que hace el admin en el panel ----------
+// - despachado: "va en camino" (con courier y N° de seguimiento) o "listo para retiro". En despachos espera a que
+//   el pedido tenga courier elegido, para que el correo lleve los datos (si el N° se pone después, igual sale).
+// - entregado: "fue entregado" + invitación a etiquetar en Instagram.
+// Cada correo sale una sola vez (marca emails.<estado> en el pedido). Firestore está en nam5 → la función va en us-central1.
+exports.correoEstado = onDocumentUpdated(
+  { document: 'pedidos/{id}', region: 'us-central1', secrets: [RESEND_API_KEY] },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const o = { ...(event.data.after.data() || {}), id: event.params.id };
+    const sent = o.emails || {};
+    const retiro = (o.shipping || {}).method === 'retiro';
+    let kind = '';
+    if (o.status === 'entregado' && !sent.entregado && before.status !== 'entregado') kind = 'entregado';
+    else if (o.status === 'despachado' && !sent.despachado && (retiro || o.courier)) kind = 'despachado';
+    if (!kind || !(o.customer && o.customer.email)) return;
+    const m = mail();
+    if (!m.key) return; // correos desactivados
+    // marca primero (transacción) para que dos disparos seguidos no manden el correo dos veces
+    const ok = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(event.data.after.ref);
+      if (((snap.data() || {}).emails || {})[kind]) return false;
+      tx.update(event.data.after.ref, { ['emails.' + kind]: core.todayCL() });
+      return true;
+    });
+    if (!ok) return;
+    const { subject, html } = statusEmail(o, kind);
+    try {
+      await sendEmail({ ...m, to: o.customer.email, subject, html });
+      logger.info('[correoEstado]', o.id, kind);
+    } catch (err) {
+      logger.error('[correoEstado] error', o.id, kind, err.message);
+      await event.data.after.ref.update({ ['emails.' + kind]: FieldValue.delete() }).catch(() => {});
+    }
   }
 );
 

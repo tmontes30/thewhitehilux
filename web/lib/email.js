@@ -66,7 +66,43 @@ function alertHtml(orders, today) {
     <p style="margin:16px 0 0;color:#555">Revisa el detalle en el panel: thewhitehilux.cavedevz.com/admin/</p></div>`;
 }
 
-async function sendEmail({ to, subject, html, key, from }) {
+// Correo al cliente cuando cambia el estado del pedido: 'despachado' (o listo para retiro) y 'entregado'
+const SITE = 'https://thewhitehilux.cavedevz.com';
+function trackLink(o) {
+  return `${SITE}/seguimiento.html?pedido=${encodeURIComponent(o.id)}&correo=${encodeURIComponent((o.customer && o.customer.email) || '')}`;
+}
+function statusEmail(o, kind) {
+  const ship = o.shipping || {};
+  const retiro = ship.method === 'retiro';
+  const first = String((o.customer && o.customer.name) || '').split(/\s+/)[0];
+  const btn = (txt, url) => `<p style="margin:20px 0 0"><a href="${url}" style="background:#2968C8;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">${txt}</a></p>`;
+  const items = `<ul style="margin:8px 0 0;padding-left:18px">${(o.lines || []).map((l) => `<li>${esc(l.qty)} × ${esc(l.name)}${l.size && l.size !== 'Única' ? ' · talla ' + esc(l.size) : ''}${l.color_name ? ' · ' + esc(l.color_name) : ''}</li>`).join('')}</ul>`;
+  let subject, body;
+  if (kind === 'despachado' && retiro) {
+    subject = `Tu pedido ${o.id} está listo para retiro`;
+    body = `<h2 style="margin:0 0 8px">¡${esc(first)}, tu pedido está listo! 🙌</h2>
+      <p style="margin:0">Ya lo puedes retirar gratis en <b>${esc(ship.pickupPoint || 'el punto acordado')}</b>. Te escribimos por WhatsApp para coordinar la hora exacta; si no te ha llegado el mensaje, escríbenos al +56 9 9225 9960.</p>`;
+  } else if (kind === 'despachado') {
+    subject = `Tu pedido ${o.id} va en camino 🚚`;
+    const code = o.trackingCode ? `<p style="margin:12px 0 0">Courier: <b>${esc(o.courier || '')}</b> · N° de seguimiento: <b>${esc(o.trackingCode)}</b></p>` : (o.courier ? `<p style="margin:12px 0 0">Lo lleva: <b>${esc(o.courier)}</b></p>` : '');
+    body = `<h2 style="margin:0 0 8px">¡${esc(first)}, tu pedido va en camino!</h2>
+      <p style="margin:0">Lo despachamos a ${esc(ship.comuna || '')}${ship.region ? ', ' + esc(ship.region) : ''}.${o.promisedDate ? ` Debería llegar a más tardar el <b>${fmt(o.promisedDate)}</b>.` : ''}</p>${code}
+      ${/^https?:\/\//.test(o.trackingUrl || '') ? btn('Seguir en ' + esc(o.courier || 'el courier'), esc(o.trackingUrl)) : ''}`;
+  } else {
+    subject = `Tu pedido ${o.id} fue entregado ✔`;
+    body = `<h2 style="margin:0 0 8px">¡Que lo disfrutes, ${esc(first)}!</h2>
+      <p style="margin:0">Tu pedido ${retiro ? 'fue retirado' : 'fue entregado'}. Gracias por confiar en The White Hilux.</p>
+      <p style="margin:12px 0 0">Sube una foto con tu merch y etiquétanos en Instagram <b>@the.whitehilux</b>. Si algo no te quedó bien, tienes 30 días para cambiar la talla: respóndenos este correo o escríbenos por WhatsApp.</p>`;
+  }
+  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;color:#1c1d1a">
+    ${body}
+    <p style="margin:16px 0 0;color:#555">Pedido <b>${esc(o.id)}</b>:</p>${items}
+    ${kind !== 'entregado' ? btn('Sigue tu pedido', trackLink(o)) : ''}
+    <p style="margin:24px 0 0;color:#888;font-size:12px">The White Hilux · thewhitehilux.cavedevz.com</p></div>`;
+  return { subject, html };
+}
+
+async function sendEmail({ to, subject, html, key, from, replyTo }) {
   key = (key || process.env.RESEND_API_KEY || '').trim();
   if (!key || key === 'none' || !to) return { skipped: true }; // "none" = correos desactivados
   const res = await fetch('https://api.resend.com/emails', {
@@ -77,10 +113,11 @@ async function sendEmail({ to, subject, html, key, from }) {
       to: [to],
       subject,
       html,
+      ...(replyTo || process.env.REPLY_TO ? { reply_to: replyTo || process.env.REPLY_TO } : {}),
     }),
   });
   if (!res.ok) throw new Error(`Resend respondió ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
-module.exports = { orderHtml, alertHtml, sendEmail, clp };
+module.exports = { orderHtml, alertHtml, statusEmail, sendEmail, clp };
