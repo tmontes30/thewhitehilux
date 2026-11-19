@@ -7,6 +7,20 @@ const esc = (s) =>
 
 const fmt = (ymd) => (ymd ? ymd.split('-').reverse().join('-') : '');
 
+// Marco común de los correos: banda oscura con el escudo TWH (logo 6, PNG publicado en la tienda) y las 3 franjas.
+// Los correos no muestran SVG: el logo va como PNG en web/assets/img/email/logo-escudo.png.
+const LOGO_URL = 'https://thewhitehilux.cavedevz.com/assets/img/email/logo-escudo.png';
+function frame(inner) {
+  return `<div style="background:#F2F1EC;padding:20px 8px;font-family:Arial,sans-serif">
+  <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;color:#1C1D1A">
+    <div style="background:#1C1D1A;padding:16px 0 12px;text-align:center"><img src="${LOGO_URL}" width="96" height="96" alt="The White Hilux · 4x4 Team" style="display:inline-block;width:96px;height:96px;border:0"></div>
+    <div style="height:4px;background:#F2A541;line-height:4px;font-size:0">&nbsp;</div><div style="height:4px;background:#E4572E;line-height:4px;font-size:0">&nbsp;</div><div style="height:4px;background:#B3202A;line-height:4px;font-size:0">&nbsp;</div>
+    <div style="padding:22px 22px 26px">${inner}</div>
+  </div>
+  <p style="max-width:560px;margin:12px auto 0;text-align:center;color:#888;font-size:12px">The White Hilux · thewhitehilux.cavedevz.com · Instagram @the.whitehilux</p>
+</div>`;
+}
+
 function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promisedDate, promisedFrom }, forCustomer) {
   const rows = (lines || [])
     .map(
@@ -23,8 +37,7 @@ function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promi
     ship.method === 'retiro'
       ? `Retiro gratis${ship.pickupPoint ? ' en ' + esc(ship.pickupPoint) : ''} (te escribimos por WhatsApp para coordinar)`
       : `${esc(ship.address)}, ${esc(ship.comuna)}, ${esc(ship.region)}`;
-  return `
-  <div style="font-family:Arial,sans-serif;max-width:560px;color:#1c1d1a">
+  return frame(`
     <h2 style="margin:0 0 4px">${forCustomer ? '¡Gracias por tu compra!' : 'Nuevo pedido pagado'}</h2>
     <p style="margin:0 0 16px;color:#555">Pedido <b>${esc(orderId)}</b> · Pago Mercado Pago #${esc(paymentId)}</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -44,8 +57,7 @@ function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promi
         : `<h3 style="margin:20px 0 6px">Cliente</h3><p style="margin:0">${esc(customer && customer.name)}<br>${esc(
             customer && customer.email
           )}<br>${esc(customer && customer.phone)}</p>`
-    }
-  </div>`;
+    }`);
 }
 
 // Correo diario con los pedidos que vencen pronto
@@ -94,11 +106,10 @@ function statusEmail(o, kind) {
       <p style="margin:0">Tu pedido ${retiro ? 'fue retirado' : 'fue entregado'}. Gracias por confiar en The White Hilux.</p>
       <p style="margin:12px 0 0">Sube una foto con tu merch y etiquétanos en Instagram <b>@the.whitehilux</b>. Si algo no te quedó bien, tienes 30 días para cambiar la talla: respóndenos este correo o escríbenos por WhatsApp.</p>`;
   }
-  const html = `<div style="font-family:Arial,sans-serif;max-width:560px;color:#1c1d1a">
+  const html = frame(`
     ${body}
     <p style="margin:16px 0 0;color:#555">Pedido <b>${esc(o.id)}</b>:</p>${items}
-    ${kind !== 'entregado' ? btn('Sigue tu pedido', trackLink(o)) : ''}
-    <p style="margin:24px 0 0;color:#888;font-size:12px">The White Hilux · thewhitehilux.cavedevz.com</p></div>`;
+    ${kind !== 'entregado' ? btn('Sigue tu pedido', trackLink(o)) : ''}`);
   return { subject, html };
 }
 
