@@ -867,14 +867,15 @@ function renderSales() {
   if (!$('tab-ventas')) return;
   $('sales-period').innerHTML = Object.keys(PERIODS).map((k) => `<button type="button" class="chip" data-p="${k}" aria-pressed="${k === period}">${PERIODS[k]}</button>`).join('');
   $('sales-range').hidden = period !== 'rango';
-  const [from, to] = periodRange(period);
+  $('sales-df').innerHTML = dfBarHtml();
+  const [from, to] = DF.range || periodRange(period);
   const inRange = (o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= from && o.paidDate <= to;
-  const list = orders.filter(inRange);
+  const list = applyDF(orders.filter(inRange));
 
   // Período anterior del mismo largo, para comparar
   const days = Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86400000) + 1);
   const pFrom = addDays(from, -days), pTo = addDays(from, -1);
-  const prev = orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= pFrom && o.paidDate <= pTo);
+  const prev = applyDF(orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= pFrom && o.paidDate <= pTo));
 
   const sum = (arr, f) => arr.reduce((s, x) => s + f(x), 0);
   const revenue = sum(list, orderPaid);
@@ -914,7 +915,7 @@ function renderSales() {
   }
   const max = Math.max(1, ...buckets.map((b) => b[1]));
   $('sales-chart').innerHTML = list.length
-    ? `<div class="bars">${buckets.map((b) => `<div class="bar${b[1] ? '' : ' zero'}" style="height:${b[1] ? Math.max(3, (b[1] / max) * 100) : 1}%" title="${b[2]}: ${money(b[1])}"></div>`).join('')}</div>
+    ? `<div class="bars">${buckets.map((b) => `<div class="bar${b[1] ? '' : ' zero'}" ${b[1] ? dfAttr('range', b[0].length === 7 ? b[0] + '-01|' + b[0] + '-31' : b[0] + '|' + b[0], (b[0].length === 7 ? 'Mes ' : 'Día ') + b[2]) : ''}style="height:${b[1] ? Math.max(3, (b[1] / max) * 100) : 1}%" title="${b[2]}: ${money(b[1])}"></div>`).join('')}</div>
        <div class="bars-axis"><span>${buckets[0][2]}</span><span>Máximo: ${money(max)}</span><span>${buckets[buckets.length - 1][2]}</span></div>`
     : '<p class="empty" style="padding:20px 0">No hay ventas pagadas en este período.</p>';
 
@@ -934,14 +935,14 @@ function renderSales() {
   // Más vendidos (por producto)
   const byProduct = {};
   skus.forEach((r) => {
-    const x = byProduct[r.id] || (byProduct[r.id] = { name: r.name, units: 0, revenue: 0 });
+    const x = byProduct[r.id] || (byProduct[r.id] = { id: r.id, name: r.name, units: 0, revenue: 0 });
     x.units += r.units;
     x.revenue += r.revenue;
   });
   const top = Object.values(byProduct).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
   const topMax = top.length ? top[0].revenue : 1;
   $('sales-top').innerHTML = top.length
-    ? top.map((t, i) => `<div class="top-item"><span class="rank">${i + 1}</span><span>${esc(t.name)} <small class="hint">· ${plural(t.units, 'unidad', 'unidades')}</small></span><b>${money(t.revenue)}</b><span class="meter"><i style="width:${pct(t.revenue, topMax)}%"></i></span></div>`).join('')
+    ? top.map((t, i) => `<div class="top-item" ${dfAttr('product', t.id, t.name)}><span class="rank">${i + 1}</span><span>${esc(t.name)} <small class="hint">· ${plural(t.units, 'unidad', 'unidades')}</small></span><b>${money(t.revenue)}</b><span class="meter"><i style="width:${pct(t.revenue, topMax)}%"></i></span></div>`).join('')
     : '<p class="hint">Sin ventas en este período.</p>';
 
   // Stock bajo de lo que se vende
@@ -955,7 +956,7 @@ function renderSales() {
   const shown = q ? skus.filter((r) => (r.sku + ' ' + r.name + ' ' + r.variant).toLowerCase().includes(q)) : skus;
   $('sales-sku').innerHTML = shown.length
     ? `<thead><tr><th>SKU</th><th>Producto</th><th>Variante</th><th class="n">Unidades</th><th class="n">Pedidos</th><th class="n">Ventas</th><th class="n">% del total</th><th class="n">Stock</th></tr></thead>
-      <tbody>${shown.map((r) => { const st = stockFor(r); return `<tr><td><span class="sku">${esc(r.sku)}</span></td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="n">${r.units}</td><td class="n">${r.orders.size}</td><td class="n">${money(r.revenue)}</td><td class="n">${pct(r.revenue, lineRevenue)}%</td><td class="n">${st == null ? '—' : st}</td></tr>`; }).join('')}</tbody>
+      <tbody>${shown.map((r) => { const st = stockFor(r); return `<tr ${dfAttr('sku', r.sku, r.sku)}><td><span class="sku">${esc(r.sku)}</span></td><td>${esc(r.name)}</td><td>${esc(r.variant)}</td><td class="n">${r.units}</td><td class="n">${r.orders.size}</td><td class="n">${money(r.revenue)}</td><td class="n">${pct(r.revenue, lineRevenue)}%</td><td class="n">${st == null ? '—' : st}</td></tr>`; }).join('')}</tbody>
       <tfoot><tr><td colspan="3">Total</td><td class="n">${sum(shown, (r) => r.units)}</td><td></td><td class="n">${money(sum(shown, (r) => r.revenue))}</td><td></td><td></td></tr></tfoot>`
     : '<tbody><tr><td class="hint">Sin ventas en este período.</td></tr></tbody>';
 
@@ -964,21 +965,21 @@ function renderSales() {
   skus.forEach((r) => { const c = byCat[r.type] || (byCat[r.type] = { units: 0, revenue: 0 }); c.units += r.units; c.revenue += r.revenue; });
   const cats = Object.keys(byCat).sort((a, b) => byCat[b].revenue - byCat[a].revenue);
   $('sales-cat').innerHTML = cats.length
-    ? `<thead><tr><th>Categoría</th><th class="n">Unidades</th><th class="n">Ventas</th><th class="n">%</th></tr></thead><tbody>${cats.map((c) => `<tr><td>${esc(CFG.categories[c] || c)}</td><td class="n">${byCat[c].units}</td><td class="n">${money(byCat[c].revenue)}</td><td class="n">${pct(byCat[c].revenue, lineRevenue)}%</td></tr>`).join('')}</tbody>`
+    ? `<thead><tr><th>Categoría</th><th class="n">Unidades</th><th class="n">Ventas</th><th class="n">%</th></tr></thead><tbody>${cats.map((c) => `<tr ${dfAttr('category', c, CFG.categories[c] || c)}><td>${esc(CFG.categories[c] || c)}</td><td class="n">${byCat[c].units}</td><td class="n">${money(byCat[c].revenue)}</td><td class="n">${pct(byCat[c].revenue, lineRevenue)}%</td></tr>`).join('')}</tbody>`
     : '<tbody><tr><td class="hint">Sin ventas.</td></tr></tbody>';
 
   // Por región
   const byReg = {};
   list.forEach((o) => {
     const s = o.shipping || {};
-    const k = s.method === 'retiro' ? 'Retiro en Santiago' : s.region || '—';
+    const k = regionKey(o);
     const r = byReg[k] || (byReg[k] = { orders: 0, revenue: 0 });
     r.orders++;
     r.revenue += orderPaid(o);
   });
   const regs = Object.keys(byReg).sort((a, b) => byReg[b].revenue - byReg[a].revenue);
   $('sales-region').innerHTML = regs.length
-    ? `<thead><tr><th>Región</th><th class="n">Pedidos</th><th class="n">Ventas</th></tr></thead><tbody>${regs.map((k) => `<tr><td>${esc(k)}</td><td class="n">${byReg[k].orders}</td><td class="n">${money(byReg[k].revenue)}</td></tr>`).join('')}</tbody>`
+    ? `<thead><tr><th>Región</th><th class="n">Pedidos</th><th class="n">Ventas</th></tr></thead><tbody>${regs.map((k) => `<tr ${dfAttr('region', k, k)}><td>${esc(k)}</td><td class="n">${byReg[k].orders}</td><td class="n">${money(byReg[k].revenue)}</td></tr>`).join('')}</tbody>`
     : '<tbody><tr><td class="hint">Sin ventas.</td></tr></tbody>';
 
   // Descuentos usados
@@ -1010,6 +1011,7 @@ $('sales-period').addEventListener('click', (e) => {
   const b = e.target.closest('[data-p]');
   if (!b) return;
   period = b.dataset.p;
+  delete DF.range; delete DF._range;
   if (period === 'rango' && !$('sales-from').value) {
     const [f, t] = periodRange('30d');
     $('sales-from').value = f;
@@ -1593,9 +1595,10 @@ function orderProfit(o, ci) {
     cogs += u.v * l.qty;
     return { l, unit: u.v };
   });
-  const shipPaid = ship.method === 'retiro' ? 0 : (o.shipCostReal != null && o.shipCostReal !== '' ? Number(o.shipCostReal) : ((CFG.shipping[ship.zone] || {}).price || 0));
+  const share = o._share != null ? o._share : 1; // pedido recortado por el filtro de producto/categoría
+  const shipPaid = ship.method === 'retiro' ? 0 : (o.shipCostReal != null && o.shipCostReal !== '' ? Number(o.shipCostReal) : ((CFG.shipping[ship.zone] || {}).price || 0) * share);
   const fee = o.mpFee != null ? Number(o.mpFee) : revenue * (profitCfg.feePct / 100);
-  const pack = Number(profitCfg.packCost) || 0;
+  const pack = (Number(profitCfg.packCost) || 0) * share;
   return { revenue, products, shipCharged, cogs, shipPaid, fee, feeReal: o.mpFee != null, pack, noCost, avgCost, missing, lines,
     profit: revenue - cogs - shipPaid - fee - pack };
 }
@@ -1604,14 +1607,16 @@ function renderProfit() {
   if (!$('tab-utilidades')) return;
   const keys = Object.keys(PERIODS).filter((k) => k !== 'rango');
   $('pf-period').innerHTML = keys.map((k) => `<button type="button" class="chip" data-pp="${k}" aria-pressed="${k === pfPeriod}">${PERIODS[k]}</button>`).join('');
-  const [from, to] = periodRange(pfPeriod);
-  const list = orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= from && o.paidDate <= to);
+  $('pf-df').innerHTML = dfBarHtml();
+  const [from, to] = DF.range || periodRange(pfPeriod);
+  const list = applyDF(orders.filter((o) => PAID.includes(o.status) && o.paidDate && o.paidDate >= from && o.paidDate <= to));
   const ci = costIndex();
   const R = list.map((o) => ({ o, r: orderProfit(o, ci) }));
   const sum = (f) => R.reduce((s, x) => s + f(x.r), 0);
   const months = new Set();
   for (let d = from; d <= to; d = addDays(d, 1)) months.add(d.slice(0, 7));
-  const other = (Number(profitCfg.otherMonthly) || 0) * (pfPeriod === 'hoy' || pfPeriod === '7d' ? 0 : months.size);
+  const partial = DF.order || DF.sku || DF.product || DF.category || DF.region; // gastos fijos no se cargan a una parte
+  const other = partial || DF.range ? 0 : (Number(profitCfg.otherMonthly) || 0) * (pfPeriod === 'hoy' || pfPeriod === '7d' ? 0 : months.size);
   const T = {
     products: sum((r) => r.products), shipCharged: sum((r) => r.shipCharged), revenue: sum((r) => r.revenue),
     cogs: sum((r) => r.cogs), shipPaid: sum((r) => r.shipPaid), fee: sum((r) => r.fee), pack: sum((r) => r.pack),
@@ -1675,9 +1680,9 @@ function renderProfit() {
        <p class="hint" style="margin-top:6px">El inventario solo cuenta productos con stock cargado en el panel.</p>`
     : '<p class="empty">Registra tus compras en la pestaña Compras para ver cuánto has recuperado.</p>';
 
-  // Por mes (todo el historial)
+  // Por mes (todo el historial, con el filtro de producto/región/pedido si hay)
   const byMonth = {};
-  allPaid.forEach((o) => {
+  applyDF(allPaid).forEach((o) => {
     const m = (o.paidDate || '').slice(0, 7);
     const r = orderProfit(o, ci);
     const x = byMonth[m] || (byMonth[m] = { n: 0, rev: 0, cogs: 0, other: 0, profit: 0 });
@@ -1687,8 +1692,9 @@ function renderProfit() {
   $('pf-month').innerHTML = mk.length
     ? `<thead><tr><th>Mes</th><th class="n">Pedidos</th><th class="n">Ingresos</th><th class="n">Costo productos</th><th class="n">Envíos, comisión y empaque</th><th class="n">Utilidad</th><th class="n">Margen</th></tr></thead><tbody>${mk.map((m) => {
       const x = byMonth[m];
-      const pr = x.profit - (Number(profitCfg.otherMonthly) || 0);
-      return `<tr><td>${m.split('-').reverse().join('-')}</td><td class="n">${x.n}</td><td class="n">${money(x.rev)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.other)}</td><td class="n"><b>${money(pr)}</b></td><td class="n">${x.rev ? Math.round((pr / x.rev) * 100) + '%' : '—'}</td></tr>`;
+      const pr = x.profit - (partial ? 0 : Number(profitCfg.otherMonthly) || 0);
+      const lbl = 'Mes ' + m.split('-').reverse().join('-');
+      return `<tr ${dfAttr('range', m + '-01|' + m + '-31', lbl)}><td>${m.split('-').reverse().join('-')}</td><td class="n">${x.n}</td><td class="n">${money(x.rev)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.other)}</td><td class="n"><b>${money(pr)}</b></td><td class="n">${x.rev ? Math.round((pr / x.rev) * 100) + '%' : '—'}</td></tr>`;
     }).join('')}</tbody>`
     : '<tbody><tr><td class="empty">Todavía no hay ventas pagadas.</td></tr></tbody>';
 
@@ -1698,15 +1704,27 @@ function renderProfit() {
     const extra = r.shipPaid + r.fee + r.pack - r.shipCharged; // costo variable neto del pedido
     r.lines.forEach(({ l, unit }) => {
       const share = r.products ? lineNet(l) / r.products : 0;
-      const x = byProd[l.id] || (byProd[l.id] = { name: l.name, q: 0, sales: 0, cogs: 0, extra: 0 });
+      const x = byProd[l.id] || (byProd[l.id] = { id: l.id, name: l.name, q: 0, sales: 0, cogs: 0, extra: 0 });
       x.q += l.qty; x.sales += lineNet(l); x.cogs += unit * l.qty; x.extra += extra * share;
     });
   });
   pfRows = Object.values(byProd).map((x) => ({ ...x, profit: x.sales - x.cogs - x.extra })).sort((a, b) => b.profit - a.profit);
   $('pf-prod').innerHTML = pfRows.length
     ? `<thead><tr><th>Producto</th><th class="n">Unidades</th><th class="n">Ventas</th><th class="n">Costo</th><th class="n">Envío/comisión</th><th class="n">Utilidad</th><th class="n">Margen</th><th class="n">Utilidad por unidad</th></tr></thead><tbody>${pfRows.map((x) =>
-      `<tr><td>${esc(x.name)}</td><td class="n">${x.q}</td><td class="n">${money(x.sales)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.extra)}</td><td class="n"><b>${money(x.profit)}</b></td><td class="n">${x.sales ? Math.round((x.profit / x.sales) * 100) + '%' : '—'}</td><td class="n">${money(x.q ? x.profit / x.q : 0)}</td></tr>`).join('')}</tbody>`
+      `<tr ${dfAttr('product', x.id, x.name)}><td>${esc(x.name)}</td><td class="n">${x.q}</td><td class="n">${money(x.sales)}</td><td class="n">${money(x.cogs)}</td><td class="n">${money(x.extra)}</td><td class="n"><b>${money(x.profit)}</b></td><td class="n">${x.sales ? Math.round((x.profit / x.sales) * 100) + '%' : '—'}</td><td class="n">${money(x.q ? x.profit / x.q : 0)}</td></tr>`).join('')}</tbody>`
     : '<tbody><tr><td class="empty">No hay ventas en este período.</td></tr></tbody>';
+
+  // Pedidos (tocar uno = ver solo su utilidad)
+  const ordRows = R.slice().sort((a, b) => (b.o.paidDate || '').localeCompare(a.o.paidDate || '') || String(b.o.id).localeCompare(String(a.o.id)));
+  $('pf-orders').innerHTML = ordRows.length
+    ? `<thead><tr><th>Pedido</th><th>Pagado</th><th>Cliente</th><th>Productos</th><th class="n">Ingreso</th><th class="n">Costo</th><th class="n">Envío/comisión/empaque</th><th class="n">Utilidad</th><th class="n">Margen</th></tr></thead><tbody>${ordRows.map(({ o, r }) => {
+      const extra = r.shipPaid + r.fee + r.pack;
+      return `<tr ${dfAttr('order', o.id, 'Pedido ' + o.id)}${DF.order === o.id ? ' class="sel"' : ''}><td><span class="sku">${esc(o.id)}</span></td><td>${fmtDate(o.paidDate)}</td><td>${esc((o.customer || {}).name || '')}</td>
+        <td>${(o.lines || []).map((l) => `${l.qty}× ${esc(l.name)}`).join(', ')}</td><td class="n">${money(r.revenue)}</td><td class="n">${money(r.cogs)}</td>
+        <td class="n" title="Envío ${money(r.shipPaid)} · comisión ${money(r.fee)}${r.feeReal ? ' (real)' : ' (estimada)'} · empaque ${money(r.pack)}">${money(extra)}${r.feeReal ? '' : ' <small class="hint">*</small>'}</td>
+        <td class="n"><b>${money(r.profit)}</b></td><td class="n">${r.revenue ? Math.round((r.profit / r.revenue) * 100) + '%' : '—'}</td></tr>`;
+    }).join('')}</tbody>`
+    : '<tbody><tr><td class="empty">No hay pedidos en este período.</td></tr></tbody>';
 
   if (!$('pf-settings').contains(document.activeElement)) {
     $('pf-fee').value = profitCfg.feePct;
@@ -1719,6 +1737,8 @@ $('pf-period').addEventListener('click', (e) => {
   const b = e.target.closest('[data-pp]');
   if (!b) return;
   pfPeriod = b.dataset.pp;
+  delete DF.range; delete DF._range;
+  renderSales();
   renderProfit();
 });
 $('pf-settings').addEventListener('submit', async (e) => {
@@ -1742,3 +1762,70 @@ $('pf-export').addEventListener('click', () => {
       x.sales ? Math.round((x.profit / x.sales) * 100) : '', x.q ? Math.round(x.profit / x.q) : '']));
   toast('Utilidades descargadas');
 });
+
+// ---------- Filtro al tocar (compartido por Ventas y Utilidades) ----------
+// Tocar una fila o barra filtra todo el tablero: DF = { range:[desde,hasta], order, sku, product, category, region } y
+// DF._<clave> = texto que se muestra en la barra de filtros. Con filtro de producto/SKU/categoría, cada pedido se
+// "recorta" a esas líneas y su envío, comisión y descuentos se reparten según lo que esas líneas aportan.
+let DF = {};
+const DF_KEYS = ['range', 'order', 'sku', 'product', 'category', 'region'];
+const regionKey = (o) => { const s = o.shipping || {}; return s.method === 'retiro' ? 'Retiro' : s.region || '—'; };
+
+function lineMatch(l) {
+  if (DF.sku && skuOfLine(l) !== DF.sku) return false;
+  if (DF.product && l.id !== DF.product) return false;
+  if (DF.category && ((productById(l.id) || {}).type || l.type) !== DF.category) return false;
+  return true;
+}
+function applyDF(list) {
+  const lineF = DF.sku || DF.product || DF.category;
+  return list.map((o) => {
+    if (DF.order && o.id !== DF.order) return null;
+    if (DF.region && regionKey(o) !== DF.region) return null;
+    if (!lineF) return o;
+    const all = o.lines || [];
+    const lines = all.filter(lineMatch);
+    if (!lines.length) return null;
+    const tot = all.reduce((s, l) => s + lineNet(l), 0);
+    const part = lines.reduce((s, l) => s + lineNet(l), 0);
+    const share = tot ? part / tot : 0;
+    const ship = o.shipping || {};
+    const shipCost = (Number(ship.cost) || 0) * share;
+    return {
+      ...o, lines, _share: share,
+      shipping: { ...ship, cost: shipCost },
+      paidAmount: part + shipCost,
+      discount: o.discount ? { ...o.discount, amount: (Number(o.discount.amount) || 0) * share } : o.discount,
+      mpFee: o.mpFee != null ? Number(o.mpFee) * share : o.mpFee,
+      shipCostReal: o.shipCostReal != null && o.shipCostReal !== '' ? Number(o.shipCostReal) * share : o.shipCostReal,
+    };
+  }).filter(Boolean);
+}
+const dfAttr = (key, v, label) => `data-df="${key}" data-v="${esc(v)}" data-l="${esc(label)}"`;
+function dfBarHtml() {
+  const on = DF_KEYS.filter((k) => DF[k] != null);
+  if (!on.length) return '<p class="hint">💡 Toca una fila, producto o barra del gráfico para filtrar todo el tablero.</p>';
+  return `<span class="hint">Filtrado por:</span> ${on.map((k) => `<button type="button" class="chip on" data-dfx="${k}">${esc(DF['_' + k])} ✕</button>`).join('')}
+    <button type="button" class="link" data-dfx="all">Quitar filtros</button>`;
+}
+function setDF(key, value, label) {
+  DF = { ...DF };
+  if (value == null || (DF[key] != null && String(DF[key]) === String(value))) { delete DF[key]; delete DF['_' + key]; } // tocar de nuevo = quitar
+  else { DF[key] = value; DF['_' + key] = label; }
+  // producto, SKU y categoría se excluyen entre sí (el último que se toca manda)
+  if (value != null && ['sku', 'product', 'category'].includes(key)) ['sku', 'product', 'category'].filter((k) => k !== key).forEach((k) => { delete DF[k]; delete DF['_' + k]; });
+  renderSales();
+  renderProfit();
+}
+['tab-ventas', 'tab-utilidades'].forEach((id) => $(id).addEventListener('click', (e) => {
+  const x = e.target.closest('[data-dfx]');
+  if (x) {
+    if (x.dataset.dfx === 'all') { DF = {}; renderSales(); renderProfit(); }
+    else setDF(x.dataset.dfx, null);
+    return;
+  }
+  const t = e.target.closest('[data-df]');
+  if (!t || e.target.closest('a, input, select')) return;
+  const key = t.dataset.df;
+  setDF(key, key === 'range' ? t.dataset.v.split('|') : t.dataset.v, t.dataset.l);
+}));

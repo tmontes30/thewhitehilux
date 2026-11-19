@@ -58,6 +58,7 @@
   <section id="tab-utilidades" hidden>
     <div class="toolbar"><div class="filters" id="pf-period"></div>
       <button type="button" class="btn ghost" id="pf-export">Descargar utilidades por producto (CSV)</button></div>
+    <div class="dfbar" id="pf-df"></div>
     <div class="stats" id="pf-kpis"></div>
     <div class="two-col">
       <div class="card"><h2 class="card-title">Estado de resultados</h2><div class="table-wrap"><table class="data pnl" id="pf-pnl"></table></div><p class="hint" id="pf-notes" style="margin-top:8px"></p></div>
@@ -65,6 +66,7 @@
     </div>
     <div class="card"><h2 class="card-title">Utilidad por mes</h2><div class="table-wrap"><table class="data" id="pf-month"></table></div></div>
     <div class="card"><h2 class="card-title">Utilidad por producto</h2><div class="table-wrap"><table class="data" id="pf-prod"></table></div></div>
+    <div class="card"><h2 class="card-title">Pedidos</h2><p class="hint" style="margin-bottom:8px">Toca un pedido para ver solo su utilidad.</p><div class="table-wrap"><table class="data" id="pf-orders"></table></div></div>
     <form class="card settings" id="pf-settings">
       <h2>Supuestos del cálculo</h2>
       <p class="hint">Cuando Mercado Pago informa la comisión real de una venta se usa esa; si no, se estima con este %. El envío usa el costo real que anotes en cada pedido; si no lo anotaste, se asume lo que cobra la tienda por esa zona (aunque el cliente lo haya tenido gratis).</p>
@@ -96,6 +98,7 @@
       </span>
       <button type="button" class="btn ghost" id="export-sales">Descargar ventas por SKU (CSV)</button>
     </div>
+    <div class="dfbar" id="sales-df"></div>
     <div class="stats" id="sales-kpis"></div>
     <div class="card otd-card">
       <div class="card-head"><h2 class="card-title">Cumplimiento de entregas (OTD)</h2><span class="hint">Pedidos pagados en el período que ya se entregaron</span></div>

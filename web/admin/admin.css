@@ -266,3 +266,11 @@ table.pnl tr.muted td { color: var(--muted); font-size: 12.5px; }
 .notifs ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; }
 .notifs li .when { display: inline-block; min-width: 96px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .notifs li.bad { color: var(--red); }
+
+/* Filtro al tocar (Ventas y Utilidades) */
+.dfbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; min-height: 28px; }
+.dfbar .chip.on { background: var(--ink, #1c1d1a); color: #fff; border-color: transparent; }
+[data-df] { cursor: pointer; }
+tr[data-df]:hover td, .top-item[data-df]:hover { background: #F4F4F2; }
+.bar[data-df]:hover { filter: brightness(1.25); }
+tr.sel td { background: #FFF6E5; }
