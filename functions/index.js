@@ -253,8 +253,11 @@ async function confirmPaid(orderId, payment) {
     });
     if (updates.length) tx.update(CATALOG, updates[0], updates[1], ...updates.slice(2));
 
+    // Retiro: pasa directo a "En preparación" (el cliente lo ve así en "Sigue tu pedido")
+    const retiro = (order.shipping || {}).method === 'retiro';
     const patch = {
-      status: 'pagado',
+      status: retiro ? 'preparando' : 'pagado',
+      ...(retiro ? { preparingDate: paidDate } : {}),
       paidAt: FieldValue.serverTimestamp(),
       paidDate,
       promisedDate,
