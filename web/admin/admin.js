@@ -175,6 +175,23 @@ function lineText(l) {
   return [l.design_name, l.size && l.size !== 'Única' ? 'Talla ' + l.size : '', l.color_name].filter(Boolean).join(' · ');
 }
 
+// Avisos enviados por este pedido (correos al cliente, copia a la tienda, notificaciones push)
+const fmtWhen = (iso) => {
+  try {
+    return new Date(iso).toLocaleString('es-CL', { timeZone: 'America/Santiago', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return iso; }
+};
+function notifsHtml(o) {
+  const list = (o.notifs || []).slice().sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  // pedidos antiguos: solo se sabía qué correos de estado salieron
+  const old = !list.length && o.emails ? Object.keys(o.emails).map((k) => ({ at: '', kind: k, channel: 'correo', to: (o.customer || {}).email, ok: true, day: o.emails[k] })) : [];
+  const rows = list.length ? list : old;
+  if (!rows.length) return o.status === 'pendiente_pago' ? '' : '<details class="notifs"><summary>Avisos enviados (0)</summary><p class="hint">Este pedido es anterior al registro de avisos.</p></details>';
+  const fails = rows.filter((n) => !n.ok).length;
+  return `<details class="notifs"><summary>Avisos enviados (${rows.length})${fails ? ` · <span class="warn">${fails} sin enviar</span>` : ''}</summary><ul>${rows.map((n) =>
+    `<li class="${n.ok ? 'ok' : 'bad'}"><span class="when">${n.at ? fmtWhen(n.at) : fmtDate(n.day)}</span>${n.channel === 'push' ? '📱' : '✉'} <b>${esc(n.kind)}</b> → ${esc(n.to || '')} ${n.ok ? '✓' : `✗ <small>${esc(n.note || 'no se envió')}</small>`}</li>`).join('')}</ul></details>`;
+}
+
 function orderCard(o) {
   const dd = due(o);
   const ship = o.shipping || {};
@@ -212,7 +229,6 @@ function orderCard(o) {
         ${o.promisedFrom && o.promisedFrom < o.promisedDate ? `<p class="hint">Rango: ${C.dayName(o.promisedFrom)} a ${C.dayName(o.promisedDate)} · fecha límite:</p>` : ''}
         ${o.promisedDate || o.status !== 'pendiente_pago' ? `<input type="date" data-act="promise" value="${esc(o.promisedDate || '')}" aria-label="Fecha prometida">` : '<p class="hint">Se fija al confirmarse el pago.</p>'}
         ${o.deliveredDate ? `<span class="pill gray">Entregado ${fmtDate(o.deliveredDate)}</span>` : ''}
-        ${o.emails ? `<p class="hint">✉ Correo enviado: ${Object.keys(o.emails).map((k) => k === 'despachado' && ship.method === 'retiro' ? 'listo para retiro' : k).join(', ')}</p>` : ''}
         ${C.onTime(o) === true ? '<span class="pill green">A tiempo</span>' : C.onTime(o) === false ? '<span class="pill red">Entregado atrasado</span>' : ''}
       </div>
     </div>
@@ -232,6 +248,7 @@ function orderCard(o) {
         <input data-act="shipCostReal" type="number" min="0" value="${o.shipCostReal != null ? esc(o.shipCostReal) : ''}" placeholder="Costo real del envío $ (para Utilidades)" title="Lo que te cobró el courier (para calcular utilidades)">
       </div>
     </div>` : ''}
+    ${notifsHtml(o)}
     <div class="order-foot">
       <textarea data-act="note" rows="1" placeholder="Nota interna (solo tú la ves): cambios de talla, acuerdos con el cliente…">${esc(o.adminNote || '')}</textarea>
       <a class="btn ghost small" href="../seguimiento.html?pedido=${encodeURIComponent(o.id)}&correo=${encodeURIComponent((o.customer || {}).email || '')}" target="_blank" rel="noopener" title="Ver lo que ve el cliente">Ver seguimiento ↗</a>

@@ -319,20 +319,40 @@ const shipText = (o) => {
   return s.method === 'retiro' ? 'Retiro' + (s.pickupPoint ? ' ' + s.pickupPoint : '') : s.comuna || s.region || '';
 };
 
+// Registro de avisos por pedido (lo muestra el panel): notifs = [{ at, kind, channel, to, ok, note }]
+async function logNotif(orderId, entries) {
+  if (!orderId || !entries.length) return;
+  const at = new Date().toISOString();
+  await ORDERS.doc(orderId).update({ notifs: FieldValue.arrayUnion(...entries.map((e) => ({ at, ...e }))) })
+    .catch((err) => logger.warn('[avisos] no se pudo registrar', orderId, err.message));
+}
+// Envía un correo y devuelve la entrada del registro (ok / desactivado / error)
+async function mailAndLog(kind, to, msg, m) {
+  try {
+    const r = await sendEmail({ ...m, to, ...msg });
+    return { kind, channel: 'correo', to, ok: !r.skipped, note: r.skipped ? 'correos desactivados' : '' };
+  } catch (err) {
+    logger.error('[email] error', kind, err.message);
+    return { kind, channel: 'correo', to, ok: false, note: String(err.message).slice(0, 140) };
+  }
+}
+
 async function notifyPaid(order) {
   const view = { ...order, orderId: order.id, paymentId: order.mpPaymentId, total: order.paidAmount };
   const m = mail();
   const units = (order.lines || []).reduce((n, l) => n + l.qty, 0);
-  await Promise.all([
+  const entries = await Promise.all([
     sendPush({
       title: '🛒 Nuevo pedido ' + clp(order.paidAmount),
       body: `${(order.customer || {}).name || ''} · ${units} producto${units === 1 ? '' : 's'} · ${shipText(order)} · entregar ${core.dayWord(order.promisedDate)}`,
       url: './#o-' + order.id,
       tag: 'pedido-' + order.id,
-    }).catch((err) => logger.error('[push] error', err.message)),
-    sendEmail({ ...m, to: ORDER_EMAIL.value(), subject: `Nuevo pedido ${order.id} · entregar antes del ${fmtDate(order.promisedDate)}`, html: orderHtml(view, false) }),
-    sendEmail({ ...m, to: order.customer && order.customer.email, subject: `Tu pedido ${order.id} en The White Hilux`, html: orderHtml(view, true) }),
-  ]).catch((err) => logger.error('[email] error', err.message));
+    }).then((n) => ({ kind: 'pedido nuevo', channel: 'push', to: 'tu celular', ok: n > 0, note: n ? '' : 'ningún dispositivo activado' }))
+      .catch((err) => ({ kind: 'pedido nuevo', channel: 'push', to: 'tu celular', ok: false, note: String(err.message).slice(0, 140) })),
+    mailAndLog('pedido nuevo (copia tienda)', ORDER_EMAIL.value(), { subject: `Nuevo pedido ${order.id} · entregar antes del ${fmtDate(order.promisedDate)}`, html: orderHtml(view, false) }, m),
+    mailAndLog('pago confirmado', order.customer && order.customer.email, { subject: `Tu pedido ${order.id} en The White Hilux`, html: orderHtml(view, true) }, m),
+  ]);
+  await logNotif(order.id, entries);
 }
 
 // Comisión real que cobró Mercado Pago (para la pestaña Utilidades). Busca el pago aprobado por N° de pedido.
@@ -424,12 +444,13 @@ exports.alertaEntregas = onSchedule(
     if (!due.length) return;
     const late = due.filter((o) => core.daysUntil(o.promisedDate, today) < 0).length;
     const first = due[0];
-    await sendPush({
+    const sentN = await sendPush({
       title: `⚠ ${due.length} pedido${due.length > 1 ? 's' : ''} por vencer${late ? ` (${late} atrasado${late > 1 ? 's' : ''})` : ''}`,
       body: due.slice(0, 3).map((o) => `${(o.customer || {}).name || o.id} · ${shipText(o)} · ${core.daysUntil(o.promisedDate, today) < 0 ? 'atrasado' : 'vence ' + core.dayWord(o.promisedDate, today)}`).join(' | '),
       url: './#o-' + first.id,
       tag: 'alerta-entregas',
-    }).catch((err) => logger.error('[push] error', err.message));
+    }).catch((err) => { logger.error('[push] error', err.message); return 0; });
+    await Promise.all(due.map((o) => logNotif(o.id, [{ kind: core.daysUntil(o.promisedDate, today) < 0 ? 'alerta: atrasado' : 'alerta: por vencer', channel: 'push', to: 'tu celular', ok: sentN > 0, note: sentN ? '' : 'ningún dispositivo activado' }])));
     // Sin correo: el dueño pidió solo la notificación push (2026-11-19)
   }
 );
@@ -461,13 +482,11 @@ exports.correoEstado = onDocumentUpdated(
     });
     if (!ok) return;
     const { subject, html } = statusEmail(o, kind);
-    try {
-      await sendEmail({ ...m, to: o.customer.email, subject, html });
-      logger.info('[correoEstado]', o.id, kind);
-    } catch (err) {
-      logger.error('[correoEstado] error', o.id, kind, err.message);
-      await event.data.after.ref.update({ ['emails.' + kind]: FieldValue.delete() }).catch(() => {});
-    }
+    const label = kind === 'entregado' ? 'entregado' : retiro ? 'listo para retiro' : 'va en camino';
+    const entry = await mailAndLog(label, o.customer.email, { subject, html }, m);
+    await logNotif(o.id, [entry]);
+    if (entry.ok) logger.info('[correoEstado]', o.id, kind);
+    else await event.data.after.ref.update({ ['emails.' + kind]: FieldValue.delete() }).catch(() => {});
   }
 );
 
