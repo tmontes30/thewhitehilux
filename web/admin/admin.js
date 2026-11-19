@@ -1532,7 +1532,7 @@ $('buy-export').addEventListener('click', () => {
 // Costo de cada unidad vendida = costo promedio ponderado de ese SKU en Compras (o del producto, o el promedio general).
 // Supuestos editables en privado/utilidades: { feePct, packCost, otherMonthly }.
 const PRIV = doc(db, 'privado', 'utilidades');
-let profitCfg = { feePct: 3.2, packCost: 0, otherMonthly: 0 }; // tarjeta de crédito al instante 2,69% + IVA ≈ 3,2% (débito 2,19% + IVA ≈ 2,6%)
+let profitCfg = { feePct: 3.81, packCost: 0, otherMonthly: 0 }; // real 2026-11-19: dinero en cuenta MP 3,81% (3,19% + IVA); crédito 2,69% + IVA, débito 2,19% + IVA
 let pfPeriod = 'mes';
 let pfRows = [];
 
