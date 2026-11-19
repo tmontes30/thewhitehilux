@@ -29,7 +29,8 @@
   var PERK = {
     truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="6" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>',
-    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>'
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'
   };
   var id = new URLSearchParams(location.search).get('id');
   var root = document.getElementById('root');
@@ -58,7 +59,10 @@
     }
     if (st.size && left(st.size) === 0) st.size = '';
     var tag = soon ? '<span class="tag-pre">PRÓXIMAMENTE</span>' : (C.isSoldOut(p) ? '<span class="tag-pre tag-out">AGOTADO</span>' : '');
-    var days = function (n) { return n + (n === 1 ? ' día hábil' : ' días hábiles'); };
+    var now = new Date();
+    var rRM = C.promiseRange(now, 'rm', set), rReg = C.promiseRange(now, 'regiones', set), rPick = C.promiseRange(now, 'retiro', set);
+    var pickWord = C.dayWord(rPick.to);
+    var pickTag = !soon && !C.isSoldOut(p) ? '<p class="pickup-tag">' + PERK.pin + '<span><b>Retiro gratis ' + pickWord + '</b> en Las Condes o Lo Barnechea</span></p>' : '';
 
     root.innerHTML =
       '<section class="pdp">' +
@@ -67,7 +71,7 @@
           '<p class="cond">' + tag + '<span>Nuevo</span></p>' +
           '<h1>' + TWH.esc(p.name) + '</h1>' +
           '<p class="price-box">' + TWH.priceHtml(p) + '</p>' + (p.offer && p.offer.name ? '<p class="offer-name">' + TWH.esc(p.offer.name) + '</p>' : '') +
-          '<p class="fees">Paga en cuotas con Mercado Pago</p>' +
+          '<p class="fees">Paga en cuotas con Mercado Pago</p>' + pickTag +
           (p.designs ? '<div><p class="opt-label">Diseño: <b id="design-name"></b></p><div class="choices" id="designs"></div></div>' : '') +
           (p.colors.length ? '<div><p class="opt-label">Color: <b id="color-name"></b></p><div class="choices" id="colors"></div></div>' : '') +
           (p.sizes.length > 1 ? '<div><p class="opt-label">Talla: <b id="size-name">Elige una talla</b></p><div class="choices" id="sizes"></div></div>' : '') +
@@ -79,7 +83,8 @@
           '<p class="added" id="added" hidden>Agregado al carrito. <a href="carrito.html">Ver carrito</a></p>' +
           '<div class="perks">' +
             '<div class="perk">' + PERK.truck + '<span>' + 'Envío a todo Chile desde ' + TWH.money(cfg.shipping.rm.price) + ' · <b>gratis en RM</b> sobre ' + TWH.money(cfg.freeShippingFrom) + '</span></div>' +
-            '<div class="perk">' + PERK.box + '<span><b>Entrega en ' + days(set.deliveryDaysRM) + '</b> en RM y ' + days(set.deliveryDaysRegiones) + ' a regiones, desde que se confirma el pago</span></div>' +
+            '<div class="perk">' + PERK.box + '<span><b>Llega ' + C.rangeText(rRM) + '</b> en RM' + ' · regiones ' + C.rangeText(rReg) + ' (comprando hoy)</span></div>' +
+            '<div class="perk">' + PERK.pin + '<span><b>Retiro gratis ' + pickWord + '</b> en Las Condes o Lo Barnechea</span></div>' +
             '<div class="perk">' + PERK.shield + '<span><b>Compra protegida</b> con Mercado Pago</span></div>' +
             '<div class="perk">' + PERK.box + '<span>Vendido y despachado por The White Hilux</span></div>' +
           '</div>' +

@@ -165,6 +165,12 @@ function buildOrder(body, products, config, opts = {}) {
   let region = '';
   let comuna = '';
   let address = '';
+  let pickupPoint = '';
+  if (method === 'retiro') {
+    const points = config.pickupPoints || [];
+    pickupPoint = str(shipping.pickupPoint, 60);
+    if (points.length && !points.includes(pickupPoint)) throw new OrderError('Elige dónde quieres retirar.');
+  }
   if (method === 'despacho') {
     region = str(shipping.region, 40);
     if (!config.regions.includes(region)) throw new OrderError('Elige tu región.');
@@ -189,7 +195,8 @@ function buildOrder(body, products, config, opts = {}) {
     shipping: {
       method,
       zone,
-      zone_label: zoneCfg.label,
+      zone_label: pickupPoint ? `${zoneCfg.label} en ${pickupPoint}` : zoneCfg.label,
+      pickupPoint,
       cost: shippingCost,
       free: Boolean(freeShipping),
       region,

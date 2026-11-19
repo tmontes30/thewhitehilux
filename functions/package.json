@@ -3,13 +3,16 @@
   "private": true,
   "description": "Funciones de Firebase de la tienda The White Hilux (Mercado Pago, pedidos, alertas)",
   "main": "index.js",
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "sync": "node sync.js"
   },
   "dependencies": {
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.0",
-    "mercadopago": "^2.13.0"
+    "mercadopago": "^2.13.0",
+    "web-push": "^3.6.7"
   }
 }

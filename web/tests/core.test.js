@@ -67,10 +67,46 @@ test('días hábiles: salta fin de semana y feriados', () => {
 });
 
 test('promesa según zona y días restantes', () => {
-  const s = { deliveryDaysRM: 3, deliveryDaysRegiones: 7, holidays: [] };
-  assert.strictEqual(C.promiseDate('2026-11-16', 'rm', s), '2026-11-19');
-  assert.strictEqual(C.promiseDate('2026-11-16', 'regiones', s), '2026-11-25');
-  assert.strictEqual(C.promiseDate('2026-11-16', 'retiro', s), '2026-11-19');
+  const s = { deliveryDaysRM: 3, deliveryDaysRegiones: 5, rangeDays: 1, holidays: [] };
+  // pagado lunes 16: RM llega jueves 19 a viernes 20; regiones lunes 23 a martes 24
+  assert.deepStrictEqual(C.promiseRange('2026-11-16', 'rm', s), { from: '2026-11-19', to: '2026-11-20' });
+  assert.deepStrictEqual(C.promiseRange('2026-11-16', 'regiones', s), { from: '2026-11-23', to: '2026-11-24' });
+  assert.strictEqual(C.promiseDate('2026-11-16', 'rm', s), '2026-11-20');
+  // retiro con fecha (pago manual en el panel): día hábil siguiente
+  assert.strictEqual(C.promiseDate('2026-11-16', 'retiro', s), '2026-11-17');
   assert.strictEqual(C.daysUntil('2026-11-19', '2026-11-17'), 2);
   assert.strictEqual(C.daysUntil('2026-11-15', '2026-11-17'), -2);
+});
+
+test('retiro: mismo día antes de la hora de corte, si no el día hábil siguiente', () => {
+  const s = { pickupCutoff: '06:30', holidays: [] };
+  // 2026-11-18 (miércoles) en Chile es UTC-3
+  assert.strictEqual(C.pickupDate(new Date('2026-11-18T09:00:00Z'), s), '2026-11-18'); // 06:00 Chile
+  assert.strictEqual(C.pickupDate(new Date('2026-11-18T09:45:00Z'), s), '2026-11-19'); // 06:45 Chile
+  assert.strictEqual(C.pickupDate(new Date('2026-11-20T23:00:00Z'), s), '2026-11-23'); // viernes 20:00 → lunes
+  assert.strictEqual(C.pickupDate(new Date('2026-11-21T08:00:00Z'), s), '2026-11-23'); // sábado temprano → lunes
+});
+
+test('textos de fechas', () => {
+  assert.strictEqual(C.rangeText({ from: '2026-11-24', to: '2026-11-25' }), 'entre el martes 24 y el miércoles 25 de noviembre');
+  assert.strictEqual(C.rangeText({ from: '2026-11-30', to: '2026-12-01' }), 'entre el lunes 30 de noviembre y el martes 1 de diciembre');
+  assert.strictEqual(C.dayWord('2026-11-18', '2026-11-18'), 'hoy');
+  assert.strictEqual(C.dayWord('2026-11-19', '2026-11-18'), 'mañana');
+  assert.strictEqual(C.dayWord('2026-11-23', '2026-11-20'), 'el lunes 23');
+});
+
+test('OTD: entregados a tiempo vs atrasados', () => {
+  const orders = [
+    { status: 'entregado', promisedDate: '2026-11-20', deliveredDate: '2026-11-20', shipping: { method: 'despacho' } },
+    { status: 'entregado', promisedDate: '2026-11-20', deliveredDate: '2026-11-23', shipping: { method: 'despacho' } },
+    { status: 'despachado', promisedDate: '2026-11-17', shippedDate: '2026-11-17', shipping: { method: 'retiro' } }, // listo para retiro a tiempo
+    { status: 'preparando', promisedDate: '2026-11-10', shipping: { method: 'despacho' } }, // vencido sin entregar
+    { status: 'cancelado', promisedDate: '2026-11-10', shipping: { method: 'despacho' } },
+  ];
+  const r = C.otd(orders, '2026-11-25');
+  assert.strictEqual(r.total, 3);
+  assert.strictEqual(r.onTime, 2);
+  assert.strictEqual(r.late, 1);
+  assert.strictEqual(r.pct, 66.7);
+  assert.strictEqual(r.openLate, 1);
 });

@@ -6,6 +6,13 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Panel TWH</title>
 <link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Panel TWH">
+<meta name="theme-color" content="#1C1D1A">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -65,6 +72,10 @@
       <button type="button" class="btn ghost" id="export-sales">Descargar ventas por SKU (CSV)</button>
     </div>
     <div class="stats" id="sales-kpis"></div>
+    <div class="card otd-card">
+      <div class="card-head"><h2 class="card-title">Cumplimiento de entregas (OTD)</h2><span class="hint">Pedidos pagados en el período que ya se entregaron</span></div>
+      <div id="otd"></div>
+    </div>
     <div class="card"><h2 class="card-title">Ventas por día</h2><div id="sales-chart"></div></div>
     <div class="two-col">
       <div class="card"><h2 class="card-title">Más vendidos</h2><div id="sales-top"></div></div>
@@ -117,15 +128,39 @@
   <section id="tab-ajustes" hidden>
     <form class="card settings" id="settings">
       <h2>Promesa de entrega</h2>
-      <p class="hint">Días hábiles desde que se confirma el pago (sin sábados, domingos ni feriados). Se muestra en la ficha y el carrito, y fija la fecha límite de cada pedido.</p>
+      <p class="hint">Días hábiles desde que se confirma el pago (sin sábados, domingos ni feriados) hasta el <b>primer día</b> del rango. El cliente ve "Llega entre el martes 24 y el miércoles 25". La fecha límite de cada pedido (alertas y OTD) es el <b>último día</b> del rango.</p>
       <div class="grid3">
-        <label>Región Metropolitana y retiro<input type="number" id="s-rm" min="0" max="60" required></label>
-        <label>Regiones<input type="number" id="s-reg" min="0" max="60" required></label>
-        <label>Avisar cuando falten (días)<input type="number" id="s-alert" min="0" max="30" required></label>
+        <label>Región Metropolitana (días)<input type="number" id="s-rm" min="0" max="60" required></label>
+        <label>Regiones (días)<input type="number" id="s-reg" min="0" max="60" required></label>
+        <label>Largo del rango (días extra)<input type="number" id="s-range" min="0" max="10" required></label>
       </div>
+      <div class="grid3">
+        <label>Retiro: mismo día si pagan antes de<input type="time" id="s-cutoff" required></label>
+        <label>Avisar cuando falten (días)<input type="number" id="s-alert" min="0" max="30" required></label>
+        <span></span>
+      </div>
+      <p class="hint">Retiro gratis en Las Condes o Lo Barnechea: si pagan antes de la hora de corte (día hábil) se retira ese mismo día; si no, el día hábil siguiente. La hora no se muestra en la tienda: el cliente solo ve "Retiro gratis hoy" o "mañana".</p>
       <label>Feriados (uno por línea, AAAA-MM-DD)<textarea id="s-holidays" rows="8"></textarea></label>
       <div class="actions"><button class="btn primary" type="submit">Guardar ajustes</button><span class="saved" id="s-saved" hidden>Guardado ✓</span></div>
     </form>
+    <div class="card settings" id="push-card">
+      <h2>Notificaciones en el celular</h2>
+      <p class="hint">Te avisa cuando entra un pedido pagado y cada mañana (9:00) si hay pedidos por vencer o atrasados, igual que la alerta roja de Pedidos.</p>
+      <p id="push-status" class="push-status"></p>
+      <div class="actions">
+        <button type="button" class="btn primary" id="push-on">Activar en este dispositivo</button>
+        <button type="button" class="btn ghost" id="push-test" hidden>Mandar prueba</button>
+        <button type="button" class="btn ghost" id="push-off" hidden>Desactivar aquí</button>
+      </div>
+      <details class="push-help"><summary>Cómo activarlo en el iPhone</summary>
+        <ol>
+          <li>Si ya tenías el panel en el inicio, <b>bórralo</b> (mantén apretado el ícono → Eliminar marcador).</li>
+          <li>Abre <b>thewhitehilux.cavedevz.com/admin/</b> en <b>Safari</b> → botón Compartir → <b>Agregar a inicio</b>.</li>
+          <li>Abre el panel <b>desde el ícono nuevo</b> (engranaje naranjo), entra con Google y ven a Ajustes.</li>
+          <li>Toca <b>Activar en este dispositivo</b> y luego <b>Permitir</b>.</li>
+        </ol>
+      </details>
+    </div>
   </section>
 </main>
 

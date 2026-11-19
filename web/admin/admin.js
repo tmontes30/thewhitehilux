@@ -86,6 +86,10 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const snap = await getDoc(CATALOG);
     if (!snap.exists()) await setDoc(CATALOG, { products: {}, settings: { ...C.DEFAULT_SETTINGS } });
+    // Migración (2026-11-18): entrega con rango de fechas, regiones 5 días y retiro con hora de corte
+    else if (snap.data().settings && snap.data().settings.rangeDays == null) {
+      await updateDoc(CATALOG, 'settings.deliveryDaysRegiones', 5, 'settings.rangeDays', 1, 'settings.pickupCutoff', '06:30');
+    }
   } catch (err) {
     return fail(err);
   }
@@ -166,7 +170,7 @@ function orderCard(o) {
   const paid = o.paidAmount != null ? o.paidAmount : o.total;
   const opts = Object.keys(C.ORDER_STATUS).map((k) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${C.ORDER_STATUS[k]}</option>`).join('');
   const dest = ship.method === 'retiro'
-    ? '<p><b>Retiro coordinado en Santiago</b></p>'
+    ? `<p><b>Retiro gratis${ship.pickupPoint ? ' en ' + esc(ship.pickupPoint) : ''}</b><br><span class="hint">Coordinar por WhatsApp</span></p>`
     : `<p>${esc(ship.address)}<br>${esc(ship.comuna)}, ${esc(ship.region)}</p>`;
   return `<article class="card order ${dd && dd.cls !== 'green' ? 'due-' + dd.cls : ''}" id="o-${esc(o.id)}" data-id="${esc(o.id)}">
     <div class="order-head">
@@ -192,8 +196,10 @@ function orderCard(o) {
       </div>
       <div class="promise">
         <h4>Promesa de entrega</h4>
+        ${o.promisedFrom && o.promisedFrom < o.promisedDate ? `<p class="hint">Rango: ${C.dayName(o.promisedFrom)} a ${C.dayName(o.promisedDate)} · fecha límite:</p>` : ''}
         ${o.promisedDate || o.status !== 'pendiente_pago' ? `<input type="date" data-act="promise" value="${esc(o.promisedDate || '')}" aria-label="Fecha prometida">` : '<p class="hint">Se fija al confirmarse el pago.</p>'}
         ${o.deliveredDate ? `<span class="pill gray">Entregado ${fmtDate(o.deliveredDate)}</span>` : ''}
+        ${C.onTime(o) === true ? '<span class="pill green">A tiempo</span>' : C.onTime(o) === false ? '<span class="pill red">Entregado atrasado</span>' : ''}
       </div>
     </div>
     <div>
@@ -227,11 +233,13 @@ function renderOrders() {
   const paidMonth = orders.filter((o) => PAID.includes(o.status) && (o.paidDate || '').startsWith(month));
   const sold = paidMonth.reduce((s, o) => s + (Number(o.paidAmount != null ? o.paidAmount : o.total) || 0), 0);
 
+  const otd30 = C.otd(orders.filter((o) => C.fulfilledDate(o) >= addDays(today, -29)));
   $('stats').innerHTML = [
     [open.length, 'Por entregar'],
     [urgent.length, `Vencen en ≤ ${plural(data.settings.alertDays, 'día', 'días')} o atrasados`],
     [money(sold), 'Vendido este mes'],
     [paidMonth.length, 'Pedidos pagados este mes'],
+    [otd30.pct == null ? '—' : otd30.pct + '%', `OTD 30 días · ${otd30.onTime} de ${otd30.total} a tiempo`],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
 
   const cnt = $('count-alert');
@@ -306,7 +314,11 @@ $('orders').addEventListener('change', async (e) => {
       // Pago manual (transferencia, efectivo): fija la promesa y descuenta stock
       if (PAID.includes(to) && !PAID.includes(o.status)) {
         patch.paidDate = o.paidDate || C.todayCL();
-        if (!o.promisedDate) patch.promisedDate = C.promiseDate(patch.paidDate, (o.shipping || {}).zone, data.settings);
+        if (!o.promisedDate) {
+          const r = C.promiseRange(patch.paidDate, (o.shipping || {}).zone, data.settings);
+          patch.promisedFrom = r.from;
+          patch.promisedDate = r.to;
+        }
         if (o.paidAmount == null) patch.paidAmount = o.total;
         if (confirm('¿Descontar estas unidades del stock?')) await moveStock(o, -1);
       }
@@ -318,7 +330,9 @@ $('orders').addEventListener('change', async (e) => {
       toast('Estado: ' + C.ORDER_STATUS[to]);
     }
     if (act === 'promise' && e.target.value) {
-      await updateDoc(ref, { promisedDate: e.target.value });
+      const patch = { promisedDate: e.target.value };
+      if (o.promisedFrom && o.promisedFrom > e.target.value) patch.promisedFrom = e.target.value;
+      await updateDoc(ref, patch);
       toast('Fecha de entrega actualizada');
     }
     if (act === 'note') {
@@ -610,6 +624,8 @@ function renderSettings() {
   const s = data.settings;
   $('s-rm').value = s.deliveryDaysRM;
   $('s-reg').value = s.deliveryDaysRegiones;
+  $('s-range').value = s.rangeDays;
+  $('s-cutoff').value = s.pickupCutoff;
   $('s-alert').value = s.alertDays;
   $('s-holidays').value = s.holidays.join('\n');
 }
@@ -623,6 +639,8 @@ $('settings').addEventListener('submit', async (e) => {
       deliveryDaysRM: Math.max(0, Math.floor(Number($('s-rm').value) || 0)),
       deliveryDaysRegiones: Math.max(0, Math.floor(Number($('s-reg').value) || 0)),
       alertDays: Math.max(0, Math.floor(Number($('s-alert').value) || 0)),
+      rangeDays: Math.max(0, Math.floor(Number($('s-range').value) || 0)),
+      pickupCutoff: /^\d{2}:\d{2}$/.test($('s-cutoff').value) ? $('s-cutoff').value : C.DEFAULT_SETTINGS.pickupCutoff,
       holidays: [...new Set(holidays)].sort(),
     });
     $('s-saved').hidden = false;
@@ -632,6 +650,90 @@ $('settings').addEventListener('submit', async (e) => {
     fail(err);
   }
 });
+
+// ---------- Notificaciones push (panel instalado en el inicio del celular) ----------
+// El dispositivo se suscribe con la clave pública VAPID y queda guardado en pushSubs/{id};
+// las funciones (pedido pagado, alerta diaria) mandan la notificación a todos los dispositivos guardados.
+const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const swReady = pushSupported ? navigator.serviceWorker.register('sw.js').catch((e) => { console.warn(e); return null; }) : Promise.resolve(null);
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function b64ToBytes(b64) {
+  const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(s, (c) => c.charCodeAt(0));
+}
+async function subId(endpoint) {
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(endpoint));
+  return Array.from(new Uint8Array(h)).slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+async function currentSub() {
+  const reg = await swReady;
+  return reg ? reg.pushManager.getSubscription() : null;
+}
+async function renderPush() {
+  const st = $('push-status');
+  const on = $('push-on'), off = $('push-off'), test = $('push-test');
+  if (!pushSupported) {
+    st.innerHTML = isIOS && !standalone
+      ? '📱 En iPhone las notificaciones funcionan solo con el panel <b>agregado al inicio</b> y abierto desde ese ícono. Sigue los pasos de abajo.'
+      : 'Este navegador no permite notificaciones push.';
+    on.hidden = off.hidden = test.hidden = true;
+    $('push-card').querySelector('details').open = isIOS;
+    return;
+  }
+  const sub = await currentSub().catch(() => null);
+  const denied = Notification.permission === 'denied';
+  st.innerHTML = sub ? '✅ <b>Activadas en este dispositivo.</b>' : denied
+    ? '⛔ Bloqueaste las notificaciones. En iPhone: Ajustes → Notificaciones → Panel TWH → Permitir.'
+    : 'Desactivadas en este dispositivo.';
+  on.hidden = !!sub || denied;
+  off.hidden = test.hidden = !sub;
+}
+$('push-on').addEventListener('click', async () => {
+  try {
+    if (!F.vapidPublicKey) throw new Error('Falta la clave pública');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { renderPush(); return toast('No diste permiso para notificaciones', true); }
+    const reg = await swReady;
+    if (!reg) throw new Error('No se pudo registrar el service worker');
+    await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(F.vapidPublicKey) });
+    const j = sub.toJSON();
+    await setDoc(doc(db, 'pushSubs', await subId(j.endpoint)), {
+      endpoint: j.endpoint, keys: j.keys, device: navigator.userAgent.slice(0, 200), createdAt: serverTimestamp(), email: auth.currentUser.email,
+    });
+    toast('Notificaciones activadas ✓');
+    renderPush();
+    $('push-test').click();
+  } catch (err) {
+    fail(err);
+  }
+});
+$('push-off').addEventListener('click', async () => {
+  try {
+    const sub = await currentSub();
+    if (sub) {
+      await deleteDoc(doc(db, 'pushSubs', await subId(sub.endpoint))).catch(() => {});
+      await sub.unsubscribe();
+    }
+    toast('Notificaciones desactivadas en este dispositivo');
+    renderPush();
+  } catch (err) {
+    fail(err);
+  }
+});
+$('push-test').addEventListener('click', async () => {
+  try {
+    const r = await fetch(F.apiBase + '/probarPush', { method: 'POST', headers: { Authorization: 'Bearer ' + (await auth.currentUser.getIdToken()) } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'No se pudo mandar la prueba');
+    toast(j.sent ? 'Prueba enviada: debería llegarte en unos segundos' : 'No hay dispositivos activados', !j.sent);
+  } catch (err) {
+    fail(err);
+  }
+});
+renderPush();
 
 window.addEventListener('beforeunload', (e) => {
   if (dirty.size) { e.preventDefault(); e.returnValue = ''; }
@@ -683,6 +785,27 @@ $('export-stock').addEventListener('click', () => {
     ['SKU', 'Producto', 'Categoría', 'Color', 'Talla', 'Stock', 'Precio normal', 'Precio actual', 'Valor inventario', 'Estado', 'Vendidas últimos 30 días'], rows);
   toast('Inventario descargado');
 });
+
+// ---------- OTD (On Time Delivery): % de pedidos entregados a más tardar el último día prometido ----------
+function renderOtd(list) {
+  const r = C.otd(list);
+  const groups = [['rm', 'RM'], ['regiones', 'Regiones'], ['retiro', 'Retiro']].map(([z, label]) => {
+    const g = C.otd(list.filter((o) => ((o.shipping || {}).zone || 'rm') === z));
+    return `<tr><td>${label}</td><td class="num">${g.total}</td><td class="num">${g.onTime}</td><td class="num">${g.late}</td><td class="num"><b>${g.pct == null ? '—' : g.pct + '%'}</b></td></tr>`;
+  }).join('');
+  const lateList = list.filter((o) => C.onTime(o) === false).map((o) => {
+    const days = C.daysUntil(o.promisedDate, C.fulfilledDate(o)) * -1;
+    return `<li>${esc(o.id)} · ${esc((o.customer || {}).name)} · prometido ${fmtDate(o.promisedDate)}, entregado ${fmtDate(C.fulfilledDate(o))} (<b>${plural(days, 'día', 'días')} tarde</b>)</li>`;
+  });
+  const color = r.pct == null ? '' : r.pct >= 95 ? 'var(--green)' : r.pct >= 85 ? '#B7791F' : 'var(--red)';
+  $('otd').innerHTML = `<div class="otd-row">
+      <div class="otd-big" style="color:${color || 'inherit'}">${r.pct == null ? '—' : r.pct + '%'}<span>${r.total ? `${r.onTime} de ${r.total} a tiempo` : 'Aún no hay entregas en este período'}</span></div>
+      <div class="table-wrap"><table class="data"><thead><tr><th>Entrega</th><th class="num">Entregados</th><th class="num">A tiempo</th><th class="num">Atrasados</th><th class="num">OTD</th></tr></thead><tbody>${groups}</tbody></table></div>
+    </div>
+    ${r.openLate ? `<p class="warn">⚠ ${plural(r.openLate, 'pedido', 'pedidos')} de este período ya pasó la fecha límite y aún no se entrega: contará como atrasado.</p>` : ''}
+    ${lateList.length ? `<details><summary>Ver entregas atrasadas (${lateList.length})</summary><ul class="otd-late">${lateList.join('')}</ul></details>` : ''}
+    <p class="hint">A tiempo = entregado (despacho) o listo para retiro a más tardar el último día del rango prometido. Meta sugerida: 95% o más.</p>`;
+}
 
 // ---------- Ventas ----------
 const PERIODS = { hoy: 'Hoy', '7d': '7 días', mes: 'Este mes', mesant: 'Mes pasado', '30d': '30 días', ano: 'Este año', todo: 'Todo', rango: 'Elegir fechas' };
@@ -737,6 +860,8 @@ function renderSales() {
     [money(shipping), 'Envíos cobrados'],
     [open, 'Pedidos por entregar (hoy)'],
   ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  renderOtd(list);
 
   // Gráfico por día (máx. 120 días; si es más largo, por mes)
   const byDay = {};

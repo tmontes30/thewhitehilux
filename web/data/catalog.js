@@ -21,8 +21,10 @@
       shipping: {
         rm: { label: 'Despacho Región Metropolitana', price: 3990 },
         regiones: { label: 'Despacho a regiones', price: 5990 },
-        retiro: { label: 'Retiro coordinado en Santiago', price: 0 }
+        retiro: { label: 'Retiro gratis', price: 0 }
       },
+      // Puntos de retiro gratis (el cliente elige uno; se coordina el lugar exacto por WhatsApp)
+      pickupPoints: ['Las Condes', 'Lo Barnechea'],
       colors: { negro: 'Negro', blanco: 'Blanco' },
       categories: { polera: 'Poleras', poleron: 'Polerones', jockey: 'Jockeys', stickers: 'Stickers' },
       regions: ['Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso', 'Región Metropolitana',

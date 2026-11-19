@@ -27,7 +27,10 @@
     '2027-08-15', '2027-09-18', '2027-09-19', '2027-10-11', '2027-10-31', '2027-11-01', '2027-12-08', '2027-12-25'
   ];
 
-  var DEFAULT_SETTINGS = { deliveryDaysRM: 3, deliveryDaysRegiones: 7, alertDays: 2, holidays: FERIADOS_CL };
+  // deliveryDays*: días hábiles hasta el primer día del rango; rangeDays: largo del rango ("llega entre martes y miércoles")
+  // pickupCutoff: pagos antes de esta hora (Chile) se retiran el mismo día hábil; después, al día hábil siguiente.
+  //   La hora de corte NO se muestra al cliente: solo ve "Retiro gratis hoy" o "mañana".
+  var DEFAULT_SETTINGS = { deliveryDaysRM: 3, deliveryDaysRegiones: 5, rangeDays: 1, alertDays: 2, pickupCutoff: '06:30', holidays: FERIADOS_CL };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
@@ -113,6 +116,8 @@
       deliveryDaysRM: posInt(s.deliveryDaysRM, DEFAULT_SETTINGS.deliveryDaysRM),
       deliveryDaysRegiones: posInt(s.deliveryDaysRegiones, DEFAULT_SETTINGS.deliveryDaysRegiones),
       alertDays: posInt(s.alertDays, DEFAULT_SETTINGS.alertDays),
+      rangeDays: posInt(s.rangeDays, DEFAULT_SETTINGS.rangeDays),
+      pickupCutoff: /^([01]\d|2[0-3]):[0-5]\d$/.test(s.pickupCutoff || '') ? s.pickupCutoff : DEFAULT_SETTINGS.pickupCutoff,
       holidays: Array.isArray(s.holidays) ? s.holidays.slice() : FERIADOS_CL.slice()
     };
     return data;
@@ -169,9 +174,84 @@
     var s = settings || DEFAULT_SETTINGS;
     return zone === 'regiones' ? s.deliveryDaysRegiones : s.deliveryDaysRM;
   }
-  function promiseDate(paidYmd, zone, settings) {
+  // Hora de Chile 'HH:MM'
+  function timeCL(date) {
+    var d = date || new Date();
+    try {
+      var t = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Santiago', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+      return t.replace(/^24/, '00');
+    } catch (e) {
+      return d.toISOString().slice(11, 16);
+    }
+  }
+  // Día de retiro (Las Condes / Lo Barnechea) para un pago hecho en `date`
+  function pickupDate(date, settings) {
     var s = settings || DEFAULT_SETTINGS;
-    return addBusinessDays(paidYmd, deliveryDaysFor(zone, s), s.holidays);
+    var day = todayCL(date);
+    var cut = s.pickupCutoff || DEFAULT_SETTINGS.pickupCutoff;
+    if (isBusinessDay(day, s.holidays) && timeCL(date) < cut) return day;
+    return addBusinessDays(day, 1, s.holidays);
+  }
+  // Rango de entrega { from, to } para un pago hecho en `date` (Date) o el día `date` ('AAAA-MM-DD')
+  function promiseRange(date, zone, settings) {
+    var s = settings || DEFAULT_SETTINGS;
+    if (zone === 'retiro') {
+      var p = typeof date === 'string' ? addBusinessDays(date, 1, s.holidays) : pickupDate(date, s);
+      return { from: p, to: p };
+    }
+    var day = typeof date === 'string' ? date : todayCL(date);
+    var from = addBusinessDays(day, deliveryDaysFor(zone, s), s.holidays);
+    var rng = s.rangeDays == null ? DEFAULT_SETTINGS.rangeDays : s.rangeDays;
+    return { from: from, to: addBusinessDays(from, rng, s.holidays) };
+  }
+  // Fecha límite (último día del rango): la que se usa para alertas y OTD
+  function promiseDate(paidYmd, zone, settings) { return promiseRange(paidYmd, zone, settings).to; }
+
+  // ---------- Textos de fechas ----------
+  var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  // 'martes 24'
+  function dayName(ymd) { var d = parseYmd(ymd); return DIAS[d.getUTCDay()] + ' ' + d.getUTCDate(); }
+  // 'hoy' / 'mañana' / 'el martes 24'
+  function dayWord(ymd, today) {
+    var n = daysUntil(ymd, today);
+    return n === 0 ? 'hoy' : n === 1 ? 'mañana' : 'el ' + dayName(ymd);
+  }
+  // 'entre el martes 24 y el miércoles 25 de noviembre'
+  function rangeText(r) {
+    var b = parseYmd(r.to);
+    var tail = ' de ' + MESES[b.getUTCMonth()];
+    if (r.from === r.to) return 'el ' + dayName(r.to) + tail;
+    var a = parseYmd(r.from);
+    var head = 'el ' + dayName(r.from) + (a.getUTCMonth() !== b.getUTCMonth() ? ' de ' + MESES[a.getUTCMonth()] : '');
+    return 'entre ' + head + ' y el ' + dayName(r.to) + tail;
+  }
+
+  // ---------- Cumplimiento de entregas (OTD = On Time Delivery) ----------
+  // Fecha en que se cumplió la entrega: despacho → entregado; retiro → listo para retiro (o entregado)
+  function fulfilledDate(o) {
+    var retiro = o.shipping && o.shipping.method === 'retiro';
+    return retiro ? (o.shippedDate || o.deliveredDate || '') : (o.deliveredDate || '');
+  }
+  // true = a tiempo, false = atrasado, null = todavía no se entrega (o no aplica)
+  function onTime(o) {
+    if (!o.promisedDate) return null;
+    var f = fulfilledDate(o);
+    return f ? f <= o.promisedDate : null;
+  }
+  // { total, onTime, late, pct, openLate } de los pedidos entregados (pct = null si no hay)
+  function otd(orders, today) {
+    var t = today || todayCL();
+    var r = { total: 0, onTime: 0, late: 0, pct: null, openLate: 0 };
+    (orders || []).forEach(function (o) {
+      if (o.status === 'cancelado' || o.status === 'pendiente_pago') return;
+      var ok = onTime(o);
+      if (ok === null) { if (o.promisedDate && o.promisedDate < t && !fulfilledDate(o)) r.openLate++; return; }
+      r.total++;
+      if (ok) r.onTime++; else r.late++;
+    });
+    r.pct = r.total ? Math.round((r.onTime / r.total) * 1000) / 10 : null;
+    return r;
   }
 
   var api = {
@@ -179,7 +259,8 @@
     mergeCatalog: mergeCatalog, stockKey: stockKey, stockColors: stockColors, stockOf: stockOf, totalStock: totalStock,
     isSoldOut: isSoldOut, isBuyable: isBuyable,
     todayCL: todayCL, addBusinessDays: addBusinessDays, isBusinessDay: isBusinessDay, daysUntil: daysUntil,
-    deliveryDaysFor: deliveryDaysFor, promiseDate: promiseDate,
+    deliveryDaysFor: deliveryDaysFor, promiseDate: promiseDate, promiseRange: promiseRange, pickupDate: pickupDate, timeCL: timeCL,
+    dayName: dayName, dayWord: dayWord, rangeText: rangeText, fulfilledDate: fulfilledDate, onTime: onTime, otd: otd,
     defaultSku: defaultSku, cleanSku: cleanSku, variantSku: variantSku, COLOR_CODE: COLOR_CODE,
     offerApplies: offerApplies, offerPrice: offerPrice, inDates: inDates, orderedImages: orderedImages
   };

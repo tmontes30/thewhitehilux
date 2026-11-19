@@ -7,7 +7,7 @@ const esc = (s) =>
 
 const fmt = (ymd) => (ymd ? ymd.split('-').reverse().join('-') : '');
 
-function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promisedDate }, forCustomer) {
+function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promisedDate, promisedFrom }, forCustomer) {
   const rows = (lines || [])
     .map(
       (l) =>
@@ -21,7 +21,7 @@ function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promi
   const ship = shipping || {};
   const dest =
     ship.method === 'retiro'
-      ? 'Retiro coordinado en Santiago'
+      ? `Retiro gratis${ship.pickupPoint ? ' en ' + esc(ship.pickupPoint) : ''} (te escribimos por WhatsApp para coordinar)`
       : `${esc(ship.address)}, ${esc(ship.comuna)}, ${esc(ship.region)}`;
   return `
   <div style="font-family:Arial,sans-serif;max-width:560px;color:#1c1d1a">
@@ -36,7 +36,7 @@ function orderHtml({ orderId, paymentId, total, customer, shipping, lines, promi
     </table>
     <h3 style="margin:20px 0 6px">Entrega</h3>
     <p style="margin:0">${dest}</p>
-    ${promisedDate ? `<p style="margin:6px 0 0"><b>${forCustomer ? 'Fecha estimada de entrega' : 'Entregar a más tardar'}: ${fmt(promisedDate)}</b></p>` : ''}
+    ${promisedDate ? `<p style="margin:6px 0 0"><b>${ship.method === 'retiro' ? 'Retiro' : forCustomer ? 'Llega' : 'Entregar'} ${promisedFrom && promisedFrom !== promisedDate ? 'entre el ' + fmt(promisedFrom) + ' y el ' + fmt(promisedDate) : 'el ' + fmt(promisedDate)}</b></p>` : ''}
     ${ship.notes ? `<p style="margin:6px 0 0;color:#555">Notas: ${esc(ship.notes)}</p>` : ''}
     ${
       forCustomer

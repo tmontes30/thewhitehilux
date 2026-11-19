@@ -375,3 +375,10 @@ mark.falta { background: #FFE08A; color: #6b4a00; padding: 0 4px; border-radius:
 @media (max-width: 600px) { .legal-card { padding: 20px 18px; } .resumen-legal { grid-template-columns: 1fr; } }
 .acepto { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; margin: 6px 0 2px; cursor: pointer; }
 .acepto input { margin-top: 3px; flex: none; }
+
+/* Retiro gratis hoy / mañana (Las Condes · Lo Barnechea) */
+.pickup-chip { justify-self: start; font-size: 12px; font-weight: 700; color: var(--green); background: #E3F4EA; border-radius: 4px; padding: 3px 8px; }
+.pickup-tag { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1E4F34; background: #E3F4EA; border-radius: 6px; padding: 8px 12px; margin: -2px 0 0; }
+.pickup-tag svg { width: 20px; height: 20px; flex: none; color: var(--green); }
+.pickup-tag b { color: var(--green); }
+.eta b { font-weight: 700; }

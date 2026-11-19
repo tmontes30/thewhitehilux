@@ -55,7 +55,7 @@
       ['Pedido recibido', o.createdDate, 'Recibimos tu pedido.'],
       ['Pago confirmado', o.paidDate, 'Mercado Pago confirmó tu pago.'],
       ['En preparación', o.preparingDate, 'Estamos preparando tus productos.'],
-      [retiro ? 'Listo para retiro' : 'Despachado', o.shippedDate, retiro ? 'Te escribimos para coordinar el retiro en Santiago.' : 'Tu pedido va en camino.'],
+      [retiro ? 'Listo para retiro' : 'Despachado', o.shippedDate, retiro ? 'Te escribimos por WhatsApp para coordinar el retiro' + (o.pickupPoint ? ' en ' + o.pickupPoint : '') + '.' : 'Tu pedido va en camino.'],
       ['Entregado', o.deliveredDate, '¡Que lo disfrutes!']
     ].map(function (s, i) { return { title: s[0], date: s[1], text: s[2], done: i <= at, current: i === at }; });
   }
@@ -69,7 +69,7 @@
       head = '<p class="track-state wait">Esperando confirmación del pago</p><p class="muted">Si ya pagaste, puede tardar unos minutos. Si el pago no se completó, puedes volver a intentarlo desde el carrito.</p>';
     } else {
       var promise = o.status !== 'entregado' && o.promisedDate
-        ? '<p class="track-eta">' + (o.method === 'retiro' ? 'Listo para retiro' : 'Entrega estimada') + ': <b>a más tardar el ' + fmt(o.promisedDate) + '</b></p>' : '';
+        ? '<p class="track-eta">' + (o.method === 'retiro' ? 'Retiro: <b>' + TWH.core.rangeText({ from: o.promisedDate, to: o.promisedDate }) : 'Llega <b>' + TWH.core.rangeText({ from: o.promisedFrom && o.promisedFrom <= o.promisedDate ? o.promisedFrom : o.promisedDate, to: o.promisedDate })) + '</b></p>' : '';
       head = '<p class="track-state">' + esc(steps(o).filter(function (s) { return s.current; })[0].title) + '</p>' + promise;
     }
     var timeline = o.status === 'cancelado' ? '' : '<ol class="timeline">' + steps(o).map(function (s) {
@@ -81,7 +81,7 @@
       ship = '<div class="track-ship"><b>Despacho</b><p>' + esc(o.courier || '') + (o.trackingCode ? ' · N° de seguimiento <b class="code">' + esc(o.trackingCode) + '</b>' : '') + '</p>' +
         (o.trackingUrl ? '<a class="btn secondary" href="' + esc(o.trackingUrl) + '" target="_blank" rel="noopener" style="width:auto">Ver en ' + esc(o.courier || 'el courier') + ' ↗</a>' : '') + '</div>';
     }
-    var dest = o.method === 'retiro' ? 'Retiro coordinado en Santiago' : 'Despacho a ' + esc(o.comuna) + ', ' + esc(o.region);
+    var dest = o.method === 'retiro' ? 'Retiro gratis' + (o.pickupPoint ? ' en ' + esc(o.pickupPoint) : '') : 'Despacho a ' + esc(o.comuna) + ', ' + esc(o.region);
     r.innerHTML = '<p class="muted">Pedido <b>' + esc(o.id) + '</b></p>' + head + timeline + ship +
       '<div class="track-items"><b>Tu compra</b><ul>' + o.lines.map(function (l) { return '<li>' + l.qty + ' × ' + esc(l.name) + (l.detail ? ' <span class="muted">· ' + esc(l.detail) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
       '<p class="muted">' + dest + ' · Total pagado ' + TWH.money(o.total) + '</p></div>';

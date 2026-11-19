@@ -25,6 +25,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Dispositivos del admin suscritos a notificaciones push (los usa la función que avisa pedidos)
+    match /pushSubs/{id} {
+      allow read, write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

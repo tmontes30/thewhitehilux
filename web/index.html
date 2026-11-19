@@ -160,6 +160,7 @@ TWH.loadData().then(function (d) {
     document.getElementById('list-count').textContent = list.length + (list.length === 1 ? ' producto' : ' productos');
     document.getElementById('empty').hidden = list.length > 0;
     var free = cfg.freeShippingFrom;
+    var pickWord = C.dayWord(C.promiseRange(new Date(), 'retiro', d.settings).to);
     document.getElementById('grid').innerHTML = list.map(function (p) {
       var color = f.color && p.colors.indexOf(f.color) >= 0 ? f.color : p.colors[0];
       var alt = TWH.pictureCount(p, color) > 1;
@@ -170,6 +171,7 @@ TWH.loadData().then(function (d) {
         '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +
         '<div class="body"><span class="title">' + TWH.esc(p.name) + '</span>' +
         TWH.priceHtml(p) +
+        (p.status !== 'proximamente' && !C.isSoldOut(p) ? '<span class="pickup-chip">Retiro gratis ' + pickWord + '</span>' : '') +
         '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">Envío a todo Chile</span>') +
         '<span class="cdots">' + dots + '</span></div></div></a>';
     }).join('');

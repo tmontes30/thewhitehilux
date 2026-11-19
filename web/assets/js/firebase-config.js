@@ -11,6 +11,8 @@
     appId: '1:136217882027:web:380ec5a3021333de07f6ee',
     // Correos con acceso al panel (deben coincidir con firestore.rules)
     admins: ['tmontes30@gmail.com'],
+    // Clave pública para las notificaciones push del panel (la privada está en la bóveda de Firebase)
+    vapidPublicKey: 'BCZjVniQDpf60yzmP0LEKn3k4dBpWN4WMN29B8ZN-KYDPRI8ygiEX5tgAEnvEwIVqZwuf8RkH1wRgh3YPdSvtvo',
     // Al abrir la tienda en localhost se usan los emuladores de Firebase (pruebas sin tocar datos reales)
     useEmulators: local,
     apiBase: local ? 'http://127.0.0.1:5001/' + projectId + '/' + region : 'https://' + region + '-' + projectId + '.cloudfunctions.net'
