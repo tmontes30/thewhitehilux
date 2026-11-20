@@ -140,10 +140,7 @@
         (D && D.config.email ? '<a href="mailto:' + esc(D.config.email) + '">✉ ' + esc(D.config.email) + '</a>' : '') +
         '<a href="https://www.instagram.com/the.whitehilux/" target="_blank" rel="noopener">Instagram @the.whitehilux</a></div>' +
         '<div><h4>Legal</h4><a href="terminos.html">Términos y condiciones</a><a href="cambios.html">Cambios y devoluciones</a><a href="privacidad.html">Privacidad</a></div>' +
-        '</div><div class="wrap foot-bottom"><span>© The White Hilux' + (function () {
-          var L = (D && D.config.legal) || {};
-          return L.titular ? ' · ' + esc(L.titular) + (L.rut ? ' · RUT ' + esc(L.rut) : '') : '';
-        })() + '</span><span>Pagos procesados por Mercado Pago · Hilux es marca de Toyota; no estamos afiliados</span></div></footer>';
+        '</div><div class="wrap foot-bottom"><span>© The White Hilux</span><span>Pagos procesados por Mercado Pago · Hilux es marca de Toyota; no estamos afiliados</span></div></footer>';
     }
     updateBadge();
     if (h && D) {
