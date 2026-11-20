@@ -113,6 +113,7 @@ onAuthStateChanged(auth, async (user) => {
     onSnapshot(collection(db, 'compras'), (s) => {
       compras = s.docs.map((d) => ({ ...d.data(), key: d.id }));
       renderBuys();
+      renderInvKpis();
       renderProfit();
     }, fail),
     onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(2000)), (s) => {
@@ -490,7 +491,36 @@ function prodMatch(p, k) {
   return p.status === k;
 }
 
+// Resumen arriba del inventario: unidades que quedan y su valor a costo (costo promedio de Compras) y a precio de venta
+function invSummary(ci) {
+  let units = 0, cost = 0, retail = 0, noCost = 0;
+  const byType = {};
+  data.products.forEach((p) => {
+    if (!p.stock) return;
+    (p.colors.length ? p.colors : ['']).forEach((c) => p.sizes.forEach((s) => {
+      const q = C.stockOf(p, c, s) || 0;
+      if (!q) return;
+      const u = ci.unit({ id: p.id, color: c, size: s, sku: C.variantSku(p, c, s) });
+      units += q; cost += q * u.v; retail += q * p.price;
+      if (u.src === 'sin') noCost += q;
+      byType[p.type] = (byType[p.type] || 0) + q;
+    }));
+  });
+  return { units, cost, retail, noCost, byType };
+}
+function renderInvKpis() {
+  const box = $('inv-kpis');
+  if (!box) return;
+  const v = invSummary(costIndex());
+  const cats = Object.keys(v.byType).map((t) => `${v.byType[t]} ${esc((CFG.categories || {})[t] || t).toLowerCase()}`).join(' · ');
+  box.innerHTML = `<div class="stat"><b>${v.units.toLocaleString('es-CL')}</b><span>Unidades en stock${cats ? '<br>' + cats : ''}</span></div>
+    <div class="stat"><b>${money(Math.round(v.cost))}</b><span>Valorizado a costo${v.noCost ? `<br>⚠ ${v.noCost} u. sin costo en Compras (cuentan $0)` : ''}</span></div>
+    <div class="stat"><b>${money(Math.round(v.retail))}</b><span>A precio de venta actual</span></div>
+    <div class="stat"><b>${money(Math.round(v.retail - v.cost))}</b><span>Margen bruto si se vende todo<br>(antes de comisión y envío)</span></div>`;
+}
+
 function renderProducts() {
+  renderInvKpis();
   const list = data.products;
   $('prod-filters').innerHTML = Object.keys(PROD_FILTERS)
     .map((k) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === prodFilter}">${PROD_FILTERS[k]}<span>${list.filter((p) => prodMatch(p, k)).length}</span></button>`)
@@ -1660,16 +1690,7 @@ function renderProfit() {
   const allPaid = orders.filter((o) => PAID.includes(o.status));
   const allProfit = allPaid.reduce((s, o) => s + orderProfit(o, ci).profit, 0);
   const allCogs = allPaid.reduce((s, o) => s + orderProfit(o, ci).cogs, 0);
-  let invUnits = 0, invValue = 0;
-  data.products.forEach((p) => {
-    if (!p.stock) return;
-    (p.colors.length ? p.colors : ['']).forEach((c) => p.sizes.forEach((s) => {
-      const q = C.stockOf(p, c, s) || 0;
-      if (!q) return;
-      invUnits += q;
-      invValue += q * ci.unit({ id: p.id, color: c, size: s, sku: C.variantSku(p, c, s) }).v;
-    }));
-  });
+  const inv = invSummary(ci), invUnits = inv.units, invValue = inv.cost;
   const recovered = ci.invested ? Math.min(100, Math.round(((allCogs + Math.max(0, allProfit)) / ci.invested) * 100)) : 0;
   $('pf-roi').innerHTML = ci.invested
     ? `<div class="roi-bar"><span style="width:${recovered}%"></span></div>
