@@ -27,6 +27,20 @@ const stripesKick = (dy = 0) =>
   `<path transform="translate(17 ${dy + 34})" d="M3 150 H196 L244 86 H259 L202 162 H3 Z" fill="${DRED}"/>`;
 const r2 = (n) => Math.round(n * 100) / 100;
 
+// TWH en Black Ops One (fuente libre OFL en disenos/fuentes), convertido a trazo e inclinado como el logo 13.
+// Ajustado a una caja de 228 × 90 con la base en y=158.
+function opsTWH(fill) {
+  const opentype = require('opentype.js');
+  const font = opentype.loadSync(path.join(__dirname, '..', 'fuentes', 'BlackOpsOne-Regular.ttf'));
+  const tan = Math.tan(12 * Math.PI / 180);
+  const bb = font.getPath('TWH', 0, 0, 100).getBoundingBox();
+  const k = Math.min(228 / ((bb.x2 - bb.x1) + (bb.y2 - bb.y1) * tan), 90 / (bb.y2 - bb.y1));
+  const p = font.getPath('TWH', 0, 0, 100 * k);
+  const b = p.getBoundingBox();
+  const dx = 150 - (b.x1 + b.x2) / 2 - ((b.y2 - b.y1) * tan) / 2, dy = 158 - b.y2;
+  return `<g transform="translate(${r2(dx)} ${r2(dy)}) translate(0 ${r2(b.y2)}) skewX(-12) translate(0 ${r2(-b.y2)})"><path d="${p.toPathData(2)}" fill="${fill}"/></g>`;
+}
+
 const LOGOS = {
   // 1. El que te gustó: TWH + franjas de rally
   'rally-stripes': () =>
@@ -355,6 +369,14 @@ const LOGOS = {
       bars(222, 262) +
       `<path d="M82 254 H226 L218 284 H74 Z" fill="${MUST}"/>` +
       ital(150, 278, t(0, 0, 'CL SHOP', 18, BG, BLACK, mid + ' letter-spacing="3"'));
+  },
+
+  // 27. LOGO OFICIAL (desde 2026-11-19): Race Dept. con TWH en Black Ops One (opción D)
+  'race-dept-ops': () => {
+    const s = (y, c, cut) => `<path d="M30 ${y} H${270 - cut} L${262 - cut} ${y + 6} H30 Z" fill="${c}"/>`;
+    return opsTWH(INK) + s(166, ORANGE, 0) + s(176, RED, 10) + s(186, DRED, 20) +
+      ital(150, 228, t(0, 0, '4WD RACE DEPT.', 22, RED, BLACK, mid)) +
+      t(150, 252, 'CHILE · SINCE 2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   }
 };
 
@@ -385,8 +407,8 @@ for (const n of names) {
   console.log('ok', n);
 }
 
-// Logo oficial (Race Dept.) recortado para el encabezado de la tienda
-const off = LOGOS['race-dept']();
+// Logo oficial (Race Dept. con TWH Black Ops) recortado para el encabezado de la tienda, portada, pie, panel y configurador
+const off = LOGOS['race-dept-ops']();
 const crop = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 62 290 200" width="290" height="200">${inner}</svg>
 `;
 fs.writeFileSync(path.join(webDir, 'logo-oficial.svg'), crop(off));
