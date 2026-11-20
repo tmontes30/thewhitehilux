@@ -37,7 +37,7 @@
         views: [{ shape: 'tee-back', logo: 'script-checker' }, { shape: 'tee-front', logo: 'checkered-shield' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-espalda.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-frente.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-espalda.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-frente.png', 'assets/img/productos/polera-twh-4x4-rally-team-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con White Hilux Script en la espalda y Escudo 4x4 Team chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera White Hilux Script","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"m"},"espalda":{"logo":"script-checker","tam":"m","alto":0}}
       },
       {
@@ -46,7 +46,7 @@
         views: [{ shape: 'tee-back', logo: 'mountain-patch' }, { shape: 'tee-front', logo: 'round-stamp' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-mud-terrain-twh-algodon-negro-espalda.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-negro-frente.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-mud-terrain-twh-algodon-blanco-espalda.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-blanco-frente.png', 'assets/img/productos/polera-mud-terrain-twh-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Race Shop en la espalda y Sello Off Road Supply chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Race Shop","colores":["negro","blanco"],"frente":{"logo":"round-stamp","pos":"pecho","tam":"m"},"espalda":{"logo":"mountain-patch","tam":"m","alto":0}}
       },
       {
@@ -55,7 +55,7 @@
         views: [{ shape: 'tee-back', logo: 'low-range' }, { shape: 'tee-front', logo: 'speed-shop' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-low-range-club-4wd-negro-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente.png', 'assets/img/productos/polera-low-range-club-4wd-negro-frente-2.png'], blanco: ['assets/img/productos/polera-low-range-club-4wd-blanco-espalda.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente.png', 'assets/img/productos/polera-low-range-club-4wd-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Low Range Club en la espalda y Speed Shop chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Low Range Club","colores":["negro","blanco"],"frente":{"logo":"speed-shop","pos":"pecho","tam":"m"},"espalda":{"logo":"low-range","tam":"m","alto":0}}
       },
       {
@@ -64,7 +64,7 @@
         views: [{ shape: 'tee-back', logo: 'sunset' }, { shape: 'tee-front', logo: 'supply-co' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-espalda.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente.png', 'assets/img/productos/polera-twh-cruz-white-hilux-algodon-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Sunset en la espalda y TWH Supply Co. chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Sunset","colores":["negro","blanco"],"frente":{"logo":"supply-co","pos":"pecho","tam":"m"},"espalda":{"logo":"sunset","tam":"m","alto":0}}
       },
       {
@@ -73,7 +73,7 @@
         views: [{ shape: 'tee-back', logo: 'recovery-crew' }, { shape: 'tee-front', logo: 'race-dept' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-recovery-negro-espalda.png', 'assets/img/productos/polera-twh-recovery-negro-frente.png', 'assets/img/productos/polera-twh-recovery-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-recovery-blanco-espalda.png', 'assets/img/productos/polera-twh-recovery-blanco-frente.png', 'assets/img/productos/polera-twh-recovery-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Recovery Crew en la espalda y 4WD Race Dept. chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Recovery Crew","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":{"logo":"recovery-crew","tam":"m","alto":0}}
       },
       {
@@ -82,7 +82,7 @@
         views: [{ shape: 'tee-back', logo: 'warp-text' }, { shape: 'tee-front', logo: 'coordenadas' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-negro-espalda.png', 'assets/img/productos/polera-twh-negro-frente.png', 'assets/img/productos/polera-twh-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-blanco-espalda.png', 'assets/img/productos/polera-twh-blanco-frente.png', 'assets/img/productos/polera-twh-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Warp en la espalda y Off Road Team chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Warp","colores":["negro","blanco"],"frente":{"logo":"coordenadas","pos":"pecho","tam":"m"},"espalda":{"logo":"warp-text","tam":"m","alto":0}}
       },
       {
@@ -91,7 +91,7 @@
         views: [{ shape: 'tee-back', logo: 'aired-down' }, { shape: 'tee-front', logo: 'script-checker' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-twh-aired-down-negro-espalda.png', 'assets/img/productos/polera-twh-aired-down-negro-frente.png', 'assets/img/productos/polera-twh-aired-down-negro-frente-2.png'], blanco: ['assets/img/productos/polera-twh-aired-down-blanco-espalda.png', 'assets/img/productos/polera-twh-aired-down-blanco-frente.png', 'assets/img/productos/polera-twh-aired-down-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Aired Down en la espalda y White Hilux Script chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF espalda y pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF espalda y pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Aired Down","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":{"logo":"aired-down","tam":"m","alto":0}}
       },
       {
@@ -100,7 +100,7 @@
         views: [{ shape: 'tee-front', logo: 'script-checker' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-twh-logo-pecho-negro-frente.png', 'assets/img/productos/polera-basica-twh-logo-pecho-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-twh-logo-pecho-blanco-frente.png', 'assets/img/productos/polera-basica-twh-logo-pecho-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con White Hilux Script chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Básica White Hilux Script","colores":["negro","blanco"],"frente":{"logo":"script-checker","pos":"pecho","tam":"m"},"espalda":null}
       },
       {
@@ -109,7 +109,7 @@
         views: [{ shape: 'tee-front', logo: 'checkered-shield' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-sello-off-road-supply-negro-frente.png', 'assets/img/productos/polera-basica-sello-off-road-supply-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-sello-off-road-supply-blanco-frente.png', 'assets/img/productos/polera-basica-sello-off-road-supply-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con Escudo 4x4 Team chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Básica Escudo 4x4 Team","colores":["negro","blanco"],"frente":{"logo":"checkered-shield","pos":"pecho","tam":"s"},"espalda":null}
       },
       {
@@ -118,7 +118,7 @@
         views: [{ shape: 'tee-front', logo: 'race-dept' }],
         images: [], imagesByColor: { negro: ['assets/img/productos/polera-basica-the-white-hilux-cl-shop-negro-frente.png', 'assets/img/productos/polera-basica-the-white-hilux-cl-shop-negro-frente-2.png'], blanco: ['assets/img/productos/polera-basica-the-white-hilux-cl-shop-blanco-frente.png', 'assets/img/productos/polera-basica-the-white-hilux-cl-shop-blanco-frente-2.png'] }, sizeGuide: 'polera', active: true,
         desc: 'Polera con 4WD Race Dept. chico en el pecho.',
-        features: [['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', 'DTF pecho']],
+        features: [['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', 'DTF pecho']],
         cfg: {"tipo":"polera","nombre":"Polera Básica 4WD Race Dept.","colores":["negro","blanco"],"frente":{"logo":"race-dept","pos":"pecho","tam":"s"},"espalda":null}
       },
       {

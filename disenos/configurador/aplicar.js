@@ -113,7 +113,7 @@ for (const d of items) {
     // Etiqueta de cuello estampada (logo + talla): la llevan salvo que se desmarque en el configurador
     const et = d.etiqueta !== false ? `, ['Etiqueta', 'Estampada en el cuello (logo + talla, sin roce)']` : '';
     features = d.tipo === 'polera'
-      ? `[['Material', 'Algodón 100%, 220 g'], ['Corte', 'Oversize'], ['Estampado', ${q(est)}]${et}]`
+      ? `[['Material', 'Work Gear, tela gruesa de calidad'], ['Modelo', 'Mide 1,74 m, pesa 76 kg y usa talla XL'], ['Estampado', ${q(est)}]${et}]`
       : `[['Material', 'Algodón/poliéster 320 g, perchado'], ['Bolsillo', 'Canguro'], ['Estampado', ${q(est)}]${et}]`;
   }
   entries.push(`      {
