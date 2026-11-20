@@ -1352,7 +1352,11 @@ function renderBuys() {
       ${b.note ? `<p class="hint">${esc(b.note)}</p>` : ''}
       <p>${plural(u, 'unidad', 'unidades')} (${Object.keys(byColor).map((k) => `${byColor[k]} ${k.toLowerCase()}`).join(' · ')}) · costo unitario promedio <b>${money1(u ? b.costTotal / u : 0)}</b></p>
       <div class="buy-actions">
-        ${b.status !== 'recibida' ? '<button type="button" class="btn primary small" data-buy-act="receive">Llegó: sumar al stock</button>' : (b.stockAdded ? '<span class="hint">✓ Sumada al stock</span>' : '')}
+        ${b.status !== 'recibida'
+          ? (b.stockAdded
+            ? '<span class="hint">✓ Ya cargada al stock</span><button type="button" class="btn primary small" data-buy-act="receive">Llegó</button>'
+            : '<button type="button" class="btn primary small" data-buy-act="receive">Llegó: sumar al stock</button><button type="button" class="btn ghost small" data-buy-act="preload">Cargar al stock antes de que llegue</button>')
+          : (b.stockAdded ? '<span class="hint">✓ Sumada al stock</span>' : '')}
         <button type="button" class="btn ghost small" data-buy-act="edit">Ver / editar</button>
         <button type="button" class="btn ghost small" data-buy-act="delete">Eliminar</button>
       </div>
@@ -1535,6 +1539,19 @@ $('buy-list').addEventListener('click', async (e) => {
       if (!confirm('¿Eliminar esta compra del registro? (no cambia el stock)')) return;
       await deleteDoc(doc(db, 'compras', key));
       return toast('Compra eliminada');
+    }
+    if (act === 'preload') {
+      // Para mostrar en la tienda las tallas que vienen (dejando el producto en Próximamente mientras): suma ahora y "Llegó" ya no vuelve a sumar
+      if (!confirm(`¿Sumar ya las ${buyUnits(b)} unidades al stock aunque no hayan llegado?
+
+Ojo: si el producto está "Disponible" se podrán comprar al tiro. Déjalo en "Próximamente" hasta que lleguen.`)) return;
+      await addBuyToStock(b);
+      await updateDoc(doc(db, 'compras', key), { stockAdded: true, stockAddedDate: C.todayCL() });
+      return toast('Cargada al stock ✓ (cuando llegue, aprieta "Llegó")');
+    }
+    if (act === 'receive' && b.stockAdded) {
+      await updateDoc(doc(db, 'compras', key), { status: 'recibida', receivedDate: C.todayCL() });
+      return toast('Marcada como recibida ✓');
     }
     if (act === 'receive') {
       const add = confirm(`¿Sumar las ${buyUnits(b)} unidades al stock de la tienda?\n\nAceptar = sumar al stock · Cancelar = solo marcarla como recibida`);
