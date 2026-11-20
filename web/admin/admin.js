@@ -50,7 +50,13 @@ function toast(msg, err) {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => (t.hidden = true), err ? 6000 : 2600);
 }
+// Mientras Firebase confirma la sesión y llegan los datos se muestra un círculo de carga (no la pantalla de login)
+function booted() {
+  $('boot').hidden = true;
+  $('main').classList.remove('booting');
+}
 function fail(err) {
+  booted();
   console.error(err);
   toast(err && err.code === 'permission-denied' ? 'Sin permiso: entra con la cuenta de admin.' : 'No se pudo guardar: ' + (err.message || err), true);
 }
@@ -78,6 +84,7 @@ onAuthStateChanged(auth, async (user) => {
   $('who').hidden = !user;
   $('who-email').textContent = user ? user.email : '';
   TABS.forEach((t) => ($('tab-' + t).hidden = true));
+  if (!isAdmin) booted();
   if (user && !isAdmin) {
     $('login-msg').textContent = `La cuenta ${user.email} no tiene acceso al panel.`;
     $('login-btn').textContent = 'Entrar con otra cuenta';
@@ -98,6 +105,7 @@ onAuthStateChanged(auth, async (user) => {
     onSnapshot(CATALOG, (s) => {
       raw = s.data() || {};
       data = C.mergeCatalog(BASE, raw);
+      booted();
       renderProducts();
       renderSettings();
       renderOrders();
