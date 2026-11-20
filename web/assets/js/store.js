@@ -152,7 +152,7 @@
         var nos = h.querySelector('.cats a[href="nosotros.html"]');
         if (!nos) return;
         var a = document.createElement('a');
-        a.href = 'index.html?estado=proximamente#productos';
+        a.href = 'index.html?estado=proximamente';
         a.className = 'cat-soon';
         a.innerHTML = 'Próximamente <span class="soon-dot">NUEVO</span>';
         if (params.get('estado') === 'proximamente') a.setAttribute('aria-current', 'page');

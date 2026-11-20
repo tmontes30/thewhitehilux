@@ -79,13 +79,19 @@ TWH.loadData().then(function (d) {
   // Banner y accesos solo en la portada sin filtros
   document.getElementById('hero').hidden = filtered;
   document.getElementById('home-extras').hidden = filtered;
+  // Links viejos con #productos: el salto se hizo con el banner todavía visible y deja la pantalla muy abajo
+  if (filtered && location.hash === '#productos') {
+    history.replaceState(null, '', location.pathname + location.search);
+    window.scrollTo(0, 0);
+  }
   if (cfg.freeShippingFrom) document.getElementById('perk-ship').textContent = 'Gratis en RM sobre ' + TWH.money(cfg.freeShippingFrom);
 
   function url(change) {
     var p = new URLSearchParams(location.search);
     Object.keys(change).forEach(function (k) { if (change[k]) p.set(k, change[k]); else p.delete(k); });
     var s = p.toString();
-    return 'index.html' + (s ? '?' + s : '') + '#productos';
+    // con filtros la página ya parte en el listado (sin banner): sin #productos para que el celular no salte hacia abajo
+    return 'index.html' + (s ? '?' + s : '#productos');
   }
 
   function match(p, skip) {
