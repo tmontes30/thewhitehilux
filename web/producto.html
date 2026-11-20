@@ -47,6 +47,10 @@
     document.getElementById('crumbs').innerHTML = '<a href="index.html">Tienda</a> › <a href="index.html?cat=' + p.type + '">' + cats[p.type] + '</a> › ' + TWH.esc(p.name);
     var st = { color: p.colors[0] || '', size: p.sizes.length === 1 ? p.sizes[0] : '', view: 0, design: p.designs ? p.designs[0].id : '' };
     var dq = new URLSearchParams(location.search).get('d');
+    // color y talla que venían filtrados en el listado
+    var cq = new URLSearchParams(location.search).get('color'), tq = new URLSearchParams(location.search).get('talla');
+    if (cq && p.colors.indexOf(cq) >= 0) st.color = cq;
+    if (tq && p.sizes.indexOf(tq) >= 0) st.size = tq;
     if (p.designs && dq && p.designs.some(function (x) { return x.id === dq; })) st.design = dq;
     if (p.designs) p.views = [{ shape: 'sticker', logo: st.design }];
     var n = 0;

@@ -46,6 +46,7 @@
           </select>
         </label>
       </div>
+      <div class="quick-filters" id="quick" hidden></div>
       <div class="active-filters" id="active"></div>
       <div class="grid" id="grid"></div>
       <div class="empty-list" id="empty" hidden>No encontramos productos con esos filtros. <a href="index.html#productos">Ver toda la colección</a></div>
@@ -63,7 +64,7 @@
 TWH.loadData().then(function (d) {
   var cfg = d.config, cats = cfg.categories;
   var q = new URLSearchParams(location.search);
-  var f = { cat: q.get('cat'), q: (q.get('q') || '').trim(), price: q.get('price'), color: q.get('color'), estado: q.get('estado') };
+  var f = { cat: q.get('cat'), q: (q.get('q') || '').trim(), price: q.get('price'), color: q.get('color'), estado: q.get('estado'), talla: q.get('talla') };
   var C = TWH.core;
   var ESTADOS = { disponible: 'Disponibles', proximamente: 'Próximamente' };
   function tagFor(p) {
@@ -73,7 +74,7 @@ TWH.loadData().then(function (d) {
     return '';
   }
   var PRICES = { low: ['Hasta $15.000', 0, 15000], mid: ['$15.000 a $25.000', 15000, 25000], high: ['Más de $25.000', 25000, 1e9] };
-  var filtered = !!(f.cat || f.q || f.price || f.color || f.estado);
+  var filtered = !!(f.cat || f.q || f.price || f.color || f.estado || f.talla);
 
   // Banner y accesos solo en la portada sin filtros
   document.getElementById('hero').hidden = filtered;
@@ -88,13 +89,51 @@ TWH.loadData().then(function (d) {
   }
 
   function match(p, skip) {
-    if (skip !== 'cat' && f.cat && p.type !== f.cat) return false;
+    skip = skip || '';
+    if (skip.indexOf('cat') < 0 && f.cat && p.type !== f.cat) return false;
     if (f.q && (p.name + ' ' + p.desc).toLowerCase().indexOf(f.q.toLowerCase()) < 0) return false;
-    if (skip !== 'price' && f.price && PRICES[f.price] && !(p.price >= PRICES[f.price][1] && p.price < PRICES[f.price][2])) return false;
-    if (skip !== 'color' && f.color && p.colors.indexOf(f.color) < 0) return false;
-    if (skip !== 'estado' && f.estado && ESTADOS[f.estado] && p.status !== f.estado) return false;
+    if (skip.indexOf('price') < 0 && f.price && PRICES[f.price] && !(p.price >= PRICES[f.price][1] && p.price < PRICES[f.price][2])) return false;
+    if (skip.indexOf('color') < 0 && f.color && p.colors.indexOf(f.color) < 0) return false;
+    if (skip.indexOf('estado') < 0 && f.estado && ESTADOS[f.estado] && p.status !== f.estado) return false;
+    if (skip.indexOf('talla') < 0 && f.talla && !hasSize(p, f.talla, skip.indexOf('color') >= 0 ? '' : f.color)) return false;
     return true;
   }
+  // ¿Hay stock de esa talla (en ese color, o en cualquiera)? Sin control de stock = sí. Próximamente con stock cargado también aparece.
+  function hasSize(p, size, color) {
+    if (p.sizes.indexOf(size) < 0) return false;
+    var cs = color ? [color] : (p.colors.length ? p.colors : ['']);
+    return cs.some(function (c) { if (color && p.colors.length && p.colors.indexOf(c) < 0) return false; var n = C.stockOf(p, c, size); return n == null || n > 0; });
+  }
+
+  // Filtros rápidos de talla y color (al entrar a una categoría o buscar)
+  var SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', 'XXXL', '3XL'];
+  (function quick() {
+    var box = document.getElementById('quick');
+    if (!filtered) return;
+    var base = d.products.filter(function (p) { return match(p, 'talla,color'); });
+    var sizes = [], colors = [];
+    base.forEach(function (p) {
+      p.sizes.forEach(function (z) { if (z !== 'Única' && sizes.indexOf(z) < 0) sizes.push(z); });
+      p.colors.forEach(function (c) { if (colors.indexOf(c) < 0) colors.push(c); });
+    });
+    sizes.sort(function (a, b) { var i = SIZE_ORDER.indexOf(a), j = SIZE_ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+    var html = '';
+    if (sizes.length > 1 || f.talla) {
+      html += '<div class="qf-row"><span class="qf-label">Talla</span>' + sizes.map(function (z) {
+        var on = f.talla === z;
+        var n = d.products.filter(function (p) { return match(p, 'talla') && hasSize(p, z, f.color); }).length;
+        return n || on ? '<a class="qf-size' + (on ? ' on' : '') + '" href="' + url({ talla: on ? '' : z }) + '"' + (on ? ' aria-current="true"' : '') + '>' + TWH.esc(z) + '</a>'
+          : '<span class="qf-size off" title="Sin stock en esta talla">' + TWH.esc(z) + '</span>';
+      }).join('') + '</div>';
+    }
+    if (colors.length > 1 || f.color) {
+      html += '<div class="qf-row"><span class="qf-label">Color</span>' + colors.map(function (c) {
+        var on = f.color === c;
+        return '<a class="qf-color' + (on ? ' on' : '') + '" href="' + url({ color: on ? '' : c }) + '"' + (on ? ' aria-current="true"' : '') + '><span class="cdot" style="background:' + TWHMock.GARMENTS[c].g + '"></span>' + TWH.esc(cfg.colors[c]) + '</a>';
+      }).join('') + '</div>';
+    }
+    if (html) { box.innerHTML = html; box.hidden = false; }
+  })();
 
   // Accesos por categoría
   document.getElementById('cat-tiles').innerHTML = Object.keys(cats).map(function (k) {
@@ -133,6 +172,7 @@ TWH.loadData().then(function (d) {
   if (f.cat) chips.push([cats[f.cat], { cat: '' }]);
   if (f.price && PRICES[f.price]) chips.push([PRICES[f.price][0], { price: '' }]);
   if (f.color) chips.push([cfg.colors[f.color], { color: '' }]);
+  if (f.talla) chips.push(['Talla ' + f.talla, { talla: '' }]);
   if (f.estado && ESTADOS[f.estado]) chips.push([ESTADOS[f.estado], { estado: '' }]);
   document.getElementById('active').innerHTML = chips.map(function (c) { return '<a class="chip" href="' + url(c[1]) + '">' + TWH.esc(c[0]) + ' ✕</a>'; }).join('') +
     (chips.length > 1 ? '<a class="chip" href="index.html#productos">Limpiar filtros</a>' : '');
@@ -165,7 +205,8 @@ TWH.loadData().then(function (d) {
       var color = f.color && p.colors.indexOf(f.color) >= 0 ? f.color : p.colors[0];
       var alt = TWH.pictureCount(p, color) > 1;
       var dots = p.colors.map(function (c) { return '<span class="cdot" title="' + cfg.colors[c] + '" style="background:' + TWHMock.GARMENTS[c].g + '"></span>'; }).join('');
-      return '<a class="item" href="producto.html?id=' + encodeURIComponent(p.id) + (p._design ? '&d=' + p._design : '') + '">' +
+      var extra = (p._design ? '&d=' + p._design : '') + (f.color && p.colors.indexOf(f.color) >= 0 ? '&color=' + f.color : '') + (f.talla ? '&talla=' + encodeURIComponent(f.talla) : '');
+      return '<a class="item" href="producto.html?id=' + encodeURIComponent(p.id) + extra + '">' +
         '<div class="pic">' + tagFor(p) +
         (alt ? '<div class="alt">' + TWH.picture(p, 1, color) + '</div>' : '') +
         '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +

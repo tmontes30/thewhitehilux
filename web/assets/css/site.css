@@ -148,6 +148,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .toolbar .count { font-size: 14px; color: var(--muted); margin-top: 2px; }
 .toolbar label { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .toolbar select { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 8px 10px; font-size: 14px; color: var(--text); }
+/* Filtros rápidos de talla y color en el listado */
+.quick-filters { display: flex; flex-wrap: wrap; gap: 10px 28px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.qf-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.qf-label { font-size: 13px; font-weight: 700; margin-right: 4px; }
+.qf-size { min-width: 40px; text-align: center; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); background: #fff; }
+.qf-size:hover, .qf-color:hover { border-color: var(--ink); }
+.qf-size.on, .qf-color.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.qf-size.off { color: #b5b3ab; text-decoration: line-through; background: transparent; cursor: default; }
+.qf-color { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px; border: 1px solid var(--line); border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--text); background: #fff; }
+.qf-color .cdot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); }
+.qf-color.on .cdot { border-color: rgba(255,255,255,.8); }
 .active-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; font-size: 13px; color: var(--text); }
 .chip:hover { border-color: var(--ink); }
