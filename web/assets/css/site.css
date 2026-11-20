@@ -185,6 +185,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .item .ship.muted { color: var(--muted); font-weight: 400; }
 .cdots { display: flex; gap: 4px; }
 .cdot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.18); }
+/* Carga del listado: con filtros el banner no aparece nunca; mientras llegan los datos, un círculo girando */
+html.filtered #hero, html.filtered #home-extras { display: none; }
+.grid-loading { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 70px 0; color: var(--muted); font-size: 14px; }
+.spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--accent-2); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.grid .item { animation: fadein .25s ease-out; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .empty-list { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 40px; text-align: center; color: var(--muted); }
 
 /* ---------- Ficha de producto ---------- */

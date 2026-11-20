@@ -7,6 +7,10 @@
 <meta name="description" content="Poleras, polerones, jockeys y stickers off road. Diseñados en Chile por @the.whitehilux.">
 <link rel="icon" href="assets/logos/favicon-twh.svg">
 <link rel="stylesheet" href="assets/css/site.css">
+<script>
+  // Con filtros (categoría, búsqueda, talla...) se esconde el banner de inmediato, sin esperar a que carguen los datos
+  if (/[?&](cat|q|price|color|estado|talla)=/.test(location.search)) document.documentElement.classList.add('filtered');
+</script>
 </head>
 <body>
 <div id="site-header"></div>
@@ -37,7 +41,7 @@
   <div class="list-layout" id="productos">
     <section>
       <div class="toolbar">
-        <div><h1 id="list-title">Toda la colección</h1><p class="count" id="list-count"></p></div>
+        <div><h1 id="list-title"></h1><p class="count" id="list-count"></p></div>
         <label for="sort">Ordenar por
           <select id="sort">
             <option value="rel">Más relevantes</option>
@@ -48,7 +52,7 @@
       </div>
       <div class="quick-filters" id="quick" hidden></div>
       <div class="active-filters" id="active"></div>
-      <div class="grid" id="grid"></div>
+      <div class="grid" id="grid"><div class="grid-loading" role="status"><span class="spinner"></span>Cargando productos…</div></div>
       <div class="empty-list" id="empty" hidden>No encontramos productos con esos filtros. <a href="index.html#productos">Ver toda la colección</a></div>
     </section>
   </div>
