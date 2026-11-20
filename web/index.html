@@ -201,11 +201,35 @@ TWH.loadData().then(function (d) {
     document.getElementById('empty').hidden = list.length > 0;
     var free = cfg.freeShippingFrom;
     var pickWord = C.dayWord(C.promiseRange(new Date(), 'retiro', d.settings).to);
+    // Sin filtro de color: si una prenda tiene stock en otro color (ej. blanco), se muestra en ese color y esas tarjetas se
+    // reparten entre las demás, para que el listado no se vea todo negro. Un color sin stock no se usa para la foto.
+    function cardColor(p) {
+      if (f.color && p.colors.indexOf(f.color) >= 0) return f.color;
+      var ok = p.colors.filter(function (c) {
+        if (f.talla) return hasSize(p, f.talla, c);
+        var n = C.totalStock(p, c); return n == null || n > 0;
+      });
+      return ok.filter(function (c) { return c !== p.colors[0]; })[0] || ok[0] || p.colors[0];
+    }
+    list.forEach(function (p) { p._color = cardColor(p); });
+    if (!f.color && sort === 'rel') {
+      var out = [];
+      [0, 1, 2].forEach(function (r) {
+        var g = list.filter(function (p) { return rank(p) === r; });
+        var cnt = {}; g.forEach(function (p) { cnt[p._color] = (cnt[p._color] || 0) + 1; });
+        var main = Object.keys(cnt).sort(function (x, y) { return cnt[y] - cnt[x]; })[0];
+        var other = g.filter(function (p) { return p._color !== main; }), base = g.filter(function (p) { return other.indexOf(p) < 0; });
+        if (!other.length || !base.length) { out = out.concat(g); return; }
+        var total = base.length + other.length, step = total / other.length, k = 0;
+        for (var i = 0; i < total; i++) out.push(other.length > k && Math.floor((k + 0.5) * step) === i ? other[k++] : base.shift() || other[k++]);
+      });
+      list = out;
+    }
     document.getElementById('grid').innerHTML = list.map(function (p) {
-      var color = f.color && p.colors.indexOf(f.color) >= 0 ? f.color : p.colors[0];
+      var color = p._color;
       var alt = TWH.pictureCount(p, color) > 1;
       var dots = p.colors.map(function (c) { return '<span class="cdot" title="' + cfg.colors[c] + '" style="background:' + TWHMock.GARMENTS[c].g + '"></span>'; }).join('');
-      var extra = (p._design ? '&d=' + p._design : '') + (f.color && p.colors.indexOf(f.color) >= 0 ? '&color=' + f.color : '') + (f.talla ? '&talla=' + encodeURIComponent(f.talla) : '');
+      var extra = (p._design ? '&d=' + p._design : '') + (color && p.colors.length > 1 ? '&color=' + color : '') + (f.talla ? '&talla=' + encodeURIComponent(f.talla) : '');
       return '<a class="item" href="producto.html?id=' + encodeURIComponent(p.id) + extra + '">' +
         '<div class="pic">' + tagFor(p) +
         (alt ? '<div class="alt">' + TWH.picture(p, 1, color) + '</div>' : '') +
