@@ -226,7 +226,7 @@ const LOGOS = {
     return `<defs><clipPath id="ort"><path d="M72 132 A78 78 0 0 1 228 132 Z"/></clipPath></defs>` +
       `<g clip-path="url(#ort)">${rays}</g>` +
       `<path d="M56 132 H244" stroke="${INK}" stroke-width="3"/>` +
-      `<g transform="rotate(-6 150 180)"><text x="150" y="190" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="54" fill="${INK}" stroke="${BG}" stroke-width="11" paint-order="stroke">Off Road</text></g>` +
+      `<g transform="rotate(-6 150 180)"><text x="150" y="190" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="54" fill="${INK}" stroke="${BG}" stroke-width="11" paint-order="stroke" stroke-linejoin="round">Off Road</text></g>` +
       t(150, 238, 'TEAM', 32, RED, BLACK, mid + ' letter-spacing="12"') +
       t(150, 268, 'TWH · EST. 2001 · CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   },
@@ -255,7 +255,7 @@ const LOGOS = {
       `<rect x="${c - H + 2}" y="${c - H + 2}" width="${2 * H - 4}" height="${2 * H - 4}" rx="16" fill="none" stroke="${INK}" stroke-width="4"/>` +
       `<g clip-path="url(#wcc)"><path d="${leaf(-1, -1)} ${leaf(1, -1)} ${leaf(-1, 1)} ${leaf(1, 1)}" fill="${INK}"/></g>` +
       vert('WHITE', c - I + 2, 80) + vert('HILUX', c + 34, 80) +
-      `<g transform="translate(${c} ${c + 21}) scale(1 1.45)"><text x="0" y="0" text-anchor="middle" font-family="'Old English Text MT', 'Times New Roman', serif" font-weight="700" font-size="54" fill="${INK}" stroke="${BG}" stroke-width="7" paint-order="stroke" textLength="252" lengthAdjust="spacingAndGlyphs">Off Road</text></g>`;
+      `<g transform="translate(${c} ${c + 21}) scale(1 1.45)"><text x="0" y="0" text-anchor="middle" font-family="'Old English Text MT', 'Times New Roman', serif" font-weight="700" font-size="54" fill="${INK}" stroke="${BG}" stroke-width="7" paint-order="stroke" stroke-linejoin="round" textLength="252" lengthAdjust="spacingAndGlyphs">Off Road</text></g>`;
   },
 
   // 19. Texto ondulado repetido
@@ -274,7 +274,7 @@ const LOGOS = {
     t(150, 74, 'EST. 2001', 14, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
     `<g transform="rotate(-8 150 138)">` +
     `<text x="155" y="152" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="58" fill="${RED}">TWH</text>` +
-    `<text x="150" y="147" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="58" fill="${INK}" stroke="${BG}" stroke-width="3" paint-order="stroke">TWH</text></g>` +
+    `<text x="150" y="147" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="58" fill="${INK}" stroke="${BG}" stroke-width="3" paint-order="stroke" stroke-linejoin="round">TWH</text></g>` +
     `<path d="M66 184 H244 L234 222 H56 Z" fill="${RED}"/>` +
     ital(150, 211, t(0, 0, 'RACE SHOP', 22, BG, BLACK, mid + ' letter-spacing="2"')) +
     t(150, 254, 'TWH · OFF ROAD · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')),
@@ -285,7 +285,7 @@ const LOGOS = {
     for (let r = 0; r < 2; r++) for (let k = 0; k < 20; k++) if ((r + k) % 2 === 0) ch += `<rect x="${40 + k * 11}" y="${172 + r * 11}" width="11" height="11" fill="${INK}"/>`;
     return t(150, 86, 'T H E', 16, RED, COND, mid + ' ' + cond('letter-spacing="6"')) +
       `<g transform="rotate(-6 150 140)">` +
-      `<text x="150" y="150" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="40" fill="${INK}" stroke="${BG}" stroke-width="10" paint-order="stroke">White Hilux</text></g>` +
+      `<text x="150" y="150" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="40" fill="${INK}" stroke="${BG}" stroke-width="10" paint-order="stroke" stroke-linejoin="round">White Hilux</text></g>` +
       ch + t(150, 228, 'OFF ROAD · CHILE · 2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   },
 
@@ -338,7 +338,7 @@ const LOGOS = {
   'tall-stack': () =>
     t(150, 56, 'THE WHITE HILUX', 13, INK, COND, mid + ' ' + cond('letter-spacing="7"')) +
     t(156, 186, 'TWH', 150, RED, IMPACT, mid + ' textLength="214" lengthAdjust="spacingAndGlyphs"') +
-    t(150, 180, 'TWH', 150, INK, IMPACT, mid + ' textLength="214" lengthAdjust="spacingAndGlyphs" stroke="' + BG + '" stroke-width="3" paint-order="stroke"') +
+    t(150, 180, 'TWH', 150, INK, IMPACT, mid + ' textLength="214" lengthAdjust="spacingAndGlyphs" stroke="' + BG + '" stroke-width="3" paint-order="stroke" stroke-linejoin="round"') +
     `<rect x="43" y="196" width="214" height="4" fill="${INK}"/>` +
     ital(150, 232, t(0, 0, 'OFF ROAD DEPT.', 26, INK, BLACK, mid + ' letter-spacing="1"')) +
     t(150, 258, '4X4 &amp; SPEED', 13, RED, COND, mid + ' ' + cond('letter-spacing="8"')),
@@ -353,7 +353,7 @@ const LOGOS = {
     return `<defs><clipPath id="sb"><circle cx="150" cy="140" r="112"/></clipPath></defs>` +
       `<g clip-path="url(#sb)">${rays}</g>` +
       `<circle cx="150" cy="140" r="112" fill="none" stroke="${INK}" stroke-width="5"/>` +
-      `<text x="150" y="166" text-anchor="middle" font-family="${BLACK}" font-size="76" fill="${INK}" stroke="${BG}" stroke-width="12" paint-order="stroke">TWH</text>` +
+      `<text x="150" y="166" text-anchor="middle" font-family="${BLACK}" font-size="76" fill="${INK}" stroke="${BG}" stroke-width="12" paint-order="stroke" stroke-linejoin="round">TWH</text>` +
       `<rect x="70" y="232" width="160" height="34" fill="${INK}"/>` +
       t(150, 256, 'OFF ROAD', 20, BG, BLACK, mid + ' letter-spacing="4"') +
       t(150, 290, 'SINCE 2001 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));

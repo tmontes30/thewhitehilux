@@ -31,6 +31,7 @@ const ETIQUETA = { ancho: 6, alto: 4, ubicacion: 'Cuello interior (espalda), cen
 const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer-core');
+const { contornos } = require('./contornos'); // textos y bordes → figuras rellenas (lo pide la imprenta)
 
 const ROOT = path.join(__dirname, '..', '..');
 const WEB = path.join(ROOT, 'web');
@@ -259,13 +260,20 @@ const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C
 
   // logos: un PDF por archivo, página del tamaño exacto del logo (sin fondo: transparente al importarlo)
   for (const a of archivos.values()) {
-    const { svg, hcm } = svgLogo(a);
+    const { svg: svg0, hcm } = svgLogo(a);
+    const C2 = await contornos(page, svg0);
+    if (C2.avisos.length) console.log('  ⚠', a.file, C2.avisos.join('; '));
+    const svg = C2.svg;
+    fs.writeFileSync(path.join(OUT, 'logos', a.file.replace(/\.pdf$/, '.svg')), svg);
     await page.setContent(`<!doctype html><html><head><style>@page{size:${a.cm}cm ${hcm}cm;margin:0}html,body{margin:0;background:transparent}svg{display:block}</style></head><body>${svg}</body></html>`);
     await page.pdf({ path: path.join(OUT, 'logos', a.file), width: `${a.cm}cm`, height: `${hcm}cm`, printBackground: false, margin: { top: 0, bottom: 0, left: 0, right: 0 }, pageRanges: '1' });
   }
   // etiquetas: una por versión (color) y talla del pedido
   for (const k of Object.keys(etiquetas)) for (const t of TALLAS) {
-    await page.setContent(`<!doctype html><html><head><style>@page{size:${ETIQUETA.ancho}cm ${ETIQUETA.alto}cm;margin:0}html,body{margin:0;background:transparent}svg{display:block}</style></head><body>${E.svg(t, k, { width: ETIQUETA.ancho + 'cm', height: ETIQUETA.alto + 'cm' })}</body></html>`);
+    const Ce = await contornos(page, E.svg(t, k, { width: ETIQUETA.ancho + 'cm', height: ETIQUETA.alto + 'cm' }));
+    if (Ce.avisos.length) console.log('  ⚠ etiqueta', k, t, Ce.avisos.join('; '));
+    fs.writeFileSync(path.join(OUT, 'etiquetas', `etiqueta-${k}-${t}.svg`), Ce.svg);
+    await page.setContent(`<!doctype html><html><head><style>@page{size:${ETIQUETA.ancho}cm ${ETIQUETA.alto}cm;margin:0}html,body{margin:0;background:transparent}svg{display:block}</style></head><body>${Ce.svg}</body></html>`);
     await page.pdf({ path: path.join(OUT, 'etiquetas', `etiqueta-${k}-${t}.pdf`), width: `${ETIQUETA.ancho}cm`, height: `${ETIQUETA.alto}cm`, printBackground: false, margin: { top: 0, bottom: 0, left: 0, right: 0 }, pageRanges: '1' });
   }
   await browser.close();
