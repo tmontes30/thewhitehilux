@@ -36,8 +36,16 @@ jobs:
           rm -rf _site/lib _site/tests _site/package.json _site/package-lock.json _site/node_modules _site/.gitignore
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+      # A veces GitHub no encuentra el archivo recién subido ("No artifacts named github-pages"): se reintenta solo
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - name: Esperar antes de reintentar
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - id: deployment2
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v5
