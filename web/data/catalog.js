@@ -213,25 +213,25 @@
         features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '26 a elección'], ['Uso', 'Exterior e interior']]
       },
       {
-        id: 'neumaticos-at', name: 'Neumáticos AT All Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        id: 'neumaticos-at', name: 'Neumáticos AT All Terrain', type: 'neumaticos', price: 490000, cotizar: true,
         sizes: [], colors: [], views: [],
         images: ['assets/img/neumaticos/at-06.jpg', 'assets/img/neumaticos/at-03.jpg', 'assets/img/neumaticos/at-01.jpg', 'assets/img/neumaticos/at-02.jpg', 'assets/img/neumaticos/at-04.jpg', 'assets/img/neumaticos/at-05.jpg'], sizeGuide: null, active: true,
         desc: 'Neumáticos AT (All Terrain): el equilibrio entre ciudad, carretera, ripio y tierra, con buena tracción y andar silencioso. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich. Los precios incluyen instalación y balanceo en local (RM). Tenemos todas las medidas para camionetas y 4x4: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
-        features: [['Tipo', 'All Terrain (AT)'], ['Uso', 'Ciudad, carretera, ripio y tierra'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'A cotizar por WhatsApp']]
+        features: [['Tipo', 'All Terrain (AT)'], ['Uso', 'Ciudad, carretera, ripio y tierra'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'Desde $490.000 (el precio final depende de la medida: cotiza por WhatsApp)']]
       },
       {
-        id: 'neumaticos-rt', name: 'Neumáticos RT Rugged Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        id: 'neumaticos-rt', name: 'Neumáticos RT Rugged Terrain', type: 'neumaticos', price: 690000, cotizar: true,
         sizes: [], colors: [], views: [],
         images: ['assets/img/neumaticos/rt-01.jpg'], sizeGuide: null, active: true,
         desc: 'Neumáticos RT (Rugged Terrain): a medio camino entre AT y MT. Más agarre en piedra, barro y ripio suelto que un AT, pero más cómodos y silenciosos en ruta que un MT. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich (según medida y disponibilidad). Los precios incluyen instalación y balanceo en local (RM). Tenemos todas las medidas: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
-        features: [['Tipo', 'Rugged Terrain (RT)'], ['Uso', 'Mixto: ruta, ripio, piedra y barro'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'A cotizar por WhatsApp']]
+        features: [['Tipo', 'Rugged Terrain (RT)'], ['Uso', 'Mixto: ruta, ripio, piedra y barro'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'Desde $690.000 (el precio final depende de la medida: cotiza por WhatsApp)']]
       },
       {
-        id: 'neumaticos-mt', name: 'Neumáticos MT Mud Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        id: 'neumaticos-mt', name: 'Neumáticos MT Mud Terrain', type: 'neumaticos', price: 690000, cotizar: true,
         sizes: [], colors: [], views: [],
         images: ['assets/img/neumaticos/mt-03.jpg', 'assets/img/neumaticos/mt-02.jpg', 'assets/img/neumaticos/mt-01.jpg', 'assets/img/neumaticos/mt-04.jpg'], sizeGuide: null, active: true,
         desc: 'Neumáticos MT (Mud Terrain): tacos grandes y hombros agresivos para barro, piedra, arena y huella dura. Hechos para el off road de verdad. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich. Los precios incluyen instalación y balanceo en local (RM). Tenemos todas las medidas: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
-        features: [['Tipo', 'Mud Terrain (MT)'], ['Uso', 'Barro, piedra, arena y huella dura'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'A cotizar por WhatsApp']]
+        features: [['Tipo', 'Mud Terrain (MT)'], ['Uso', 'Barro, piedra, arena y huella dura'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Incluye', 'Instalación y balanceo en local (RM)'], ['Precio', 'Desde $690.000 (el precio final depende de la medida: cotiza por WhatsApp)']]
       }
     ]
   };
