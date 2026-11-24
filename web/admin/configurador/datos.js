@@ -293,10 +293,10 @@ window.TWH_CFG = {
    "id": "winch-crew",
    "name": "Winch Crew",
    "aspect": 1,
-   "l": 0.12,
-   "r": 0.87,
+   "l": 0.1333,
+   "r": 0.8567,
    "t": 0.2,
-   "b": 0.91
+   "b": 0.8333
   }
  ],
  "seed": [

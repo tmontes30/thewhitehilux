@@ -446,19 +446,13 @@ const LOGOS = {
       t(150, 262, 'MUD DEPT. · CHILE', 12, MUST, COND, mid + ' ' + cond('letter-spacing="7"'));
   },
 
-  // 31. Winch Crew: cable y gancho de winche
+  // 31. Winch Crew (cable de winche, sin gancho)
   'winch-crew': () =>
     pt('BlackOpsOne-Regular', 'WINCH', 64, 150, 128, INK, { w: 216 }) +
     pt('BlackOpsOne-Regular', 'CREW', 64, 150, 196, RED, { w: 168 }) +
-    `<path d="M36 214 H208" stroke="${MUST}" stroke-width="4" stroke-dasharray="7 3"/>` +
-    `<path d="M204 208 H213 V220 H204 Z" fill="${INK}"/>` +
-    // gancho de winche: ojo, caña, curva gruesa abajo, punta hacia adentro y seguro
-    `<g transform="translate(222 214) scale(1.25)">` +
-    `<circle cx="0" cy="0" r="7.5" fill="none" stroke="${INK}" stroke-width="4.5"/>` +
-    `<path d="M-5 7 H5 V30 C5 39 21 39 21 30 V25 L18 19 L27 15 L31 25 V31 C31 52 -5 53 -5 31 Z" fill="${INK}"/>` +
-    `<path d="M5 13 L19 19" stroke="${MUST}" stroke-width="2.4" stroke-linecap="round"/></g>` +
+    `<path d="M40 214 H260" stroke="${MUST}" stroke-width="4" stroke-dasharray="7 3"/>` +
     t(150, 70, 'TWH RECOVERY', 14, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
-    t(38, 250, '12.000 LBS · PULL HARD', 12, MUST, COND, cond('letter-spacing="3"'))
+    t(150, 250, '12.000 LBS · PULL HARD', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'))
 };
 
 // ---------- salida ----------
