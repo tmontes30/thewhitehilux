@@ -23,6 +23,7 @@
       <button type="button" data-tab="pedidos" aria-pressed="true">Pedidos <span class="count" id="count-alert" hidden></span></button>
       <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
       <button type="button" data-tab="utilidades" aria-pressed="false">Utilidades</button>
+      <button type="button" data-tab="cliente" aria-pressed="false">Cliente</button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
       <button type="button" data-tab="compras" aria-pressed="false">Compras</button>
       <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
@@ -80,6 +81,31 @@
       </div>
       <div class="actions"><button class="btn primary" type="submit">Guardar supuestos</button></div>
     </form>
+  </section>
+
+  <!-- CLIENTE: visitas de la tienda (anónimas, por día) -->
+  <section id="tab-cliente" hidden>
+    <div class="toolbar"><div class="filters" id="cl-period"></div>
+      <button type="button" class="btn ghost" id="cl-refresh">Actualizar</button></div>
+    <p class="hint" id="cl-note" style="margin:-4px 0 12px"></p>
+    <div class="stats" id="cl-kpis"></div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Embudo de compra</h2><div id="cl-funnel"></div><p class="hint" style="margin-top:8px">Cada paso cuenta visitas (sesiones), no personas: de cada 100 visitas, cuántas llegan a cada paso.</p></div>
+      <div class="card"><h2 class="card-title">💡 Qué mejorar y qué potenciar</h2><ul class="insights" id="cl-insights"></ul></div>
+    </div>
+    <div class="card"><h2 class="card-title">Productos: miradas vs. agregados al carro</h2><p class="hint" style="margin-bottom:8px">Un producto muy visto pero poco agregado al carro puede tener un problema de precio, fotos o tallas. Uno que se agrega mucho conviene empujarlo.</p><div class="table-wrap"><table class="data" id="cl-prod"></table></div></div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Lo que más se toca</h2><div class="table-wrap"><table class="data" id="cl-click"></table></div></div>
+      <div class="card"><h2 class="card-title">Páginas más vistas</h2><div class="table-wrap"><table class="data" id="cl-pages"></table></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">Lo que buscan</h2><div class="table-wrap"><table class="data" id="cl-search"></table></div></div>
+      <div class="card"><h2 class="card-title">Lo que buscaron y no encontraron</h2><p class="hint" style="margin-bottom:8px">Tallas sin stock y búsquedas sin resultado: pistas de qué comprar o agregar.</p><div class="table-wrap"><table class="data" id="cl-empty"></table></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><h2 class="card-title">De dónde llegan</h2><div class="table-wrap"><table class="data" id="cl-source"></table></div></div>
+      <div class="card"><h2 class="card-title">Desde qué equipo</h2><div class="table-wrap"><table class="data" id="cl-device"></table></div></div>
+    </div>
   </section>
 
   <!-- PRODUCTOS -->

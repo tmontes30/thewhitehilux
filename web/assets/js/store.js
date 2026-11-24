@@ -197,7 +197,96 @@
     return '<span class="price-old">' + money(p.compareAt) + '</span><span class="' + (cls || 'price') + '">' + money(p.price) + ' <em class="off">' + p.offerPct + '% OFF</em></span>';
   }
 
-  document.addEventListener('DOMContentLoaded', renderChrome);
+  // ---------- Visitas (anónimas): qué se mira y qué se toca, sumado por día en el panel (pestaña Cliente) ----------
+  // Se manda a la función "evento" en lotes. No se guarda nada de la persona. No cuenta: el navegador del admin
+  // (marcado al entrar al panel), robots, navegadores automáticos ni la página abierta con doble clic.
+  var Q = [];
+  var flushT = null;
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } }
+  var trackOff = location.protocol === 'file:' || ls('twh-admin') === '1' || navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent);
+  function flush() {
+    clearTimeout(flushT); flushT = null;
+    if (!Q.length || !window.TWH_FIREBASE) return;
+    var body = JSON.stringify({ e: Q.splice(0, 40) });
+    var url = window.TWH_FIREBASE.apiBase + '/evento';
+    try {
+      if (!(navigator.sendBeacon && navigator.sendBeacon(url, new Blob([body], { type: 'text/plain' })))) {
+        fetch(url, { method: 'POST', body: body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(function () {});
+      }
+    } catch (e) { /* sin conexión: se pierde el conteo, no importa */ }
+    if (Q.length) flush();
+  }
+  function track(g, k) {
+    if (trackOff || !k) return;
+    Q.push([g, String(k).slice(0, 60)]);
+    if (!flushT) flushT = setTimeout(flush, 2500);
+  }
+  // paso del embudo: una vez por sesión (visita)
+  function paso(p) { if (ss('twh-f-' + p)) return; ss('twh-f-' + p, '1'); track('embudo', p); }
+  function pagina() {
+    var n = (location.pathname.split('/').pop() || 'index.html').replace('.html', '') || 'index';
+    var q = new URLSearchParams(location.search);
+    if (n === 'index') return q.get('q') ? 'busqueda' : q.get('cat') ? 'categoria:' + q.get('cat') : q.get('estado') ? 'estado:' + q.get('estado') : 'inicio';
+    return n;
+  }
+  function fuente() {
+    var q = new URLSearchParams(location.search);
+    var u = (q.get('utm_source') || '').toLowerCase();
+    var r = '';
+    try { r = document.referrer ? new URL(document.referrer).hostname.toLowerCase() : ''; } catch (e) { r = ''; }
+    if (r === location.hostname) return '';
+    var s = u || r;
+    if (!s) return 'Directo';
+    if (/instagram|^ig$/.test(s)) return 'Instagram';
+    if (/facebook|fb\.|^fb$/.test(s)) return 'Facebook';
+    if (/whatsapp|wa\.me|^wa$/.test(s)) return 'WhatsApp';
+    if (/google/.test(s)) return 'Google';
+    if (/tiktok/.test(s)) return 'TikTok';
+    if (/mercadopago|mercadolibre/.test(s)) return 'Mercado Pago';
+    return s.replace(/^www\./, '').slice(0, 40);
+  }
+  function rotulo(el) {
+    var t = el.getAttribute('data-track') || el.getAttribute('aria-label') || el.title || el.textContent || '';
+    t = t.replace(/\s+/g, ' ').trim();
+    if (el.classList.contains('item')) t = 'Tarjeta de producto';
+    else if (el.classList.contains('cat-tile')) t = 'Acceso ' + (el.querySelector('b') ? el.querySelector('b').textContent : '');
+    else if (el.classList.contains('wa-float')) t = 'WhatsApp (botón flotante)';
+    else if (el.closest('.thumbs')) t = 'Miniatura de foto';
+    else if (el.classList.contains('qf-size')) t = 'Filtro de talla';
+    else if (el.classList.contains('qf-color')) t = 'Filtro de color';
+    var ZONAS = { inicio: 'Inicio', categoria: 'Categoría', busqueda: 'Búsqueda', estado: 'Próximamente', producto: 'Ficha', carrito: 'Carrito', gracias: 'Gracias', seguimiento: 'Seguimiento', nosotros: 'Nosotros' };
+    var pg = pagina().split(':')[0];
+    var zona = el.closest('header') ? 'Menú' : el.closest('footer') ? 'Pie' : ZONAS[pg] || pg;
+    return (zona + ' · ' + t).slice(0, 60);
+  }
+  function iniciarVisitas() {
+    if (trackOff) return;
+    var hoy = window.TWHCore ? window.TWHCore.todayCL() : new Date().toISOString().slice(0, 10);
+    if (ls('twh-vd') !== hoy) { ls('twh-vd', hoy); track('embudo', 'visitantes'); }
+    if (!ss('twh-s')) {
+      ss('twh-s', '1');
+      track('embudo', 'sesiones');
+      var f = fuente();
+      if (f) track('fuente', f);
+      track('disp', /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.matchMedia('(max-width: 760px)').matches ? 'Celular' : 'Computador');
+    }
+    track('pv', pagina());
+    document.addEventListener('click', function (e) {
+      var v = e.target.closest && e.target.closest('[data-vacia]');
+      if (v) track('vacia', v.getAttribute('data-vacia'));
+      var el = e.target.closest && e.target.closest('a, button, [data-track], select, summary');
+      if (el && el.tagName !== 'SELECT') track('click', rotulo(el));
+    }, true);
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+  }
+  // el carrito cuenta "agregado al carro" para el producto y el paso del embudo
+  var cartAdd = Cart.add;
+  Cart.add = function (line) { cartAdd(line); track('cart', line.id); paso('carrito'); };
 
-  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON, priceHtml: priceHtml };
+  document.addEventListener('DOMContentLoaded', renderChrome);
+  document.addEventListener('DOMContentLoaded', iniciarVisitas);
+
+  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON, priceHtml: priceHtml, track: track, paso: paso };
 })();

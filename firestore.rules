@@ -40,6 +40,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Visitas de la tienda (anónimas, sumadas por día). Las escribe la función "evento"; solo el admin las ve
+    match /estadisticas/{dia} {
+      allow read: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

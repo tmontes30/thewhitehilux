@@ -33,6 +33,7 @@
   var status = q.get('collection_status') || q.get('status');
   if (!status || status === 'approved') {
     TWH.Cart.clear();
+    TWH.paso('compra');
     // se guarda el número para que "Sigue tu pedido" lo rellene solo
     if (id) try { localStorage.setItem('twh-last-order', id); } catch (e) {}
   }

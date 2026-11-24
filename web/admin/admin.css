@@ -285,3 +285,15 @@ tr.sel td { background: #FFF6E5; }
 label.check { display: flex; align-items: center; gap: 8px; align-self: end; padding-bottom: 8px; }
 label.check input { width: auto; }
 .mv-total { font-size: 15px; margin: 12px 0 4px; }
+
+/* Cliente (visitas de la tienda) */
+.fun-row { display: grid; grid-template-columns: 150px 1fr 52px 130px; gap: 10px; align-items: center; padding: 6px 0; font-size: 13.5px; }
+.fun-bar { background: #f0efeb; border-radius: 6px; height: 16px; overflow: hidden; }
+.fun-bar span { display: block; height: 100%; background: linear-gradient(90deg, #F2A541, #E4572E); border-radius: 6px; }
+.fun-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.fun-row small { color: var(--muted); }
+.insights { list-style: none; display: grid; gap: 10px; margin: 0; padding: 0; }
+.insights li { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: start; font-size: 13.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: #f6f5f1; }
+.insights li.mejorar { background: #fdf0ec; }
+.insights li.potenciar { background: #eef7f0; }
+@media (max-width: 700px) { .fun-row { grid-template-columns: 1fr 52px; } .fun-row .fun-bar { grid-column: 1 / -1; grid-row: 2; } .fun-row small { grid-column: 1 / -1; } }

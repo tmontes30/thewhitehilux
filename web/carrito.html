@@ -249,6 +249,7 @@
       return showErr('Estás viendo la tienda desde tu computador. El pago con Mercado Pago funciona en la tienda publicada (thewhitehilux.cavedevz.com).');
     }
     var btn = $('pay');
+    TWH.paso('checkout');
     btn.disabled = true; btn.textContent = 'Conectando con Mercado Pago…';
     fetch(window.TWH_FIREBASE.apiBase + '/crearPreferencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })

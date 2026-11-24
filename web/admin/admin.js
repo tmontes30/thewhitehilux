@@ -6,7 +6,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js';
 import {
   getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, orderBy,
-  limit, increment, FieldPath, serverTimestamp, deleteField
+  limit, increment, FieldPath, serverTimestamp, deleteField, getDocs
 } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js';
 
 const F = window.TWH_FIREBASE;
@@ -24,7 +24,7 @@ if (F.useEmulators) {
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
 const COURIERS = ['Starken', 'Chilexpress', 'Blue Express', 'Correos de Chile', 'Despacho propio', 'Otro'];
-const TABS = ['pedidos', 'ventas', 'utilidades', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
+const TABS = ['pedidos', 'ventas', 'utilidades', 'cliente', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -85,6 +85,8 @@ onAuthStateChanged(auth, async (user) => {
   $('who-email').textContent = user ? user.email : '';
   TABS.forEach((t) => ($('tab-' + t).hidden = true));
   if (!isAdmin) booted();
+  // este navegador es del admin: la tienda no cuenta sus visitas en la pestaña Cliente
+  if (isAdmin) { try { localStorage.setItem('twh-admin', '1'); } catch (e) { /* sin almacenamiento */ } }
   if (user && !isAdmin) {
     $('login-msg').textContent = `La cuenta ${user.email} no tiene acceso al panel.`;
     $('login-btn').textContent = 'Entrar con otra cuenta';
@@ -148,6 +150,7 @@ function showTab(name) {
   // ?v= evita que el navegador muestre una versión vieja guardada en caché
   if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html?v=' + Date.now();
   document.body.classList.toggle('wide', name === 'configurador');
+  if (name === 'cliente' && !visitas) loadVisitas();
 }
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-tab]');
@@ -2058,3 +2061,131 @@ $('manual-form').addEventListener('submit', async (e) => {
     fail(err);
   }
 });
+
+// ---------- Cliente: visitas de la tienda (anónimas, sumadas por día en estadisticas/<fecha>) ----------
+// Las cuenta la tienda (store.js → función "evento"). No incluye las visitas de este navegador (admin).
+let visitas = null; // { 'YYYY-MM-DD': { pv, prod, cart, click, filtro, busca, vacia, fuente, disp, embudo } }
+let clPeriod = '30d';
+const CL_PERIODS = ['hoy', '7d', '30d', 'mes', 'mesant', 'todo'];
+const PAGINAS = { inicio: 'Inicio', busqueda: 'Resultados de búsqueda', producto: 'Ficha de producto', carrito: 'Carrito', gracias: 'Gracias por tu compra', 'pago-pendiente': 'Pago pendiente', 'pago-fallido': 'Pago fallido', seguimiento: 'Sigue tu pedido', nosotros: 'Nosotros', terminos: 'Términos', cambios: 'Cambios y devoluciones', privacidad: 'Privacidad', 'estado:proximamente': 'Próximamente' };
+
+async function loadVisitas() {
+  try {
+    const s = await getDocs(collection(db, 'estadisticas'));
+    visitas = {};
+    s.docs.forEach((d) => (visitas[d.id] = d.data()));
+  } catch (err) {
+    visitas = {};
+    fail(err);
+  }
+  renderCliente();
+}
+$('cl-refresh').addEventListener('click', () => { $('cl-refresh').disabled = true; loadVisitas().finally(() => ($('cl-refresh').disabled = false)); });
+$('cl-period').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cp]');
+  if (!b) return;
+  clPeriod = b.dataset.cp;
+  renderCliente();
+});
+
+function clSum(from, to) {
+  const S = {};
+  Object.keys(visitas || {}).filter((d) => (!from || d >= from) && (!to || d <= to)).forEach((d) => {
+    const v = visitas[d];
+    Object.keys(v).forEach((g) => {
+      if (!v[g] || typeof v[g] !== 'object' || v[g].toDate) return;
+      S[g] = S[g] || {};
+      Object.keys(v[g]).forEach((k) => (S[g][k] = (S[g][k] || 0) + (Number(v[g][k]) || 0)));
+    });
+  });
+  return S;
+}
+const topN = (m, n) => Object.entries(m || {}).sort((a, b) => b[1] - a[1]).slice(0, n || 15);
+const sumOf = (m) => Object.values(m || {}).reduce((s, n) => s + n, 0);
+function clTable(id, head, rows, empty) {
+  $(id).innerHTML = rows.length
+    ? `<thead><tr>${head.map((h, i) => `<th${i ? ' class="n"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody>`
+    : `<tbody><tr><td class="hint">${empty || 'Todavía sin datos en este período.'}</td></tr></tbody>`;
+}
+function pageName(k) {
+  if (k.startsWith('categoria:')) return 'Categoría ' + ((CFG.categories || {})[k.slice(10)] || k.slice(10));
+  return PAGINAS[k] || k;
+}
+
+function renderCliente() {
+  if (!$('tab-cliente')) return;
+  $('cl-period').innerHTML = CL_PERIODS.map((k) => `<button type="button" class="chip" data-cp="${k}" aria-pressed="${k === clPeriod}">${PERIODS[k]}</button>`).join('');
+  if (!visitas) { $('cl-kpis').innerHTML = '<p class="hint">Cargando visitas…</p>'; return; }
+  const [from, to] = clPeriod === 'todo' ? ['', ''] : periodRange(clPeriod);
+  const S = clSum(from, to);
+  const E = S.embudo || {};
+  const dias = Object.keys(visitas).sort();
+  $('cl-note').textContent = dias.length
+    ? `Datos desde el ${fmtDate(dias[0])}. No cuenta tus propias visitas (este navegador está marcado como admin) ni robots.`
+    : 'Todavía no hay visitas registradas: se empiezan a contar desde que se publicó esta pestaña. No cuenta tus propias visitas.';
+  // ventas web reales del período (pedidos pagados, sin ventas manuales), para comparar con las visitas
+  const paid = orders.filter((o) => PAID.includes(o.status) && o.paidDate && (!from || o.paidDate >= from) && (!to || o.paidDate <= to) && o.source !== 'manual');
+  const conv = E.sesiones ? Math.round((paid.length / E.sesiones) * 1000) / 10 : 0;
+  $('cl-kpis').innerHTML = [
+    [E.visitantes || 0, 'Visitantes (personas distintas por día)'],
+    [E.sesiones || 0, 'Visitas'],
+    [sumOf(S.pv), 'Páginas vistas'],
+    [sumOf(S.prod), 'Fichas de producto vistas'],
+    [sumOf(S.cart), 'Agregados al carro'],
+    [paid.length, `Ventas web · conversión ${conv.toLocaleString('es-CL')}%`],
+  ].map(([v, l]) => `<div class="stat"><b>${Number(v).toLocaleString('es-CL')}</b><span>${l}</span></div>`).join('');
+
+  // Embudo
+  const pasos = [['sesiones', 'Entraron a la tienda'], ['producto', 'Vieron un producto'], ['carrito', 'Agregaron al carro'], ['checkout', 'Fueron a pagar'], ['compra', 'Compraron']];
+  const base = E.sesiones || 0;
+  $('cl-funnel').innerHTML = pasos.map(([k, l], i) => {
+    const n = E[k] || 0;
+    const prev = i ? E[pasos[i - 1][0]] || 0 : n;
+    return `<div class="fun-row"><span class="fun-l">${l}</span><div class="fun-bar"><span style="width:${base ? Math.max(2, pct(n, base)) : 0}%"></span></div><b>${n.toLocaleString('es-CL')}</b><small>${i ? (prev ? pct(n, prev) + '% del paso anterior' : '—') : '100%'}</small></div>`;
+  }).join('');
+
+  // Productos: vistas vs. carro vs. ventas
+  const ids = [...new Set([...Object.keys(S.prod || {}), ...Object.keys(S.cart || {})])];
+  const sold = {};
+  paid.forEach((o) => (o.lines || []).forEach((l) => (sold[l.id] = (sold[l.id] || 0) + (l.qty || 0))));
+  const prows = ids.map((id) => ({ id, name: (productById(id) || {}).name || id, v: (S.prod || {})[id] || 0, c: (S.cart || {})[id] || 0, s: sold[id] || 0 }))
+    .sort((a, b) => b.v - a.v || b.c - a.c);
+  clTable('cl-prod', ['Producto', 'Vistas', 'Al carro', '% al carro', 'Vendidas'],
+    prows.map((r) => [esc(r.name), r.v, r.c, r.v ? pct(r.c, r.v) + '%' : '—', r.s]));
+
+  clTable('cl-click', ['Botón o link', 'Toques'], topN(S.click, 20).map(([k, n]) => [esc(k), n]));
+  clTable('cl-pages', ['Página', 'Vistas'], topN(S.pv, 15).map(([k, n]) => [esc(pageName(k)), n]));
+  clTable('cl-search', ['Filtro o búsqueda', 'Veces'], [...topN(S.filtro, 12).map(([k, n]) => [esc(k), n]), ...topN(S.busca, 12).map(([k, n]) => ['Búsqueda “' + esc(k) + '”', n])].sort((a, b) => b[1] - a[1]));
+  clTable('cl-empty', ['Qué', 'Veces'], topN(S.vacia, 15).map(([k, n]) => [esc(k), n]), 'Nada por ahora: todo lo que buscaron lo encontraron.');
+  const fTot = sumOf(S.fuente);
+  clTable('cl-source', ['Origen', 'Visitas', '%'], topN(S.fuente, 10).map(([k, n]) => [esc(k), n, pct(n, fTot) + '%']));
+  const dTot = sumOf(S.disp);
+  clTable('cl-device', ['Equipo', 'Visitas', '%'], topN(S.disp, 5).map(([k, n]) => [esc(k), n, pct(n, dTot) + '%']));
+
+  // Recomendaciones automáticas (reglas simples sobre el embudo, productos y búsquedas)
+  const tips = [];
+  if ((E.sesiones || 0) < 30) tips.push(['info', `Hay pocas visitas en este período (${E.sesiones || 0}). Las recomendaciones se vuelven confiables desde unas 100 visitas.`]);
+  const mirados = prows.filter((r) => r.v >= 15);
+  const flojo = mirados.filter((r) => pct(r.c, r.v) < 5).sort((a, b) => b.v - a.v)[0];
+  if (flojo) tips.push(['mejorar', `<b>${esc(flojo.name)}</b> se mira mucho (${flojo.v} vistas) pero casi nadie lo agrega al carro (${pct(flojo.c, flojo.v)}%). Revisa fotos, precio o si faltan tallas.`]);
+  const estrella = mirados.filter((r) => pct(r.c, r.v) >= 15).sort((a, b) => pct(b.c, b.v) - pct(a.c, a.v))[0];
+  if (estrella) tips.push(['potenciar', `<b>${esc(estrella.name)}</b> convence: ${pct(estrella.c, estrella.v)}% de quienes lo ven lo agregan al carro. Ponlo primero en Instagram o en la portada.`]);
+  const masVisto = prows[0];
+  if (masVisto && masVisto.v >= 10 && masVisto !== estrella && masVisto !== flojo) tips.push(['potenciar', `El producto más visto es <b>${esc(masVisto.name)}</b> (${masVisto.v} vistas). Asegúrate de tener stock de sus tallas más vendidas.`]);
+  if ((E.sesiones || 0) >= 20 && pct(E.producto || 0, E.sesiones) < 40) tips.push(['mejorar', `Solo ${pct(E.producto || 0, E.sesiones)}% de las visitas abre un producto. Haz la portada más directa: fotos más grandes o un destacado arriba.`]);
+  if ((E.carrito || 0) >= 5 && pct(E.checkout || 0, E.carrito) < 40) tips.push(['mejorar', `Solo ${pct(E.checkout || 0, E.carrito)}% de quienes agregan al carro van a pagar. Revisa el costo de envío, que el carrito sea claro, o agrega un incentivo (ej. código de descuento en la primera compra).`]);
+  if ((E.checkout || 0) >= 5 && pct(E.compra || 0, E.checkout) < 50) tips.push(['mejorar', `De quienes van a pagar, solo ${pct(E.compra || 0, E.checkout)}% termina la compra. Puede ser algo en Mercado Pago (medios de pago, cuotas): ofrece también transferencia por WhatsApp.`]);
+  const tallas = topN(Object.fromEntries(Object.entries(S.vacia || {}).filter(([k]) => /^Talla/.test(k))), 3);
+  if (tallas.length && tallas[0][1] >= 3) tips.push(['potenciar', `Buscan tallas que no tienes: ${tallas.map(([k, n]) => `<b>${esc(k)}</b> (${n})`).join(', ')}. Considéralas en la próxima compra.`]);
+  const vacias = topN(Object.fromEntries(Object.entries(S.vacia || {}).filter(([k]) => /^Búsqueda/.test(k))), 3);
+  if (vacias.length) tips.push(['mejorar', `Búsquedas sin resultado: ${vacias.map(([k, n]) => `<b>${esc(k.replace('Búsqueda: ', ''))}</b> (${n})`).join(', ')}. Puede ser un producto a sumar o una palabra a poner en las descripciones.`]);
+  const fuenteTop = topN(S.fuente, 1)[0];
+  if (fuenteTop && fTot >= 20) tips.push(['info', `La mayoría llega desde <b>${esc(fuenteTop[0])}</b> (${pct(fuenteTop[1], fTot)}%). Ahí conviene poner el esfuerzo de publicaciones.`]);
+  const cel = (S.disp || {}).Celular || 0;
+  if (dTot >= 20 && pct(cel, dTot) >= 60) tips.push(['info', `${pct(cel, dTot)}% entra desde el celular: revisa siempre cómo se ve la tienda en el teléfono antes de publicar algo.`]);
+  const wa = Object.entries(S.click || {}).filter(([k]) => /WhatsApp/i.test(k)).reduce((s, [, n]) => s + n, 0);
+  if (wa >= 5) tips.push(['info', `Tocaron WhatsApp ${wa} veces: hay gente con dudas antes de comprar. Mira qué preguntan y súmalo a las descripciones.`]);
+  const ICO = { mejorar: '🔧', potenciar: '🚀', info: 'ℹ️' };
+  $('cl-insights').innerHTML = (tips.length ? tips : [['info', 'Todo se ve sano en este período. Mira el embudo semana a semana.']])
+    .map(([t, h]) => `<li class="${t}"><span>${ICO[t]}</span><p>${h}</p></li>`).join('');
+}

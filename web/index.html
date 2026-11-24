@@ -133,7 +133,7 @@ TWH.loadData().then(function (d) {
         var on = f.talla === z;
         var n = d.products.filter(function (p) { return match(p, 'talla') && hasSize(p, z, f.color); }).length;
         return n || on ? '<a class="qf-size' + (on ? ' on' : '') + '" href="' + url({ talla: on ? '' : z }) + '"' + (on ? ' aria-current="true"' : '') + '>' + TWH.esc(z) + '</a>'
-          : '<span class="qf-size off" title="Sin stock en esta talla">' + TWH.esc(z) + '</span>';
+          : '<span class="qf-size off" title="Sin stock en esta talla" data-vacia="Talla ' + TWH.esc(z) + ' (tachada' + (f.cat ? ' en ' + TWH.esc(cats[f.cat] || f.cat) : '') + ')">' + TWH.esc(z) + '</span>';
       }).join('') + '</div>';
     }
     if (colors.length > 1 || f.color) {
@@ -253,6 +253,13 @@ TWH.loadData().then(function (d) {
   }
   document.getElementById('sort').addEventListener('change', render);
   render();
+  // Visitas: qué filtran y buscan (y lo que no encontraron)
+  (function () {
+    var n = document.querySelectorAll('#grid .item').length;
+    if (f.talla) { TWH.track('filtro', 'Talla ' + f.talla); if (!n) TWH.track('vacia', 'Talla ' + f.talla + (f.color ? ' ' + (cfg.colors[f.color] || f.color) : '') + (f.cat ? ' · ' + (cats[f.cat] || f.cat) : '')); }
+    if (f.color) TWH.track('filtro', 'Color ' + (cfg.colors[f.color] || f.color));
+    if (f.q) { TWH.track('busca', f.q.toLowerCase().slice(0, 40)); if (!n) TWH.track('vacia', 'Búsqueda: ' + f.q.toLowerCase().slice(0, 40)); }
+  })();
 });
 </script>
 </body>

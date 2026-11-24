@@ -43,6 +43,7 @@
       return;
     }
     document.title = p.name + ' · The White Hilux';
+    TWH.track('prod', p.id); TWH.paso('producto');
     var cats = d.config.categories, cfg = d.config;
     document.getElementById('crumbs').innerHTML = '<a href="index.html">Tienda</a> › <a href="index.html?cat=' + p.type + '">' + cats[p.type] + '</a> › ' + TWH.esc(p.name);
     var st = { color: p.colors[0] || '', size: p.sizes.length === 1 ? p.sizes[0] : '', view: 0, design: p.designs ? p.designs[0].id : '' };

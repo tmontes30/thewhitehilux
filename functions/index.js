@@ -507,6 +507,41 @@ exports.probarPush = onRequest(
   }
 );
 
+// ---------- evento (visitas de la tienda, anónimas y agregadas por día) ----------
+// La tienda manda lotes de eventos [grupo, clave] (navigator.sendBeacon, text/plain). Se suman en
+// estadisticas/<YYYY-MM-DD> como { grupo: { clave: n } }. No se guarda nada de la persona (ni IP ni id).
+const GRUPOS_EVENTO = ['pv', 'prod', 'cart', 'click', 'filtro', 'busca', 'vacia', 'fuente', 'disp', 'embudo'];
+const PASOS_EMBUDO = ['visitantes', 'sesiones', 'producto', 'carrito', 'checkout', 'compra'];
+exports.evento = onRequest(
+  { cors: [/thewhitehilux\.cavedevz\.com$/, /tmontes30\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/], memory: '256MiB' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).end();
+    const body = (typeof req.body === 'string' ? safeJson(req.body) : Buffer.isBuffer(req.body) ? safeJson(req.body.toString()) : req.body) || {};
+    const list = Array.isArray(body.e) ? body.e.slice(0, 40) : [];
+    const sum = {};
+    let n = 0;
+    list.forEach((ev) => {
+      if (!Array.isArray(ev)) return;
+      const g = String(ev[0] || '');
+      const k = String(ev[1] || '').replace(/[\u0000-\u001f`]/g, '').trim().slice(0, 60);
+      if (!GRUPOS_EVENTO.includes(g) || !k) return;
+      if (g === 'embudo' && !PASOS_EMBUDO.includes(k)) return;
+      sum[g] = sum[g] || {};
+      sum[g][k] = (sum[g][k] || 0) + 1;
+      n++;
+    });
+    if (!n) return res.status(204).end();
+    const data = {};
+    Object.keys(sum).forEach((g) => {
+      data[g] = {};
+      Object.keys(sum[g]).forEach((k) => (data[g][k] = FieldValue.increment(sum[g][k])));
+    });
+    data.actualizado = FieldValue.serverTimestamp();
+    await db.collection('estadisticas').doc(core.todayCL()).set(data, { merge: true });
+    return res.status(204).end();
+  }
+);
+
 function safeJson(s) {
   try {
     return JSON.parse(s);
