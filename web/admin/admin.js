@@ -81,6 +81,8 @@ onAuthStateChanged(auth, async (user) => {
   const isAdmin = user && user.emailVerified && F.admins.includes((user.email || '').toLowerCase());
   $('login').hidden = !!isAdmin;
   $('tabs').hidden = !isAdmin;
+  $('mnav').hidden = !isAdmin;
+  $('msheet-who').textContent = user ? user.email : '';
   $('who').hidden = !user;
   $('who-email').textContent = user ? user.email : '';
   TABS.forEach((t) => ($('tab-' + t).hidden = true));
@@ -148,6 +150,7 @@ function showTab(name) {
   document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'));
   TABS.forEach((t) => ($('tab-' + t).hidden = t !== name));
   if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+  syncMobileNav(name);
   // el configurador (con sus fotos base) se carga solo la primera vez que se abre
   // ?v= evita que el navegador muestre una versión vieja guardada en caché
   if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html?v=' + Date.now();
@@ -160,6 +163,34 @@ function showTab(name) {
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-tab]');
   if (b) showTab(b.dataset.tab);
+});
+
+// ---------- Celular / app del iPhone: barra inferior, botón "+" (venta manual) y panel "Más" ----------
+const TAB_TITLES = { pedidos: 'Pedidos', ventas: 'Ventas', utilidades: 'Utilidades', cliente: 'Cliente', productos: 'Productos y stock', compras: 'Compras', descuentos: 'Descuentos', configurador: 'Configurador', ajustes: 'Ajustes' };
+function syncMobileNav(name) {
+  const inNav = ['pedidos', 'ventas', 'productos'].includes(name);
+  document.querySelectorAll('#mnav button[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
+  $('mnav-more').classList.toggle('on', !inNav);
+  document.querySelectorAll('#msheet button[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
+  $('mtitle').textContent = TAB_TITLES[name] || '';
+}
+function sheet(open) {
+  $('msheet').hidden = !open;
+  document.body.classList.toggle('sheet-open', open || !$('manual-form').hidden && window.matchMedia('(max-width: 820px)').matches);
+}
+$('mnav').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.id === 'mnav-more') return sheet($('msheet').hidden);
+  sheet(false);
+  if (b.id === 'mnav-new') { showTab('pedidos'); openManual(); return; }
+  if (b.dataset.tab) { showTab(b.dataset.tab); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+$('msheet').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-tab]');
+  if (b) { sheet(false); showTab(b.dataset.tab); window.scrollTo({ top: 0 }); return; }
+  if (e.target.id === 'msheet-logout') { sheet(false); signOut(auth); return; }
+  if (e.target === $('msheet')) sheet(false); // tocar fuera cierra
 });
 
 // ---------- Pedidos ----------
@@ -320,6 +351,8 @@ function renderOrders() {
   const cnt = $('count-alert');
   cnt.hidden = !urgent.length;
   cnt.textContent = urgent.length;
+  $('mnav-alert').hidden = !urgent.length;
+  $('mnav-alert').textContent = urgent.length;
   $('alert').hidden = !urgent.length;
   $('alert').innerHTML = urgent.length
     ? `<h3>⚠ ${plural(urgent.length, 'pedido necesita', 'pedidos necesitan')} entregarse pronto</h3><ul>${urgent
@@ -1940,13 +1973,13 @@ function mLineHtml(l, i) {
   const designs = p && p.designs ? p.designs : [];
   const st = p && p.stock ? C.stockOf(p, l.color, l.size) : null;
   return `<tr data-i="${i}">
-    <td><select data-f="id" aria-label="Producto"><option value="">Producto…</option>${prodOpts}</select></td>
-    <td>${designs.length ? `<select data-f="design" aria-label="Diseño">${designs.map((d) => `<option value="${esc(d.id)}"${d.id === l.design ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : '—'}</td>
-    <td>${colors.length ? `<select data-f="color" aria-label="Color">${colors.map((c) => `<option value="${c}"${c === l.color ? ' selected' : ''}>${esc(CFG.colors[c])}</option>`).join('')}</select>` : '—'}</td>
-    <td><select data-f="size" aria-label="Talla">${(p ? p.sizes : []).map((s) => `<option${s === l.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>${st != null ? `<small class="hint"> quedan ${st}</small>` : ''}</td>
-    <td><input type="number" data-f="qty" min="1" value="${esc(l.qty)}" class="qty-in" aria-label="Cantidad"></td>
-    <td><input type="number" data-f="price" min="0" value="${esc(l.price)}" class="qty-in" aria-label="Precio unitario"></td>
-    <td><button type="button" class="link" data-f="del" aria-label="Quitar">✕</button></td>
+    <td class="mv-prod" data-l="Producto"><select data-f="id" aria-label="Producto"><option value="">Producto…</option>${prodOpts}</select></td>
+    <td data-l="Diseño" class="${designs.length ? '' : 'mv-na'}">${designs.length ? `<select data-f="design" aria-label="Diseño">${designs.map((d) => `<option value="${esc(d.id)}"${d.id === l.design ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : '—'}</td>
+    <td data-l="Color" class="${colors.length ? '' : 'mv-na'}">${colors.length ? `<select data-f="color" aria-label="Color">${colors.map((c) => `<option value="${c}"${c === l.color ? ' selected' : ''}>${esc(CFG.colors[c])}</option>`).join('')}</select>` : '—'}</td>
+    <td data-l="Talla"><select data-f="size" aria-label="Talla">${(p ? p.sizes : []).map((s) => `<option${s === l.size ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>${st != null ? `<small class="hint"> quedan ${st}</small>` : ''}</td>
+    <td data-l="Cantidad"><div class="stepper"><button type="button" data-f="dec" aria-label="Una menos">−</button><input type="number" data-f="qty" min="1" inputmode="numeric" value="${esc(l.qty)}" class="qty-in" aria-label="Cantidad"><button type="button" data-f="inc" aria-label="Una más">+</button></div></td>
+    <td data-l="Precio unitario"><input type="number" data-f="price" min="0" inputmode="numeric" value="${esc(l.price)}" class="qty-in" aria-label="Precio unitario"></td>
+    <td class="mv-del"><button type="button" class="link" data-f="del" aria-label="Quitar producto">✕</button></td>
   </tr>`;
 }
 // Costo unitario de una línea (promedio de Compras por SKU → producto → categoría); 0 si no hay compras
@@ -1959,7 +1992,8 @@ function mDefaults(l) {
   const p = productById(l.id);
   if (!p) return l;
   l.color = p.colors.length ? (p.colors.includes(l.color) ? l.color : p.colors[0]) : '';
-  l.size = p.sizes.includes(l.size) ? l.size : p.sizes[0];
+  const conStock = p.stock ? p.sizes.filter((z) => C.stockOf(p, l.color, z) > 0) : p.sizes;
+  l.size = p.sizes.includes(l.size) ? l.size : conStock[0] || p.sizes[0];
   l.design = p.designs && p.designs.length ? (p.designs.some((d) => d.id === l.design) ? l.design : p.designs[0].id) : '';
   l.price = manual && manual.muestra ? Math.round(costoLinea(l).v) : p.price;
   return l;
@@ -1976,7 +2010,7 @@ function openManual() {
   const f = $('manual-form');
   f.hidden = false;
   const points = CFG.pickupPoints || [];
-  f.innerHTML = `<h2>Venta manual <small class="hint">(transferencia o efectivo, sin Mercado Pago)</small></h2>
+  f.innerHTML = `<div class="mv-head"><h2>Venta manual <small class="hint">(transferencia o efectivo, sin Mercado Pago)</small></h2><button type="button" class="mv-x" id="mv-x" aria-label="Cerrar">✕</button></div>
     <label class="check muestra-check"><input type="checkbox" id="mv-muestra"> <span><b>Muestra</b>: me la quedo yo, a precio costo <small class="hint">(precio = costo de Compras, entregada y sin correos)</small></span></label>
     <div class="grid3">
       <label>Nombre del cliente<input id="mv-name" maxlength="80" required></label>
@@ -2006,11 +2040,13 @@ function openManual() {
       <label class="check"><input type="checkbox" id="mv-mails"> Mandarle correos de despacho/entrega</label>
     </div>
     <label style="margin-top:10px">Nota interna (opcional)<input id="mv-note" maxlength="300" placeholder="Ej: amigo de la U, pagó al Banco Estado"></label>
-    <p id="mv-total" class="mv-total"></p>
-    <div class="actions"><button class="btn primary" type="submit">Guardar venta</button><button type="button" class="btn ghost" id="mv-cancel">Cancelar</button></div>`;
+    <div class="mv-foot"><p id="mv-total" class="mv-total"></p>
+    <div class="actions"><button class="btn primary" type="submit">Guardar venta</button><button type="button" class="btn ghost" id="mv-cancel">Cancelar</button></div></div>`;
   mTotals();
-  f.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  $('mv-name').focus();
+  const movil = window.matchMedia('(max-width: 820px)').matches;
+  document.body.classList.toggle('sheet-open', movil); // en el celular el formulario es una hoja a pantalla completa
+  if (movil) f.scrollTop = 0;
+  else { f.scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mv-name').focus(); }
 }
 $('manual-new').addEventListener('click', openManual);
 $('manual-form').addEventListener('change', (e) => {
@@ -2071,8 +2107,21 @@ $('manual-form').addEventListener('click', (e) => {
     $('mv-lines').innerHTML = manual.lines.map(mLineHtml).join('');
     mTotals();
   }
-  if (e.target.id === 'mv-cancel') { manual = null; $('manual-form').hidden = true; }
+  const step = e.target.closest('[data-f="inc"], [data-f="dec"]');
+  if (step) {
+    const tr = step.closest('tr[data-i]');
+    const l = manual.lines[Number(tr.dataset.i)];
+    l.qty = Math.max(1, Math.min(99, (Number(l.qty) || 1) + (step.dataset.f === 'inc' ? 1 : -1)));
+    tr.querySelector('[data-f="qty"]').value = l.qty;
+    mTotals();
+  }
+  if (e.target.id === 'mv-cancel' || e.target.closest('#mv-x')) closeManual();
 });
+function closeManual() {
+  manual = null;
+  $('manual-form').hidden = true;
+  document.body.classList.remove('sheet-open');
+}
 $('manual-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('mv-name').value.trim();
@@ -2124,7 +2173,7 @@ $('manual-form').addEventListener('submit', async (e) => {
     if ($('mv-stock').checked) await moveStock(order, -1);
     toast(manual.muestra ? `Muestra ${id} guardada ✓ (a costo, descontada del stock)` : `Venta ${id} guardada ✓`);
     manual = null;
-    $('manual-form').hidden = true;
+    closeManual();
     orderFilter = status === 'entregado' ? 'entregado' : 'abiertos';
     renderOrders();
   } catch (err) {

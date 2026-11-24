@@ -312,3 +312,116 @@ label.check input { width: auto; }
 /* Venta manual: casilla Muestra */
 .muestra-check { display: flex; gap: 8px; align-items: flex-start; background: #faf6ea; border: 1px solid #ecdfb8; border-radius: 10px; padding: 10px 12px; margin: 4px 0 12px; }
 .cl-self { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0 0 12px; font-size: 13px; }
+
+/* ================= Celular / app del iPhone (pantalla de inicio) =================
+   Barra inferior estilo app, encabezado compacto con el notch, campos de 16 px (iOS no hace zoom),
+   botones de 44 px para el dedo y la venta manual como hoja a pantalla completa. En computador no aplica. */
+.mnav, .msheet, .mtitle { display: none; }
+.mv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mv-x { display: none; }
+.stepper { display: inline-flex; align-items: stretch; border: 1px solid #C9C9C4; border-radius: 8px; overflow: hidden; background: #fff; }
+.stepper input { border: 0; border-radius: 0; width: 52px; text-align: center; -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper button { border: 0; background: #F3F2EE; width: 34px; font-size: 18px; font-weight: 700; cursor: pointer; color: var(--text); }
+.stepper button:active { background: #E6E4DD; }
+
+@media (max-width: 820px) {
+  html { -webkit-text-size-adjust: 100%; }
+  body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+  /* Encabezado compacto: logo + nombre de la sección (las pestañas pasan abajo) */
+  .top { padding-top: env(safe-area-inset-top); }
+  .top-in { padding: 8px 16px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); flex-wrap: nowrap; gap: 12px; }
+  .brand img { height: 30px; }
+  .brand span { display: none; }
+  .tabs, .who { display: none !important; }
+  .mtitle { display: block; flex: 1; text-align: right; font-weight: 800; font-size: 17px; letter-spacing: -.01em; color: #fff; }
+  main.wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+
+  /* Barra inferior */
+  .mnav:not([hidden]) { display: grid; }
+  .mnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 48; grid-template-columns: repeat(5, 1fr); align-items: end;
+    background: rgba(27, 28, 26, .94); -webkit-backdrop-filter: saturate(160%) blur(16px); backdrop-filter: saturate(160%) blur(16px);
+    border-top: 1px solid rgba(255,255,255,.08); padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
+  .mnav button { position: relative; background: none; border: 0; color: rgba(242,240,232,.62); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0 2px; font: 600 11px/1 var(--font); cursor: pointer; min-height: 50px; justify-content: flex-end; }
+  .mnav button svg { width: 25px; height: 25px; }
+  .mnav button.on { color: var(--accent); }
+  .mnav .mnav-new b { display: grid; place-items: center; width: 54px; height: 54px; margin-top: -26px; border-radius: 50%; background: linear-gradient(145deg, #F2A541, #E4572E); color: #fff; font-size: 32px; font-weight: 400; line-height: 1; box-shadow: 0 6px 18px rgba(228, 87, 46, .45), 0 0 0 5px rgba(27,28,26,.94); }
+  .mnav .mnav-new { color: rgba(242,240,232,.85); }
+  .mnav .mnav-new:active b { transform: scale(.94); }
+  .mbadge { position: absolute; top: 0; left: 50%; margin-left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font: 700 11px/18px var(--font); font-style: normal; text-align: center; }
+
+  /* Panel "Más" (hoja desde abajo) */
+  .msheet:not([hidden]) { display: block; }
+  .msheet { position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,.38); animation: fade .18s ease-out; }
+  .msheet-in { position: absolute; left: 0; right: 0; bottom: 0; background: var(--page); border-radius: 18px 18px 0 0; padding: 8px 14px calc(92px + env(safe-area-inset-bottom)); animation: up .22s ease-out; }
+  .msheet-grip { width: 38px; height: 5px; border-radius: 3px; background: #CFCDC6; margin: 2px auto 12px; }
+  .msheet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .msheet-grid button { background: #fff; border: 0; border-radius: 14px; box-shadow: var(--shadow); padding: 14px 6px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; font: 600 13px var(--font); color: var(--text); cursor: pointer; }
+  .msheet-grid button b { font-size: 24px; line-height: 1; }
+  .msheet-grid button.on { box-shadow: inset 0 0 0 2px var(--accent); }
+  .msheet-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .msheet-foot a { color: var(--blue); font-weight: 600; }
+  body.sheet-open { overflow: hidden; }
+
+  /* Campos y botones para el dedo (16 px: iOS no hace zoom al escribir) */
+  input, select, textarea { font-size: 16px; min-height: 44px; padding: 10px 12px; border-radius: 10px; }
+  input[type="checkbox"], input[type="radio"] { min-height: 0; width: 22px; height: 22px; }
+  textarea { min-height: 44px; }
+  .btn { min-height: 44px; border-radius: 10px; }
+  .btn.small { min-height: 38px; font-size: 14px; padding: 8px 12px; }
+  .chip { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -12px; padding-right: 12px; }
+  .filters::-webkit-scrollbar { display: none; }
+  .toolbar { gap: 10px; }
+  #export, #export-stock, #pf-export, #buy-export { display: none; } /* CSV: mejor desde el computador */
+  #manual-new { display: none; } /* en el celular está el "+" de la barra */
+  .toast { bottom: calc(86px + env(safe-area-inset-bottom)); border-radius: 12px; }
+  .card { border-radius: 14px; padding: 14px; }
+  .stats { gap: 10px; }
+  .stat { border-radius: 14px; padding: 12px 14px; }
+  .stat b { font-size: 22px; }
+
+  /* Pedidos */
+  .order { border-radius: 14px; }
+  .order-head select { min-width: 0; flex: 1 1 100%; }
+  .order-foot { flex-wrap: wrap; }
+  .order-foot textarea { flex: 1 1 100%; }
+  .ship-cost-row input { width: 130px; }
+
+  /* Venta manual: hoja a pantalla completa con barra fija para guardar */
+  #manual-form:not([hidden]) { position: fixed; inset: 0; z-index: 50; margin: 0; border-radius: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: calc(10px + env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left)); background: var(--page); animation: up .22s ease-out; }
+  #manual-form .mv-head { position: sticky; top: calc(-10px - env(safe-area-inset-top)); z-index: 2; background: var(--page); margin: 0 -14px 6px; padding: 8px 14px 10px; border-bottom: 1px solid var(--line); }
+  #manual-form .mv-head h2 { font-size: 20px; margin: 0; }
+  #manual-form .mv-head small { display: block; font-size: 12.5px; font-weight: 500; }
+  .mv-x { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #E6E4DD; font-size: 16px; color: var(--text); cursor: pointer; }
+  #manual-form label { font-size: 14px; }
+  #manual-form .grid3 { gap: 10px; margin-bottom: 10px; }
+  #manual-form .table-wrap { overflow: visible; }
+  #manual-form .buy-lines thead { display: none; }
+  #manual-form .buy-lines, #manual-form .buy-lines tbody { display: block; }
+  #manual-form .buy-lines tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; background: #fff; border-radius: 14px; box-shadow: var(--shadow); padding: 12px; margin-bottom: 10px; position: relative; }
+  #manual-form .buy-lines td { display: block; padding: 0; border: 0; }
+  #manual-form .buy-lines td[data-l]::before { content: attr(data-l); display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  #manual-form .buy-lines td.mv-prod { grid-column: 1 / -1; padding-right: 34px; }
+  #manual-form .buy-lines td.mv-na { display: none; }
+  #manual-form .buy-lines td.mv-del { position: absolute; top: 8px; right: 8px; }
+  #manual-form .buy-lines td.mv-del .link { font-size: 18px; padding: 4px 8px; }
+  #manual-form .buy-lines .qty-in { width: 100%; }
+  #manual-form .stepper { display: flex; width: 100%; }
+  #manual-form .stepper input { flex: 1; width: auto; min-width: 0; }
+  #manual-form .stepper button { width: 44px; font-size: 22px; }
+  #manual-form #mv-add { width: 100%; min-height: 44px; }
+  .muestra-check { font-size: 14px; }
+  #manual-form .mv-foot { position: sticky; bottom: 0; z-index: 2; margin: 16px -14px 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(240, 240, 238, .96); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
+  #manual-form .mv-foot .mv-total { margin: 0 0 8px; font-size: 15px; }
+  #manual-form .mv-foot .actions { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin: 0; }
+  #manual-form .mv-foot .btn { min-height: 50px; font-size: 16px; }
+}
+@keyframes up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .msheet, .msheet-in, #manual-form { animation: none !important; } }
+
+/* Las columnas no se estiran por tablas anchas (en el celular se desplazan dentro de su tarjeta) */
+.two-col > *, .stats > * { min-width: 0; }
+.chip { white-space: nowrap; }
