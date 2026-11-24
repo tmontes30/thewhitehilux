@@ -36,9 +36,11 @@ const NAMES = {
   'sunset': 'Sunset', 'patente': 'Patente TWH·4X4', 'rally-plate': 'Placa Rally 01', 'off-road-script': 'Off Road (manuscrita)',
   'coordenadas': 'Off Road Team', 'supply-co': 'TWH Supply Co.', 'iron-cross': 'Cruz Chopper', 'warp-text': 'Warp',
   'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'tire-blueprint': 'Plano 35"', 'round-stamp': 'Sello Off Road Supply',
-  'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst'
+  'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst',
+  'race-dept-ops': '4WD Race Dept. (oficial)', 'topo-explorers': 'Off Road Explorers (topo)', 'rally-raid': 'Rally Raid 4X4',
+  'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew'
 };
-const ids = fs.readdirSync(LOGOS).filter((f) => f.endsWith('.svg') && !f.endsWith('-claro.svg') && f !== 'logo-oficial.svg').map((f) => f.replace('.svg', ''));
+const ids = fs.readdirSync(LOGOS).filter((f) => f.endsWith('.svg') && !f.endsWith('-claro.svg') && f !== 'logo-oficial.svg' && !f.startsWith('favicon')).map((f) => f.replace('.svg', ''));
 const srcs = ids.map((id) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, id + '.svg'), 'utf8')));
 const tmp = path.join(HERE, '_medir.html');
 fs.writeFileSync(tmp, `<!doctype html><body><pre id="o"></pre><script>

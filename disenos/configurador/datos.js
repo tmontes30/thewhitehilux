@@ -11,6 +11,15 @@ window.TWH_CFG = {
    "b": 0.84
   },
   {
+   "id": "race-dept-ops",
+   "name": "4WD Race Dept. (oficial)",
+   "aspect": 1,
+   "l": 0.1,
+   "r": 0.9,
+   "t": 0.3167,
+   "b": 0.84
+  },
+  {
    "id": "aired-down",
    "name": "Aired Down",
    "aspect": 1,
@@ -74,6 +83,15 @@ window.TWH_CFG = {
    "b": 0.86
   },
   {
+   "id": "topo-explorers",
+   "name": "Off Road Explorers (topo)",
+   "aspect": 1,
+   "l": 0.1067,
+   "r": 0.8933,
+   "t": 0.1267,
+   "b": 0.9333
+  },
+  {
    "id": "road-sign",
    "name": "Off Road Recovery",
    "aspect": 1,
@@ -128,6 +146,15 @@ window.TWH_CFG = {
    "b": 0.8467
   },
   {
+   "id": "rally-raid",
+   "name": "Rally Raid 4X4",
+   "aspect": 1,
+   "l": 0.0683,
+   "r": 0.91,
+   "t": 0.16,
+   "b": 0.9267
+  },
+  {
    "id": "rally-stripes",
    "name": "Rally Team",
    "aspect": 1,
@@ -171,6 +198,15 @@ window.TWH_CFG = {
    "r": 0.8917,
    "t": 0.19,
    "b": 0.8933
+  },
+  {
+   "id": "stay-dirty",
+   "name": "Stay Dirty",
+   "aspect": 1,
+   "l": 0.1283,
+   "r": 0.9067,
+   "t": 0.22,
+   "b": 0.8733
   },
   {
    "id": "sunburst",
@@ -252,6 +288,15 @@ window.TWH_CFG = {
    "r": 0.9683,
    "t": 0.2483,
    "b": 0.76
+  },
+  {
+   "id": "winch-crew",
+   "name": "Winch Crew",
+   "aspect": 1,
+   "l": 0.12,
+   "r": 0.87,
+   "t": 0.2,
+   "b": 0.91
   }
  ],
  "seed": [
