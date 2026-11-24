@@ -25,14 +25,14 @@ if not defined ARCHIVO (
 )
 if not defined ARCHIVO (
   echo  No encontre twh-coleccion.json.
-  echo  Descargalo desde el configurador ^(boton "Descargar coleccion"^)
+  echo  Exportalo desde el configurador ^(boton "Exportar productos nuevos"^)
   echo  y dejalo en Descargas o en esta carpeta.
   goto fin
 )
 
 echo  Usando: %ARCHIVO%
 echo.
-echo  Generando fotos y actualizando la tienda. Esto tarda unos minutos...
+echo  Generando fotos y agregando los productos nuevos ^(lo que ya estaba no se toca^)...
 echo.
 node aplicar.js "%ARCHIVO%"
 if errorlevel 1 (
@@ -61,14 +61,14 @@ rem ---- Publicar en la pagina (GitHub Pages se actualiza solo en 1-2 minutos) -
 echo.
 echo  Publicando en thewhitehilux.cavedevz.com...
 pushd "%~dp0..\.."
-git add -A
+git add web/data/catalog.js web/assets/img/productos web/admin/configurador disenos/configurador/datos.js
 git diff --cached --quiet
 if not errorlevel 1 (
   echo  No habia cambios nuevos que publicar.
   popd
   goto abrir
 )
-git -c user.name="tmontes30" -c user.email="tmontes30@users.noreply.github.com" commit -q -m "Coleccion actualizada desde el configurador"
+git -c user.name="tmontes30" -c user.email="tmontes30@users.noreply.github.com" commit -q -m "Productos nuevos desde el configurador"
 git push -q
 if errorlevel 1 (
   popd

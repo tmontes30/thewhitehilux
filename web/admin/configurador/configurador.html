@@ -5,188 +5,210 @@
 <meta name="robots" content="noindex, nofollow">
 <!-- COPIA GENERADA por disenos/configurador/copiar-al-panel.js: no editar aquí -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TWH · Configurador de colección</title>
+<title>TWH · Configurador</title>
 <style>
-  :root { --bg: #EEEEEC; --card: #fff; --ink: #1B1C1A; --muted: #6B706C; --line: #E1E1DD; --accent: #E39B2D; --blue: #2968C8; --red: #C8382A; }
+  :root { --bg: #EEEEEC; --card: #fff; --ink: #1B1C1A; --muted: #6B706C; --line: #E1E1DD; --accent: #E39B2D; --accent2: #E4572E; --blue: #2968C8; --red: #C8382A; --green: #0A8A4A; --r: 14px; --sh: 0 1px 3px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.05); }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 'Segoe UI', system-ui, Arial, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; }
   button, input, select { font: inherit; color: inherit; }
-  header { background: var(--ink); color: #F2F0E8; padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; }
-  header img { height: 34px; }
-  header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  header { background: var(--ink); color: #F2F0E8; padding: 10px 20px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 20; }
+  header img { height: 32px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: .02em; }
   header .sp { flex: 1; }
-  header .help { font-size: 12.5px; color: rgba(242,240,232,.75); max-width: 520px; }
-  .btn { border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 700; cursor: pointer; background: #fff; color: var(--ink); }
-  .btn.accent { background: var(--accent); color: var(--ink); }
-  .btn.blue { background: var(--blue); color: #fff; }
+  .btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; background: #fff; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+  .btn.primary { background: var(--blue); color: #fff; }
+  .btn.accent { background: linear-gradient(135deg, #F2A541, #E4572E); color: #fff; }
   .btn.ghost { background: transparent; color: inherit; box-shadow: inset 0 0 0 1.5px currentColor; }
-  .btn.small { padding: 6px 10px; font-size: 12.5px; }
-  .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 16px; padding: 16px; align-items: start; }
-  @media (max-width: 1200px) { .layout { grid-template-columns: 340px minmax(0, 1fr); } .coll { grid-column: 1 / -1; } }
-  .panel { background: var(--card); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; }
-  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
-  .group { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
-  .group:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-  .row label { font-weight: 600; min-width: 70px; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button { border: 0; background: #fff; padding: 7px 12px; cursor: pointer; }
-  .seg button + button { border-left: 1px solid var(--line); }
-  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-  input[type=text] { width: 100%; border: 1px solid #C9C9C4; border-radius: 8px; padding: 9px 10px; }
-  .picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 236px; overflow-y: auto; padding: 2px; }
-  .tile { aspect-ratio: 1; border-radius: 6px; border: 2px solid transparent; background: #1B1C1A; cursor: pointer; padding: 3px; display: grid; place-items: center; color: #aaa; font-size: 11px; }
-  .tile img { width: 100%; height: 100%; object-fit: contain; }
+  .btn.small { padding: 7px 11px; font-size: 13px; border-radius: 8px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 60px; }
+  .hidden { display: none !important; }
+
+  /* ---------- Inicio ---------- */
+  .hero h2 { font-size: 26px; margin: 4px 0 4px; letter-spacing: -.01em; }
+  .hero p { margin: 0 0 18px; color: var(--muted); }
+  .types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .type { background: var(--card); border: 0; border-radius: var(--r); box-shadow: var(--sh); padding: 0; cursor: pointer; text-align: left; overflow: hidden; transition: transform .12s, box-shadow .12s; }
+  .type:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,0,0,.12); }
+  .type .pic { aspect-ratio: 1; background: #E6E6E2; display: grid; place-items: center; overflow: hidden; }
+  .type .pic img { width: 100%; height: 100%; object-fit: cover; }
+  .type .txt { padding: 12px 14px 14px; }
+  .type b { display: block; font-size: 18px; }
+  .type span { color: var(--muted); font-size: 13.5px; }
+  .tray { margin-top: 28px; background: var(--card); border-radius: var(--r); box-shadow: var(--sh); padding: 18px; }
+  .tray-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tray-head h3 { margin: 0; font-size: 17px; }
+  .tray-head small { color: var(--muted); font-weight: 400; }
+  .saved { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .sv { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; display: flex; flex-direction: column; }
+  .sv .thumb { aspect-ratio: 1; background: #E6E6E2; overflow: hidden; }
+  .sv .meta { padding: 9px 10px 4px; }
+  .sv .meta b { display: block; font-size: 13.5px; line-height: 1.25; }
+  .sv .meta span { font-size: 12px; color: var(--muted); }
+  .sv .acts { display: flex; gap: 4px; padding: 6px 8px 10px; margin-top: auto; }
+  .sv .acts button { flex: 1; border: 0; background: #F2F1EC; border-radius: 8px; padding: 6px 0; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .sv .acts button.del { color: var(--red); }
+  .empty { color: var(--muted); padding: 18px; text-align: center; border: 2px dashed var(--line); border-radius: 12px; }
+  .done { margin-top: 14px; background: #EAF6EE; border-radius: 12px; padding: 14px 16px; font-size: 14px; }
+  .done ol { margin: 6px 0 0; padding-left: 20px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #F2F1EC; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ---------- Editor ---------- */
+  .ed-bar { display: flex; align-items: center; gap: 10px; margin: -22px -20px 16px; padding: 12px 20px; flex-wrap: wrap; position: sticky; top: 52px; z-index: 15; background: rgba(238,238,236,.95); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  @media (max-width: 900px) { .ed-bar h2 { font-size: 18px; min-width: 0; } .ed-bar #back { display: none; } }
+  .ed-bar h2 { margin: 0; font-size: 22px; flex: 1; min-width: 200px; }
+  .ed { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .step { background: var(--card); border-radius: var(--r); box-shadow: var(--sh); padding: 16px; margin-bottom: 12px; }
+  .step-h { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .step-h .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; }
+  .step-h h3 { margin: 0; font-size: 15.5px; flex: 1; }
+  .step-h .val { font-size: 12.5px; color: var(--muted); max-width: 55%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step-h .val b { color: var(--ink); }
+  .search { width: 100%; border: 1px solid #C9C9C4; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; background: #fff; }
+  .picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; padding: 2px; }
+  .tile { border: 2px solid transparent; border-radius: 10px; background: #fff; cursor: pointer; padding: 0; overflow: hidden; display: flex; flex-direction: column; text-align: center; box-shadow: inset 0 0 0 1px var(--line); }
+  .tile .lg { aspect-ratio: 1; background: #1B1C1A; display: grid; place-items: center; padding: 4px; }
+  .tile .lg img { width: 100%; height: 100%; object-fit: contain; }
+  .tile .lg.none { background: #F2F1EC; color: var(--muted); font-size: 22px; }
+  .tile small { font-size: 10.5px; line-height: 1.2; padding: 4px 3px 5px; color: var(--muted); min-height: 30px; display: flex; align-items: center; justify-content: center; }
   .tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-  .tile:hover { border-color: #888; }
-  .picked { font-size: 12.5px; color: var(--muted); margin: -4px 0 8px; }
-  .picked b { color: var(--ink); }
-  input[type=range] { flex: 1; }
-  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-  .et-view .et-stage { aspect-ratio: 3 / 4; display: grid; place-items: center; padding: 18px; }
-  .et-view .et-stage svg { width: 78%; height: auto; }
-  .et-check { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
-  .view { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .view .cap { padding: 8px 12px; font-size: 12.5px; color: var(--muted); }
+  .tile[aria-pressed="true"] small { color: var(--ink); font-weight: 700; }
+  .opt { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .opt > label { font-weight: 600; min-width: 74px; font-size: 14px; }
+  .seg { display: inline-flex; background: #F2F1EC; border-radius: 10px; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 7px 13px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  input[type=range] { flex: 1; min-width: 120px; }
+  .colors { display: flex; gap: 10px; }
+  .color { display: flex; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 12px; padding: 8px 14px 8px 10px; cursor: pointer; background: #fff; font-weight: 600; }
+  .color i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); }
+  .color[aria-pressed="true"] { border-color: var(--accent); background: #FFF8EC; }
+  .name-in { width: 100%; border: 1px solid #C9C9C4; border-radius: 10px; padding: 10px 12px; font-size: 15px; font-weight: 600; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+  .check input { width: 18px; height: 18px; }
+  .preview { position: sticky; top: 70px; }
+  .pv-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pv-head b { font-size: 18px; }
+  .pv-head span { color: var(--muted); }
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .view { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--sh); }
+  .view .cap { padding: 7px 12px; font-size: 12.5px; color: var(--muted); }
   .stage { position: relative; width: 100%; }
   .stage > img.base { width: 100%; display: block; }
   .stage .lg { position: absolute; pointer-events: none; }
   .stage .patch { position: absolute; background: #E9E4D6; box-shadow: 0 1px 3px rgba(0,0,0,.4); outline: 1px dashed rgba(60,55,45,.4); outline-offset: -3px; }
-  .preview-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  .preview-head h2 { margin: 0; font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--ink); }
-  .preview-head .price { font-size: 18px; color: var(--muted); }
-  .coll .item { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
-  .coll .item:hover { background: #F5F5F2; }
-  .coll .item.sel { border-color: var(--accent); background: #FFF8EC; }
-  .coll .thumb { width: 56px; height: 56px; border-radius: 6px; overflow: hidden; background: #ddd; }
-  .coll .thumb .stage { width: 56px; }
-  .coll .name { font-weight: 600; font-size: 13px; }
-  .coll .sub { font-size: 12px; color: var(--muted); }
-  .coll .list { display: grid; gap: 2px; max-height: 58vh; overflow-y: auto; margin: 8px 0; }
-  .coll .cat { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 10px 0 2px 8px; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
-  .ok { color: #0A8A4A; font-weight: 600; }
-  .hidden { display: none !important; }
+  .et-stage { aspect-ratio: 3 / 4; display: grid; place-items: center; padding: 18px; }
+  .et-stage svg { width: 78%; height: auto; }
+  .sticker-bg { aspect-ratio: 1; background: repeating-linear-gradient(45deg, #DADAD5 0 12px, #E3E3DF 12px 24px); display: grid; place-items: center; }
+  .sticker { width: 64%; aspect-ratio: 1; background: #fff; border-radius: 18%; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.22); padding: 7%; }
+  .sticker img { width: 100%; height: 100%; object-fit: contain; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 12px; font-weight: 600; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .toast.err { background: var(--red); }
+
+  @media (max-width: 900px) {
+    .types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ed { grid-template-columns: 1fr; }
+    .preview { position: static; order: -1; }
+    .views { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .picker { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    header .help { display: none; }
+  }
 </style>
 </head>
 <body>
 <header>
   <img src="../../assets/logos/logo-oficial.svg" alt="The White Hilux">
-  <h1>Configurador de colección</h1>
+  <h1>Configurador</h1>
   <span class="sp"></span>
-  <span class="help">Arma cada prenda, agrégala a tu colección y al final descarga el archivo. Lo que ves aquí es exactamente cómo saldrán las fotos de la tienda.</span>
-  <button class="btn accent" id="dl">Descargar colección</button>
+  <span class="help" style="font-size:12.5px;color:rgba(242,240,232,.7)">Crea productos nuevos. No modifica nada de lo que ya está en la tienda.</span>
 </header>
 
-<div class="layout">
-  <!-- Editor -->
-  <section class="panel" id="editor">
-    <div class="group">
-      <h2>Producto</h2>
-      <div class="row"><div class="seg" id="tipo">
-        <button data-v="polera">Polera</button><button data-v="poleron">Polerón</button><button data-v="jockey">Jockey</button>
-      </div></div>
-      <div class="row"><input type="text" id="nombre" placeholder="Nombre del producto"></div>
-      <div class="row" id="colores-row"><label>Colores</label>
-        <label><input type="checkbox" id="c-negro"> Negro</label>
-        <label><input type="checkbox" id="c-blanco"> Blanco</label>
+<!-- ============ INICIO ============ -->
+<main class="wrap" id="v-inicio">
+  <section class="hero">
+    <h2>¿Qué quieres crear?</h2>
+    <p>Elige el tipo de producto. Lo armas, lo guardas en tu sesión y puedes crear todos los que quieras antes de exportar.</p>
+  </section>
+  <div class="types" id="types"></div>
+
+  <section class="tray">
+    <div class="tray-head">
+      <h3>Tu sesión <small id="tray-count"></small></h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn small ghost" id="clear" style="color:var(--red)">Vaciar sesión</button>
+        <button class="btn accent" id="export">Exportar productos nuevos</button>
       </div>
     </div>
-
-    <div class="group" id="g-frente">
-      <h2>Frente</h2>
-      <p class="picked" id="frente-name"></p>
-      <div class="picker" id="pick-frente"></div>
-      <div class="row" style="margin-top:10px"><label>Posición</label><div class="seg" id="f-pos"><button data-v="pecho">Pecho izq.</button><button data-v="centro">Centro</button></div></div>
-      <div class="row"><label>Tamaño</label><div class="seg" id="f-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
-    </div>
-
-    <div class="group" id="g-espalda">
-      <h2>Espalda</h2>
-      <p class="picked" id="espalda-name"></p>
-      <div class="picker" id="pick-espalda"></div>
-      <div class="row" style="margin-top:10px"><label>Tamaño</label><div class="seg" id="e-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
-      <div class="row"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1"><span id="e-alto-v"></span></div>
-    </div>
-
-    <div class="group" id="g-etiqueta">
-      <h2>Etiqueta en el cuello</h2>
-      <div class="row"><label class="et-check"><input type="checkbox" id="et-on"> Estampar etiqueta (logo + talla)</label></div>
-      <p class="picked" id="et-info"></p>
-      <div class="row"><label>Ver talla</label><div class="seg" id="et-talla"><button data-v="S">S</button><button data-v="M">M</button><button data-v="L">L</button><button data-v="XL">XL</button><button data-v="XXL">XXL</button></div></div>
-    </div>
-
-    <div class="group" id="g-jockey">
-      <h2>Logo del jockey</h2>
-      <p class="picked" id="jockey-name"></p>
-      <div class="picker" id="pick-jockey"></div>
-      <div class="row" style="margin-top:10px"><label>Estilo</label><div class="seg" id="j-est"><button data-v="bordado">Bordado</button><button data-v="parche">Parche tejido</button></div></div>
-      <div class="row"><label>Tamaño</label><div class="seg" id="j-tam"><button data-v="s">Chico</button><button data-v="m">Mediano</button><button data-v="l">Grande</button></div></div>
-    </div>
+    <div id="saved"></div>
+    <div class="done hidden" id="done"></div>
   </section>
+</main>
 
-  <!-- Vista previa -->
-  <section>
-    <div class="preview-head">
-      <div><h2 id="pv-name"></h2><span class="price" id="pv-price"></span></div>
-      <div class="seg" id="pv-color"></div>
-    </div>
-    <div class="views" id="views"></div>
-  </section>
+<!-- ============ EDITOR ============ -->
+<main class="wrap hidden" id="v-editor">
+  <div class="ed-bar">
+    <button class="btn small ghost" id="back">← Volver</button>
+    <h2 id="ed-title"></h2>
+    <button class="btn ghost" id="cancel">Cancelar</button>
+    <button class="btn primary" id="save">Guardar</button>
+  </div>
+  <div class="ed">
+    <div id="steps"></div>
+    <aside class="preview">
+      <div class="pv-head"><div><b id="pv-name"></b> <span id="pv-price"></span></div><div class="seg" id="pv-color"></div></div>
+      <div class="views" id="views"></div>
+    </aside>
+  </div>
+</main>
 
-  <!-- Colección -->
-  <aside class="panel coll">
-    <h2>Mi colección (<span id="count">0</span>)</h2>
-    <div class="actions">
-      <button class="btn blue small" data-new="polera">+ Polera</button>
-      <button class="btn blue small" data-new="poleron">+ Polerón</button>
-      <button class="btn blue small" data-new="jockey">+ Jockey</button>
-    </div>
-    <div class="list" id="list"></div>
-    <div class="actions">
-      <button class="btn small ghost" id="dup">Duplicar</button>
-      <button class="btn small ghost" id="del" style="color:var(--red)">Eliminar</button>
-      <button class="btn small ghost" id="load">Cargar archivo</button>
-      <button class="btn small ghost" id="reset">Volver a la tienda actual</button>
-      <input type="file" id="file" accept=".json" class="hidden">
-    </div>
-    <p class="note" id="msg">Tus cambios se guardan solos en este navegador.</p>
-  </aside>
-</div>
+<div class="toast hidden" id="toast"></div>
 
-<script src="posiciones.js?v=mwuphrth"></script>
-<script src="datos.js?v=mwuphrth"></script>
-<script src="etiqueta.js?v=mwuphrth"></script>
+<script src="posiciones.js?v=mwupu2kf"></script>
+<script src="datos.js?v=mwupu2kf"></script>
+<script src="etiqueta.js?v=mwupu2kf"></script>
 <script>
 (function () {
-  var P = TWHPos, CFG = TWH_CFG, KEY = 'twh-cfg-coleccion';
+  // Configurador de productos NUEVOS. Parte vacío cada vez; lo guardado queda en la sesión de esta pestaña
+  // (sessionStorage) y se exporta como "agregar": aplicar.js lo suma a la tienda sin tocar lo que ya existe.
+  var P = TWHPos, CFG = TWH_CFG, E = window.TWHEtiqueta, KEY = 'twh-cfg-sesion';
   var LOGOS = {}; CFG.logos.forEach(function (l) { LOGOS[l.id] = l; });
   var LOGO_DIR = '../../assets/logos/', BASE_DIR = 'bases/';
-  var TIPOS = { polera: 'Polera', poleron: 'Polerón', jockey: 'Jockey' };
+  var PRICES = { polera: P.PRICES.polera, poleron: P.PRICES.poleron, jockey: P.PRICES.jockey, sticker: 2990 };
+  var TIPOS = { polera: 'Polera', poleron: 'Polerón', jockey: 'Jockey', sticker: 'Sticker' };
   var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var clp = function (n) { return '$' + Number(n).toLocaleString('es-CL'); };
 
-  function load() { try { var v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v) && v.length) return v; } catch (e) {} return JSON.parse(JSON.stringify(CFG.seed)); }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(coll)); } catch (e) {} }
-  var coll = load(), cur = 0, color = 'negro', etTalla = 'M';
-  var E = window.TWHEtiqueta;
-  // Etiqueta: poleras y polerones la llevan salvo que se desmarque (las colecciones antiguas no tenían el dato)
-  function conEtiqueta(d) { return d.tipo !== 'jockey' && d.etiqueta !== false; }
+  var sesion = [];
+  try { sesion = JSON.parse(sessionStorage.getItem(KEY) || '[]') || []; } catch (e) { sesion = []; }
+  function persist() { try { sessionStorage.setItem(KEY, JSON.stringify(sesion)); } catch (e) {} }
+  var draft = null, editIdx = null, original = '', color = 'negro', etTalla = 'M', search = {};
 
+  function toast(t, err) { var el = $('toast'); el.textContent = t; el.className = 'toast' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { el.className = 'toast hidden'; }, 2600); }
   function nameOf(id) { return id && LOGOS[id] ? LOGOS[id].name : ''; }
+  function cap(s) { return s.replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }); }
   function autoName(d) {
-    if (d.tipo === 'jockey') return 'Jockey 5 Paneles ' + nameOf(d.jockey && d.jockey.logo) + (d.jockey && d.jockey.estilo === 'parche' ? ' Parche Tejido' : ' Bordado');
-    var main = d.espalda ? nameOf(d.espalda.logo) : nameOf(d.frente && d.frente.logo);
-    main = main.replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); });
+    if (d.tipo === 'sticker') return d.logo ? 'Sticker ' + nameOf(d.logo) : 'Sticker';
+    if (d.tipo === 'jockey') return d.jockey.logo ? 'Jockey 5 Paneles ' + nameOf(d.jockey.logo) + (d.jockey.estilo === 'parche' ? ' Parche Tejido' : ' Bordado') : 'Jockey 5 Paneles';
+    var main = cap(d.espalda ? nameOf(d.espalda.logo) : nameOf(d.frente && d.frente.logo));
     if (d.tipo === 'poleron') return 'Polerón Canguro ' + main;
-    return (d.espalda ? 'Polera ' : 'Polera Básica ') + main;
+    return ((d.espalda ? 'Polera ' : 'Polera Básica ') + main).trim();
   }
   function blank(tipo) {
-    var d = { id: tipo + '-' + Date.now().toString(36), tipo: tipo, colores: P.COLORS[tipo].slice() };
-    if (tipo === 'jockey') d.jockey = { logo: 'logo-header', estilo: 'parche', tam: 'm' };
-    else { d.frente = { logo: 'logo-header', pos: 'pecho', tam: 'm' }; d.espalda = tipo === 'polera' ? { logo: 'race-dept', tam: 'm', alto: 0 } : null; d.etiqueta = true; }
-    d.nombre = autoName(d);
+    var d = { id: tipo + '-' + Date.now().toString(36), tipo: tipo };
+    if (tipo === 'sticker') d.logo = null;
+    else if (tipo === 'jockey') { d.colores = ['negro']; d.jockey = { logo: null, estilo: 'parche', tam: 'm' }; }
+    else { d.colores = P.COLORS[tipo].slice(); d.frente = null; d.espalda = null; d.etiqueta = true; }
+    d.nombre = autoName(d); d.auto = true;
     return d;
+  }
+  function falta(d) {
+    if (d.tipo === 'sticker') return d.logo ? '' : 'Elige el logo del sticker.';
+    if (d.tipo === 'jockey') return d.jockey.logo ? '' : 'Elige el logo del jockey.';
+    if (!d.frente && !d.espalda) return 'Elige al menos un logo (frente o espalda).';
+    if (!d.nombre.trim()) return 'Ponle un nombre.';
+    return '';
   }
 
   // ---------- Dibujo ----------
@@ -204,125 +226,177 @@
     });
     return html + '</div>';
   }
-  var VIEW_LABEL = { frente: 'Frente', 'frente-2': 'Frente (otra pose)', espalda: 'Espalda' };
-
-  function picker(el, selected, allowNone, onPick) {
-    var h = allowNone ? '<button class="tile" data-id="" aria-pressed="' + (!selected) + '" title="Sin logo">Ninguno</button>' : '';
-    CFG.logos.forEach(function (l) { h += '<button class="tile" data-id="' + l.id + '" title="' + l.name + '" aria-pressed="' + (l.id === selected) + '"><img src="' + LOGO_DIR + l.id + '.svg" alt="' + l.name + '" loading="lazy"></button>'; });
-    el.innerHTML = h;
-    el.onclick = function (e) { var b = e.target.closest('.tile'); if (b) onPick(b.getAttribute('data-id') || null); };
-  }
-  function seg(el, value, onPick) {
-    el.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === value ? 'true' : 'false'); });
-    el.onclick = function (e) { var b = e.target.closest('button'); if (b) onPick(b.getAttribute('data-v')); };
+  function stickerHtml(logo) { return '<div class="sticker-bg"><div class="sticker">' + (logo ? '<img src="' + LOGO_DIR + logo + '-claro.svg" alt="">' : '') + '</div></div>'; }
+  function thumb(d) {
+    if (d.tipo === 'sticker') return stickerHtml(d.logo);
+    var c = (d.colores && d.colores[0]) || 'negro';
+    return stage(d, P.viewsFor(d, c)[0]);
   }
 
-  function update(fn) { var d = coll[cur]; var auto = d.nombre === autoName(d); fn(d); if (auto || !d.nombre) d.nombre = autoName(d); save(); render(); }
-
-  function render() {
-    if (!coll.length) coll.push(blank('polera'));
-    if (cur >= coll.length) cur = coll.length - 1;
-    var d = coll[cur];
-    if (d.colores.indexOf(color) < 0) color = d.colores[0] || 'negro';
-
-    seg($('tipo'), d.tipo, function (t) { if (t === d.tipo) return; var n = blank(t); n.id = d.id; coll[cur] = n; save(); render(); });
-    $('nombre').value = d.nombre;
-    $('colores-row').classList.toggle('hidden', d.tipo !== 'polera');
-    $('c-negro').checked = d.colores.indexOf('negro') >= 0; $('c-blanco').checked = d.colores.indexOf('blanco') >= 0;
-
-    var ropa = d.tipo !== 'jockey';
-    $('g-frente').classList.toggle('hidden', !ropa); $('g-espalda').classList.toggle('hidden', !ropa); $('g-jockey').classList.toggle('hidden', ropa);
-    $('g-etiqueta').classList.toggle('hidden', !ropa);
-    if (ropa) {
-      $('et-on').checked = conEtiqueta(d);
-      $('et-info').innerHTML = conEtiqueta(d)
-        ? 'Se elige sola según el color: <b>negra → etiqueta clara</b> · <b>blanca → etiqueta oscura</b>.'
-        : 'Sin etiqueta estampada.';
-      seg($('et-talla'), etTalla, function (v) { etTalla = v; render(); });
-      $('et-talla').parentNode.classList.toggle('hidden', !conEtiqueta(d));
-    }
-    if (ropa) {
-      $('frente-name').innerHTML = 'Elegido: <b>' + (d.frente ? nameOf(d.frente.logo) : 'sin logo') + '</b>';
-      $('espalda-name').innerHTML = 'Elegido: <b>' + (d.espalda ? nameOf(d.espalda.logo) : 'espalda lisa') + '</b>';
-      picker($('pick-frente'), d.frente && d.frente.logo, true, function (id) { update(function (x) { x.frente = id ? Object.assign({ pos: 'pecho', tam: 'm' }, x.frente || {}, { logo: id }) : null; }); });
-      picker($('pick-espalda'), d.espalda && d.espalda.logo, true, function (id) { update(function (x) { x.espalda = id ? Object.assign({ tam: 'm', alto: 0 }, x.espalda || {}, { logo: id }) : null; }); });
-      seg($('f-pos'), d.frente && d.frente.pos, function (v) { update(function (x) { if (x.frente) x.frente.pos = v; }); });
-      seg($('f-tam'), d.frente && d.frente.tam, function (v) { update(function (x) { if (x.frente) x.frente.tam = v; }); });
-      seg($('e-tam'), d.espalda && d.espalda.tam, function (v) { update(function (x) { if (x.espalda) x.espalda.tam = v; }); });
-      $('e-alto').value = d.espalda ? d.espalda.alto || 0 : 0;
-      $('e-alto-v').textContent = d.espalda ? ((d.espalda.alto > 0 ? 'más abajo ' : d.espalda.alto < 0 ? 'más arriba ' : 'normal ') + (d.espalda.alto ? Math.abs(d.espalda.alto) : '')) : '';
-    } else {
-      $('jockey-name').innerHTML = 'Elegido: <b>' + nameOf(d.jockey.logo) + '</b>';
-      picker($('pick-jockey'), d.jockey.logo, false, function (id) { update(function (x) { x.jockey.logo = id; }); });
-      seg($('j-est'), d.jockey.estilo, function (v) { update(function (x) { x.jockey.estilo = v; }); });
-      seg($('j-tam'), d.jockey.tam, function (v) { update(function (x) { x.jockey.tam = v; }); });
-    }
-
-    // vista previa
-    $('pv-name').textContent = d.nombre;
-    $('pv-price').textContent = '$' + P.PRICES[d.tipo].toLocaleString('es-CL');
-    $('pv-color').innerHTML = d.colores.map(function (c) { return '<button data-v="' + c + '" aria-pressed="' + (c === color) + '">' + (c === 'negro' ? 'Negro' : 'Blanco') + '</button>'; }).join('');
-    $('pv-color').onclick = function (e) { var b = e.target.closest('button'); if (b) { color = b.getAttribute('data-v'); render(); } };
-    $('views').innerHTML = P.viewsFor(d, color).map(function (v) {
-      var k = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
-      return '<div class="view">' + stage(d, v) + '<div class="cap">' + (VIEW_LABEL[k] || 'Jockey') + '</div></div>';
-    }).join('') + (conEtiqueta(d) && E ? (function () {
-      // etiqueta del cuello sobre el color de la prenda que se está mirando
-      var ver = E.versionPara(color);
-      return '<div class="view et-view"><div class="et-stage" style="background:' + E.VERSIONES[ver].fondo + '">' + E.svg(etTalla, ver, { width: '100%', height: 'auto' }) + '</div>' +
-        '<div class="cap">Etiqueta cuello · ' + (ver === 'clara' ? 'clara (prenda negra)' : 'oscura (prenda blanca)') + ' · talla ' + etTalla + '</div></div>';
-    })() : '');
-
-    // colección
-    $('count').textContent = coll.length;
-    var html = '';
-    ['polera', 'poleron', 'jockey'].forEach(function (t) {
-      var items = coll.map(function (x, i) { return [x, i]; }).filter(function (p) { return p[0].tipo === t; });
-      if (!items.length) return;
-      html += '<div class="cat">' + TIPOS[t] + 's (' + items.length + ')</div>';
-      items.forEach(function (p) {
-        var x = p[0], i = p[1], v = P.viewsFor(x, x.colores[0] || 'negro')[0];
-        var sub = x.tipo === 'jockey' ? (x.jockey.estilo === 'parche' ? 'Parche' : 'Bordado') : ((x.frente ? 'Frente: ' + nameOf(x.frente.logo) : 'Sin frente') + ' · ' + (x.espalda ? 'Espalda: ' + nameOf(x.espalda.logo) : 'Espalda lisa') + (conEtiqueta(x) ? ' · con etiqueta' : ' · sin etiqueta'));
-        html += '<div class="item' + (i === cur ? ' sel' : '') + '" data-i="' + i + '"><div class="thumb">' + stage(x, v) + '</div><div><div class="name">' + x.nombre + '</div><div class="sub">' + sub + (x.tipo === 'polera' ? ' · ' + x.colores.join(' y ') : '') + '</div></div></div>';
-      });
-    });
-    $('list').innerHTML = html;
+  // ---------- Inicio ----------
+  function renderInicio() {
+    $('v-inicio').classList.remove('hidden'); $('v-editor').classList.add('hidden');
+    var pics = { polera: '<img src="' + BASE_DIR + 'polera-negro-frente.png" alt="">', poleron: '<img src="' + BASE_DIR + 'poleron-negro-frente.png" alt="">', jockey: '<img src="' + BASE_DIR + 'jockey-negro.png" alt="">', sticker: stickerHtml('race-dept-ops') };
+    var sub = { polera: 'Negro y/o blanco · logo pecho y espalda', poleron: 'Negro · logo pecho y espalda', jockey: '5 paneles · bordado o parche', sticker: 'Vinilo 10 cm · un logo' };
+    $('types').innerHTML = ['polera', 'poleron', 'jockey', 'sticker'].map(function (t) {
+      return '<button class="type" data-t="' + t + '"><div class="pic">' + pics[t] + '</div><div class="txt"><b>' + TIPOS[t] + '</b><span>' + clp(PRICES[t]) + ' · ' + sub[t] + '</span></div></button>';
+    }).join('');
+    $('tray-count').textContent = sesion.length ? '(' + sesion.length + (sesion.length === 1 ? ' producto' : ' productos') + ')' : '';
+    $('saved').innerHTML = sesion.length ? '<div class="saved">' + sesion.map(function (d, i) {
+      return '<div class="sv"><div class="thumb">' + thumb(d) + '</div><div class="meta"><span class="pill">' + TIPOS[d.tipo] + '</span><b>' + esc(d.nombre) + '</b><span>' + clp(PRICES[d.tipo]) + (d.colores && d.tipo === 'polera' ? ' · ' + d.colores.join(' y ') : '') + '</span></div>' +
+        '<div class="acts"><button data-act="edit" data-i="' + i + '">Editar</button><button data-act="dup" data-i="' + i + '">Duplicar</button><button class="del" data-act="del" data-i="' + i + '">Borrar</button></div></div>';
+    }).join('') + '</div>'
+      : '<div class="empty">Todavía no has guardado nada en esta sesión. Elige arriba qué quieres crear.</div>';
+    $('export').disabled = !sesion.length;
+    $('clear').classList.toggle('hidden', !sesion.length);
+    window.scrollTo(0, 0);
   }
-
-  // ---------- Eventos ----------
-  $('list').onclick = function (e) { var it = e.target.closest('.item'); if (it) { cur = +it.getAttribute('data-i'); render(); } };
-  $('nombre').oninput = function () { coll[cur].nombre = this.value; save(); $('pv-name').textContent = this.value; };
-  $('nombre').onchange = function () { render(); };
-  ['negro', 'blanco'].forEach(function (c) {
-    $('c-' + c).onchange = function () {
-      var d = coll[cur], s = d.colores.filter(function (x) { return x !== c; });
-      if (this.checked) s.push(c);
-      if (!s.length) { this.checked = true; return; }
-      d.colores = ['negro', 'blanco'].filter(function (x) { return s.indexOf(x) >= 0; }); save(); render();
-    };
-  });
-  $('et-on').onchange = function () { var v = this.checked; update(function (x) { x.etiqueta = v; }); };
-  $('e-alto').oninput = function () { var v = +this.value; update(function (x) { if (x.espalda) x.espalda.alto = v; }); };
-  document.querySelectorAll('[data-new]').forEach(function (b) { b.onclick = function () { coll.push(blank(b.getAttribute('data-new'))); cur = coll.length - 1; save(); render(); }; });
-  $('dup').onclick = function () { var c = JSON.parse(JSON.stringify(coll[cur])); c.id = c.tipo + '-' + Date.now().toString(36); c.nombre += ' (copia)'; coll.splice(cur + 1, 0, c); cur++; save(); render(); };
-  $('del').onclick = function () { coll.splice(cur, 1); save(); render(); };
-  $('reset').onclick = function () { coll = JSON.parse(JSON.stringify(CFG.seed)); cur = 0; save(); render(); msg('Colección reiniciada con los productos de la tienda actual.'); };
-  $('load').onclick = function () { $('file').click(); };
-  $('file').onchange = function () {
-    var f = this.files[0]; if (!f) return;
-    var r = new FileReader();
-    r.onload = function () { try { var v = JSON.parse(r.result); coll = v.productos || v; cur = 0; save(); render(); msg('Archivo cargado.'); } catch (e) { msg('Ese archivo no es una colección válida.'); } };
-    r.readAsText(f);
+  $('types').onclick = function (e) { var b = e.target.closest('.type'); if (b) abrir(blank(b.getAttribute('data-t')), null); };
+  $('saved').onclick = function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b) return;
+    var i = +b.getAttribute('data-i'), act = b.getAttribute('data-act');
+    if (act === 'edit') abrir(JSON.parse(JSON.stringify(sesion[i])), i);
+    if (act === 'dup') { var c = JSON.parse(JSON.stringify(sesion[i])); c.id = c.tipo + '-' + Date.now().toString(36); c.nombre += ' (copia)'; c.auto = false; sesion.splice(i + 1, 0, c); persist(); renderInicio(); toast('Duplicado'); }
+    if (act === 'del' && confirm('¿Borrar "' + sesion[i].nombre + '" de tu sesión?')) { sesion.splice(i, 1); persist(); renderInicio(); toast('Borrado'); }
   };
-  $('dl').onclick = function () {
-    var data = { generado: new Date().toISOString(), productos: coll };
+  $('clear').onclick = function () { if (confirm('¿Vaciar la sesión? Se borran los ' + sesion.length + ' productos que creaste (los de la tienda no se tocan).')) { sesion = []; persist(); $('done').classList.add('hidden'); renderInicio(); } };
+  $('export').onclick = function () {
+    if (!sesion.length) return;
+    var data = { modo: 'agregar', generado: new Date().toISOString(), productos: sesion.map(function (d) { var c = JSON.parse(JSON.stringify(d)); delete c.auto; return c; }) };
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
-    a.download = 'twh-coleccion.json'; document.body.appendChild(a); a.click(); a.remove();
-    msg('<span class="ok">Descargado twh-coleccion.json.</span> Ahora haz doble clic en <b>APLICAR-COLECCION.bat</b> (carpeta disenos/configurador): toma el archivo de Descargas, genera las fotos y publica la tienda.');
+    a.download = 'twh-coleccion-nuevos-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    $('done').classList.remove('hidden');
+    $('done').innerHTML = '<b>✓ Exportado: ' + sesion.length + (sesion.length === 1 ? ' producto nuevo' : ' productos nuevos') + '</b> (quedó en Descargas).' +
+      '<ol><li>En el computador, haz doble clic en <b>APLICAR-COLECCION.bat</b> (carpeta disenos/configurador).</li>' +
+      '<li>Genera las fotos, <b>agrega</b> estos productos a la tienda como <b>Próximamente</b> y publica. Lo que ya estaba no se toca.</li>' +
+      '<li>En el panel → Productos, cárgales stock y pásalos a <b>Disponible</b> cuando quieras venderlos.</li></ol>';
   };
-  function msg(t) { $('msg').innerHTML = t; }
-  render();
+
+  // ---------- Editor ----------
+  function abrir(d, idx) {
+    draft = d; editIdx = idx; original = JSON.stringify(d); search = {};
+    color = (d.colores && d.colores[0]) || 'negro';
+    $('v-inicio').classList.add('hidden'); $('v-editor').classList.remove('hidden');
+    renderEditor(); window.scrollTo(0, 0);
+  }
+  function cerrar() { draft = null; renderInicio(); }
+  function salir() { if (JSON.stringify(draft) !== original && !confirm('¿Salir sin guardar? Se pierden los cambios de este producto.')) return; cerrar(); }
+  $('back').onclick = salir; $('cancel').onclick = salir;
+  $('save').onclick = function () {
+    var f = falta(draft); if (f) return toast(f, true);
+    if (editIdx == null) sesion.push(draft); else sesion[editIdx] = draft;
+    persist(); var n = draft.nombre; cerrar(); toast('Guardado en tu sesión: ' + n);
+  };
+
+  function upd(fn) { fn(draft); if (draft.auto) draft.nombre = autoName(draft); renderEditor(); }
+  function seg(id, opts, val) { return '<div class="seg" data-seg="' + id + '">' + opts.map(function (o) { return '<button data-v="' + o[0] + '" aria-pressed="' + (o[0] === val) + '">' + o[1] + '</button>'; }).join('') + '</div>'; }
+  function picker(key, selected, allowNone) {
+    var q = (search[key] || '').toLowerCase();
+    var list = CFG.logos.filter(function (l) { return !q || l.name.toLowerCase().indexOf(q) >= 0; });
+    return '<input class="search" data-search="' + key + '" placeholder="Buscar logo (' + CFG.logos.length + ')…" value="' + esc(search[key] || '') + '">' +
+      '<div class="picker" data-pick="' + key + '">' +
+      (allowNone ? '<button class="tile" data-id="" aria-pressed="' + (!selected) + '"><div class="lg none">∅</div><small>Sin logo</small></button>' : '') +
+      list.map(function (l) { return '<button class="tile" data-id="' + l.id + '" aria-pressed="' + (l.id === selected) + '" title="' + esc(l.name) + '"><div class="lg"><img src="' + LOGO_DIR + l.id + '.svg" alt="" loading="lazy"></div><small>' + esc(l.name) + '</small></button>'; }).join('') +
+      (list.length ? '' : '<p class="hint">Ningún logo con ese nombre.</p>') + '</div>';
+  }
+  function step(n, title, val, body) { return '<section class="step"><div class="step-h"><span class="n">' + n + '</span><h3>' + title + '</h3><span class="val">' + val + '</span></div>' + body + '</section>'; }
+  var TAM = [['s', 'Chico'], ['m', 'Mediano'], ['l', 'Grande']];
+
+  function renderEditor() {
+    var d = draft, n = 1, h = '';
+    $('ed-title').textContent = (editIdx == null ? (d.tipo === 'polera' ? 'Nueva ' : 'Nuevo ') : 'Editar ') + TIPOS[d.tipo].toLowerCase();
+    if (d.tipo === 'polera' || d.tipo === 'poleron') {
+      h += step(n++, 'Logo del frente', d.frente ? '<b>' + esc(nameOf(d.frente.logo)) + '</b>' : 'sin logo',
+        picker('frente', d.frente && d.frente.logo, true) +
+        (d.frente ? '<div class="opt"><label>Posición</label>' + seg('f-pos', [['pecho', 'Pecho (corazón)'], ['centro', 'Centro']], d.frente.pos) + '</div>' +
+          '<div class="opt"><label>Tamaño</label>' + seg('f-tam', TAM, d.frente.tam) + '</div>' : ''));
+      h += step(n++, 'Logo de la espalda', d.espalda ? '<b>' + esc(nameOf(d.espalda.logo)) + '</b>' : 'espalda lisa',
+        picker('espalda', d.espalda && d.espalda.logo, true) +
+        (d.espalda ? '<div class="opt"><label>Tamaño</label>' + seg('e-tam', TAM, d.espalda.tam) + '</div>' +
+          '<div class="opt"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1" value="' + (d.espalda.alto || 0) + '"><span class="hint" style="margin:0">' + (d.espalda.alto > 0 ? 'más abajo' : d.espalda.alto < 0 ? 'más arriba' : 'normal') + '</span></div>' : ''));
+      if (d.tipo === 'polera') h += step(n++, 'Colores', '<b>' + d.colores.join(' y ') + '</b>',
+        '<div class="colors">' + [['negro', 'Negro', '#1B1C1A'], ['blanco', 'Blanco', '#F4F3EF']].map(function (c) { return '<button class="color" data-color="' + c[0] + '" aria-pressed="' + (d.colores.indexOf(c[0]) >= 0) + '"><i style="background:' + c[2] + '"></i>' + c[1] + '</button>'; }).join('') + '</div><p class="hint">Puedes ofrecerla en uno o en los dos colores.</p>');
+      h += step(n++, 'Etiqueta en el cuello', d.etiqueta !== false ? '<b>sí</b>' : 'no',
+        '<label class="check"><input type="checkbox" id="et-on"' + (d.etiqueta !== false ? ' checked' : '') + '> Estampar etiqueta (logo + talla)</label><p class="hint">Se elige sola según el color: negra → etiqueta clara · blanca → etiqueta oscura.</p>');
+    } else if (d.tipo === 'jockey') {
+      h += step(n++, 'Logo del jockey', d.jockey.logo ? '<b>' + esc(nameOf(d.jockey.logo)) + '</b>' : 'elige uno', picker('jockey', d.jockey.logo, false));
+      h += step(n++, 'Estilo y tamaño', '<b>' + (d.jockey.estilo === 'parche' ? 'Parche tejido' : 'Bordado') + '</b>',
+        '<div class="opt" style="margin-top:0"><label>Estilo</label>' + seg('j-est', [['parche', 'Parche tejido'], ['bordado', 'Bordado']], d.jockey.estilo) + '</div>' +
+        '<div class="opt"><label>Tamaño</label>' + seg('j-tam', TAM, d.jockey.tam) + '</div>');
+    } else {
+      h += step(n++, 'Logo del sticker', d.logo ? '<b>' + esc(nameOf(d.logo)) + '</b>' : 'elige uno', picker('sticker', d.logo, false) + '<p class="hint">Se suma como diseño nuevo del sticker (el cliente lo elige en la ficha del sticker).</p>');
+    }
+    h += step(n++, 'Nombre', '', '<input class="name-in" id="nombre" value="' + esc(d.nombre) + '" maxlength="80"><p class="hint">' + (d.auto ? 'Se arma solo con los logos. Puedes cambiarlo.' : 'Nombre personalizado.') + '</p>');
+    $('steps').innerHTML = h;
+    renderPreview();
+  }
+  function renderPreview() {
+    var d = draft;
+    $('pv-name').textContent = d.nombre;
+    $('pv-price').textContent = clp(PRICES[d.tipo]);
+    if (d.tipo === 'sticker') { $('pv-color').innerHTML = ''; $('views').innerHTML = '<div class="view">' + stickerHtml(d.logo) + '<div class="cap">Sticker vinilo 10 cm</div></div>'; return; }
+    if (d.colores.indexOf(color) < 0) color = d.colores[0];
+    $('pv-color').innerHTML = d.colores.length > 1 ? d.colores.map(function (c) { return '<button data-v="' + c + '" aria-pressed="' + (c === color) + '">' + (c === 'negro' ? 'Negro' : 'Blanco') + '</button>'; }).join('') : '';
+    var LBL = { frente: 'Frente', 'frente-2': 'Frente (otra pose)', espalda: 'Espalda' };
+    $('views').innerHTML = P.viewsFor(d, color).map(function (v) {
+      var k = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
+      return '<div class="view">' + stage(d, v) + '<div class="cap">' + (LBL[k] || 'Jockey') + '</div></div>';
+    }).join('') + (d.tipo !== 'jockey' && d.etiqueta !== false && E ? (function () {
+      var ver = E.versionPara(color);
+      return '<div class="view"><div class="et-stage" style="background:' + E.VERSIONES[ver].fondo + '">' + E.svg(etTalla, ver, { width: '100%', height: 'auto' }) + '</div><div class="cap">Etiqueta cuello · talla ' + etTalla + '</div></div>';
+    })() : '');
+  }
+
+  // eventos del editor (delegados)
+  $('steps').addEventListener('click', function (e) {
+    var t = e.target.closest('.tile');
+    if (t) {
+      var key = t.parentNode.getAttribute('data-pick'), id = t.getAttribute('data-id') || null;
+      upd(function (x) {
+        if (key === 'frente') x.frente = id ? Object.assign({ pos: 'pecho', tam: 'm' }, x.frente || {}, { logo: id }) : null;
+        if (key === 'espalda') x.espalda = id ? Object.assign({ tam: 'm', alto: 0 }, x.espalda || {}, { logo: id }) : null;
+        if (key === 'jockey') x.jockey.logo = id;
+        if (key === 'sticker') x.logo = id;
+      });
+      return;
+    }
+    var b = e.target.closest('.seg button');
+    if (b) {
+      var s = b.parentNode.getAttribute('data-seg'), v = b.getAttribute('data-v');
+      upd(function (x) {
+        if (s === 'f-pos') x.frente.pos = v; if (s === 'f-tam') x.frente.tam = v; if (s === 'e-tam') x.espalda.tam = v;
+        if (s === 'j-est') x.jockey.estilo = v; if (s === 'j-tam') x.jockey.tam = v;
+      });
+      return;
+    }
+    var c = e.target.closest('.color');
+    if (c) {
+      var col = c.getAttribute('data-color');
+      upd(function (x) {
+        var on = x.colores.indexOf(col) >= 0;
+        if (on && x.colores.length === 1) return toast('Deja al menos un color', true);
+        x.colores = on ? x.colores.filter(function (y) { return y !== col; }) : ['negro', 'blanco'].filter(function (y) { return y === col || x.colores.indexOf(y) >= 0; });
+      });
+    }
+  });
+  $('steps').addEventListener('input', function (e) {
+    if (e.target.getAttribute('data-search')) {
+      var key = e.target.getAttribute('data-search'); search[key] = e.target.value;
+      var pos = e.target.selectionStart; renderEditor();
+      var inp = document.querySelector('[data-search="' + key + '"]'); inp.focus(); inp.setSelectionRange(pos, pos);
+    }
+    if (e.target.id === 'nombre') { draft.nombre = e.target.value; draft.auto = false; $('pv-name').textContent = draft.nombre; }
+    if (e.target.id === 'e-alto') { draft.espalda.alto = +e.target.value; renderPreview(); e.target.nextSibling.textContent = draft.espalda.alto > 0 ? 'más abajo' : draft.espalda.alto < 0 ? 'más arriba' : 'normal'; }
+  });
+  $('steps').addEventListener('change', function (e) {
+    if (e.target.id === 'et-on') upd(function (x) { x.etiqueta = e.target.checked; });
+    if (e.target.id === 'nombre' && !draft.nombre.trim()) { draft.auto = true; upd(function () {}); }
+  });
+  $('pv-color').onclick = function (e) { var b = e.target.closest('button'); if (b) { color = b.getAttribute('data-v'); renderPreview(); } };
+
+  renderInicio();
 })();
 </script>
 </body>

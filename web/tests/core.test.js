@@ -10,7 +10,9 @@ const POLERA = base.products.find((p) => p.type === 'polera' && p.colors.include
 
 test('sin datos del panel, todo queda disponible y sin control de stock', () => {
   const d = C.mergeCatalog(base, null);
-  assert.ok(d.products.every((p) => p.status === 'disponible' && p.stock === null));
+  // los productos nuevos del configurador vienen con status 'proximamente' en el catálogo base; el resto, disponibles
+  const statusBase = Object.fromEntries(base.products.map((p) => [p.id, p.status || 'disponible']));
+  assert.ok(d.products.every((p) => p.status === statusBase[p.id] && p.stock === null));
   assert.strictEqual(d.settings.deliveryDaysRM, 3);
   assert.strictEqual(d.products.length, base.products.length);
 });

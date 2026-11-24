@@ -84,7 +84,7 @@ window.TWH_CFG = {
   },
   {
    "id": "topo-explorers",
-   "name": "Off Road Explorers (topo)",
+   "name": "Off Road Explorers",
    "aspect": 1,
    "l": 0.1067,
    "r": 0.8933,

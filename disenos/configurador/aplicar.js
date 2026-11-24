@@ -1,6 +1,8 @@
-// Pasa una colección del configurador a la tienda: genera las fotos y reemplaza poleras, polerones y jockeys del catálogo.
-// Uso: node disenos/configurador/aplicar.js [ruta/a/twh-coleccion.json]
-//      (sin ruta usa disenos/configurador/twh-coleccion.json)
+// Pasa lo creado en el configurador a la tienda.
+//  - Modo "agregar" (el que exporta el configurador desde 2026-11-24): genera las fotos y SUMA los productos nuevos
+//    al catálogo como Próximamente (los stickers se suman como diseño nuevo del sticker). No toca nada de lo que ya existe.
+//  - Modo antiguo "reemplazar" (archivo sin modo): reemplaza todas las poleras, polerones y jockeys. Solo con --reemplazar.
+// Uso: node disenos/configurador/aplicar.js [ruta/a/twh-coleccion.json] [--reemplazar]
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -13,9 +15,17 @@ const OUT = path.join(ROOT, 'web', 'assets', 'img', 'productos');
 const CATALOG = path.join(ROOT, 'web', 'data', 'catalog.js');
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => fs.existsSync(p));
 
-const file = process.argv[2] || path.join(HERE, 'twh-coleccion.json');
+const file = process.argv.slice(2).find((a) => !a.startsWith('--')) || path.join(HERE, 'twh-coleccion.json');
 const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
-const items = raw.productos || raw;
+const AGREGAR = raw.modo === 'agregar';
+if (!AGREGAR && !process.argv.includes('--reemplazar')) {
+  console.error('Este archivo es del configurador antiguo (reemplaza TODA la colección de la tienda). No se aplicó nada.\n' +
+    'Exporta de nuevo desde el configurador nuevo, o si de verdad quieres reemplazar todo: node aplicar.js <archivo> --reemplazar');
+  process.exit(1);
+}
+const todos = raw.productos || raw;
+const stickers = todos.filter((d) => d.tipo === 'sticker');
+const items = todos.filter((d) => d.tipo !== 'sticker');
 global.window = {}; require('./datos.js'); const LMETA = {}; window.TWH_CFG.logos.forEach((l) => { LMETA[l.id] = l; });
 
 // ---------- ids únicos a partir del nombre ----------
@@ -23,8 +33,9 @@ const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,
 // Si la prenda ya existe en la tienda (el configurador guarda su id), se conserva el id aunque cambie el nombre:
 // así no pierde su stock, precio, estado ni ventas en el panel. Las prendas nuevas reciben un id a partir del nombre.
 const current = new Map(require(CATALOG).products.map((p) => [p.id, p.type]));
-const used = new Set();
-items.forEach((d) => { if (d.id && current.get(d.id) === d.tipo && !used.has(d.id)) { used.add(d.id); d._id = d.id; } });
+// al agregar, los ids nuevos no pueden chocar con ningún producto de la tienda
+const used = new Set(AGREGAR ? current.keys() : []);
+if (!AGREGAR) items.forEach((d) => { if (d.id && current.get(d.id) === d.tipo && !used.has(d.id)) { used.add(d.id); d._id = d.id; } });
 items.forEach((d) => {
   if (d._id) return;
   let id = slug(d.nombre || d.tipo) || d.tipo, k = 2;
@@ -123,21 +134,43 @@ for (const d of items) {
         images: [], imagesByColor: { ${Object.entries(byColor).map(([c, l]) => c + ': ' + arr(l)).join(', ')} }, sizeGuide: ${guide}, active: true,
         desc: ${q(desc)},
         features: ${features},
-        cfg: ${JSON.stringify(cfgOf(d))}
+        cfg: ${JSON.stringify(cfgOf(d))}${AGREGAR ? `,
+        status: 'proximamente'` : ''}
       },
 `);
 }
 
-// ---------- catálogo: reemplaza poleras, polerones y jockeys (los stickers no se tocan) ----------
 let cat = fs.readFileSync(CATALOG, 'utf8');
 const a = cat.indexOf('    products: [\n'), b = cat.indexOf("      {\n        id: 'sticker-twh'");
 if (a < 0 || b < 0) throw new Error('No encontré la lista de productos en catalog.js');
 const order = { polera: 0, poleron: 1, jockey: 2 };
 const sorted = entries.map((e, i) => [order[items[i].tipo], i, e]).sort((x, y) => x[0] - y[0] || x[1] - y[1]).map((x) => x[2]);
-cat = cat.slice(0, a + '    products: [\n'.length) + sorted.join('') + cat.slice(b);
-fs.writeFileSync(CATALOG, cat);
 
-// fotos viejas que ya no usa ningún producto
-let removed = 0;
-for (const f of fs.readdirSync(OUT)) if (f.endsWith('.png') && !keep.has(f)) { fs.unlinkSync(path.join(OUT, f)); removed++; }
-console.log(`Listo: ${items.length} productos en la tienda, ${keep.size} fotos generadas, ${removed} fotos viejas borradas.`);
+if (AGREGAR) {
+  // ---------- agregar: los nuevos van al final de la ropa (antes del sticker); lo que ya existe no se toca ----------
+  cat = cat.slice(0, b) + sorted.join('') + cat.slice(b);
+  // stickers: diseño nuevo dentro del producto sticker (si ese logo no estaba)
+  const lista = () => { const s0 = cat.indexOf("id: 'sticker-twh'"), d0 = cat.indexOf('designs: [', s0); return [d0, cat.indexOf('\n        ],', d0)]; };
+  let nuevos = 0;
+  for (const st of stickers) {
+    if (!st.logo || !LMETA[st.logo]) continue;
+    const [d0, d1] = lista();
+    if (cat.slice(d0, d1).includes(`id: ${q(st.logo)}`)) continue;
+    const nombre = String(st.nombre || '').replace(/^Sticker\s+/i, '') || nameOf(st.logo);
+    cat = cat.slice(0, d1) + `,\n          { id: ${q(st.logo)}, name: ${q(nombre)} }` + cat.slice(d1);
+    nuevos++;
+  }
+  // "N a elección" en las características del sticker
+  const [d0, d1] = lista();
+  const total = (cat.slice(d0, d1).match(/\{ id: /g) || []).length;
+  cat = cat.replace(/\['Diseños', '\d+ a elección'\]/, `['Diseños', '${total} a elección']`);
+  fs.writeFileSync(CATALOG, cat);
+  console.log(`Listo: ${items.length} productos nuevos agregados como Próximamente (${keep.size} fotos) y ${nuevos} diseños de sticker nuevos. Lo que ya estaba en la tienda no se tocó.`);
+} else {
+  // ---------- reemplazar (modo antiguo, solo con --reemplazar): poleras, polerones y jockeys = la colección ----------
+  cat = cat.slice(0, a + '    products: [\n'.length) + sorted.join('') + cat.slice(b);
+  fs.writeFileSync(CATALOG, cat);
+  let removed = 0;
+  for (const f of fs.readdirSync(OUT)) if (f.endsWith('.png') && !keep.has(f)) { fs.unlinkSync(path.join(OUT, f)); removed++; }
+  console.log(`Listo: ${items.length} productos en la tienda, ${keep.size} fotos generadas, ${removed} fotos viejas borradas.`);
+}

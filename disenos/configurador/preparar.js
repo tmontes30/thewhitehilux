@@ -37,7 +37,7 @@ const NAMES = {
   'coordenadas': 'Off Road Team', 'supply-co': 'TWH Supply Co.', 'iron-cross': 'Cruz Chopper', 'warp-text': 'Warp',
   'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'tire-blueprint': 'Plano 35"', 'round-stamp': 'Sello Off Road Supply',
   'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst',
-  'race-dept-ops': '4WD Race Dept. (oficial)', 'topo-explorers': 'Off Road Explorers (topo)', 'rally-raid': 'Rally Raid 4X4',
+  'race-dept-ops': '4WD Race Dept. (oficial)', 'topo-explorers': 'Off Road Explorers', 'rally-raid': 'Rally Raid 4X4',
   'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew',
   'twh-monogram': 'TWH Monograma', 'twh-varsity': 'TWH Varsity', 'twh-stripe-fill': 'TWH Franjas', 'twh-crate': 'TWH Caja militar', 'twh-echo': 'TWH Eco',
   'twh-split': 'TWH Split', 'twh-spec': 'TWH Spec', 'twh-pill': 'TWH Pill', 'twh-vertical': 'TWH Vertical', 'twh-tread': 'TWH Tread',
