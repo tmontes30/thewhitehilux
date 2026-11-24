@@ -245,6 +245,15 @@ window.TWH_CFG = {
    "b": 0.9467
   },
   {
+   "id": "twh-extrude",
+   "name": "TWH 3D",
+   "aspect": 1,
+   "l": 0.0883,
+   "r": 0.8933,
+   "t": 0.2233,
+   "b": 0.7533
+  },
+  {
    "id": "twh-4x4",
    "name": "TWH 4X4",
    "aspect": 1,
@@ -252,6 +261,42 @@ window.TWH_CFG = {
    "r": 0.9167,
    "t": 0.28,
    "b": 0.9133
+  },
+  {
+   "id": "twh-crate",
+   "name": "TWH Caja militar",
+   "aspect": 1,
+   "l": 0.0917,
+   "r": 0.9083,
+   "t": 0.165,
+   "b": 0.835
+  },
+  {
+   "id": "twh-knockout",
+   "name": "TWH Calado",
+   "aspect": 1,
+   "l": 0.1117,
+   "r": 0.8867,
+   "t": 0.2917,
+   "b": 0.7933
+  },
+  {
+   "id": "twh-circle-type",
+   "name": "TWH Circle",
+   "aspect": 1,
+   "l": 0.1067,
+   "r": 0.8933,
+   "t": 0.1067,
+   "b": 0.8933
+  },
+  {
+   "id": "twh-echo",
+   "name": "TWH Eco",
+   "aspect": 1,
+   "l": 0.0567,
+   "r": 0.9233,
+   "t": 0.1433,
+   "b": 0.9
   },
   {
    "id": "logo-header",
@@ -263,6 +308,60 @@ window.TWH_CFG = {
    "b": 0.9673
   },
   {
+   "id": "twh-stripe-fill",
+   "name": "TWH Franjas",
+   "aspect": 1,
+   "l": 0.0317,
+   "r": 0.9517,
+   "t": 0.22,
+   "b": 0.7533
+  },
+  {
+   "id": "twh-halftone",
+   "name": "TWH Halftone",
+   "aspect": 1,
+   "l": 0.0983,
+   "r": 0.8783,
+   "t": 0.195,
+   "b": 0.7667
+  },
+  {
+   "id": "twh-monogram",
+   "name": "TWH Monograma",
+   "aspect": 1,
+   "l": 0.0667,
+   "r": 0.9333,
+   "t": 0.0667,
+   "b": 0.9333
+  },
+  {
+   "id": "twh-pill",
+   "name": "TWH Pill",
+   "aspect": 1,
+   "l": 0.12,
+   "r": 0.88,
+   "t": 0.2983,
+   "b": 0.74
+  },
+  {
+   "id": "twh-spec",
+   "name": "TWH Spec",
+   "aspect": 1,
+   "l": 0.0933,
+   "r": 0.9383,
+   "t": 0.1767,
+   "b": 0.8367
+  },
+  {
+   "id": "twh-split",
+   "name": "TWH Split",
+   "aspect": 1,
+   "l": 0.1133,
+   "r": 0.8683,
+   "t": 0.205,
+   "b": 0.74
+  },
+  {
    "id": "supply-co",
    "name": "TWH Supply Co.",
    "aspect": 1,
@@ -270,6 +369,42 @@ window.TWH_CFG = {
    "r": 0.895,
    "t": 0.1983,
    "b": 0.8017
+  },
+  {
+   "id": "twh-tread",
+   "name": "TWH Tread",
+   "aspect": 1,
+   "l": 0.1083,
+   "r": 0.8717,
+   "t": 0.2183,
+   "b": 0.7933
+  },
+  {
+   "id": "twh-triple-line",
+   "name": "TWH Triple línea",
+   "aspect": 1,
+   "l": 0.0883,
+   "r": 0.895,
+   "t": 0.19,
+   "b": 0.82
+  },
+  {
+   "id": "twh-varsity",
+   "name": "TWH Varsity",
+   "aspect": 1,
+   "l": 0.1017,
+   "r": 0.9217,
+   "t": 0.2717,
+   "b": 0.84
+  },
+  {
+   "id": "twh-vertical",
+   "name": "TWH Vertical",
+   "aspect": 1,
+   "l": 0.2,
+   "r": 0.8017,
+   "t": 0.0917,
+   "b": 0.8783
   },
   {
    "id": "warp-text",

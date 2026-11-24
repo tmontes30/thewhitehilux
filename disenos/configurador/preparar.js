@@ -38,7 +38,10 @@ const NAMES = {
   'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'tire-blueprint': 'Plano 35"', 'round-stamp': 'Sello Off Road Supply',
   'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst',
   'race-dept-ops': '4WD Race Dept. (oficial)', 'topo-explorers': 'Off Road Explorers (topo)', 'rally-raid': 'Rally Raid 4X4',
-  'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew'
+  'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew',
+  'twh-monogram': 'TWH Monograma', 'twh-varsity': 'TWH Varsity', 'twh-stripe-fill': 'TWH Franjas', 'twh-crate': 'TWH Caja militar', 'twh-echo': 'TWH Eco',
+  'twh-split': 'TWH Split', 'twh-spec': 'TWH Spec', 'twh-pill': 'TWH Pill', 'twh-vertical': 'TWH Vertical', 'twh-tread': 'TWH Tread',
+  'twh-halftone': 'TWH Halftone', 'twh-circle-type': 'TWH Circle', 'twh-triple-line': 'TWH Triple línea', 'twh-extrude': 'TWH 3D', 'twh-knockout': 'TWH Calado'
 };
 const ids = fs.readdirSync(LOGOS).filter((f) => f.endsWith('.svg') && !f.endsWith('-claro.svg') && f !== 'logo-oficial.svg' && !f.startsWith('favicon')).map((f) => f.replace('.svg', ''));
 const srcs = ids.map((id) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, id + '.svg'), 'utf8')));
