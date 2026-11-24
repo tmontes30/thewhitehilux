@@ -204,7 +204,10 @@ TWH.loadData().then(function (d) {
     });
     var sort = document.getElementById('sort').value;
     // Lo que se puede comprar primero; próximamente y agotados al final
-    var rank = function (p) { return p.status === 'proximamente' ? 2 : (C.isSoldOut(p) ? 1 : 0); };
+    // Lo que se puede comprar primero; agotados y próximamente después. En el inicio (sin categoría ni búsqueda)
+    // los neumáticos van al final: la ropa es la protagonista
+    var tiresLast = !f.cat && !f.q;
+    var rank = function (p) { return tiresLast && p.cotizar ? 3 : p.status === 'proximamente' ? 2 : (C.isSoldOut(p) ? 1 : 0); };
     list.sort(function (a, b) { return rank(a) - rank(b); });
     if (sort === 'asc') list.sort(function (a, b) { return rank(a) - rank(b) || a.price - b.price; });
     if (sort === 'desc') list.sort(function (a, b) { return rank(a) - rank(b) || b.price - a.price; });
@@ -225,7 +228,7 @@ TWH.loadData().then(function (d) {
     list.forEach(function (p) { p._color = cardColor(p); });
     if (!f.color && sort === 'rel') {
       var out = [];
-      [0, 1, 2].forEach(function (r) {
+      [0, 1, 2, 3].forEach(function (r) {
         var g = list.filter(function (p) { return rank(p) === r; });
         var cnt = {}; g.forEach(function (p) { cnt[p._color] = (cnt[p._color] || 0) + 1; });
         var main = Object.keys(cnt).sort(function (x, y) { return cnt[y] - cnt[x]; })[0];
