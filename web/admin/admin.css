@@ -308,3 +308,6 @@ label.check input { width: auto; }
 .insights li.mejorar { background: #fdf0ec; }
 .insights li.potenciar { background: #eef7f0; }
 @media (max-width: 700px) { .fun-row { grid-template-columns: 1fr 52px; } .fun-row .fun-bar { grid-column: 1 / -1; grid-row: 2; } .fun-row small { grid-column: 1 / -1; } }
+
+/* Venta manual: casilla Muestra */
+.muestra-check { display: flex; gap: 8px; align-items: flex-start; background: #faf6ea; border: 1px solid #ecdfb8; border-radius: 10px; padding: 10px 12px; margin: 4px 0 12px; }

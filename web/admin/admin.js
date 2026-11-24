@@ -220,7 +220,7 @@ function orderCard(o) {
   return `<article class="card order ${dd && dd.cls !== 'green' ? 'due-' + dd.cls : ''}" id="o-${esc(o.id)}" data-id="${esc(o.id)}">
     <div class="order-head">
       <span class="id">${esc(o.id)}</span>
-      ${o.source === 'manual' ? `<span class="pill gray">Venta manual · ${esc(PAY_METHODS[o.paymentMethod] || o.paymentMethod || '')}</span>` : ''}
+      ${o.muestra ? '<span class="pill gray">Muestra · a precio costo</span>' : o.source === 'manual' ? `<span class="pill gray">Venta manual · ${esc(PAY_METHODS[o.paymentMethod] || o.paymentMethod || '')}</span>` : ''}
       <span class="date">Creado ${fmtDate(o.createdDate)}${o.paidDate ? ' · pagado ' + fmtDate(o.paidDate) : ''}</span>
       <select data-act="status" aria-label="Estado del pedido">${opts}</select>
       ${dd ? `<span class="pill ${dd.cls}">${dd.text}</span>` : ''}
@@ -304,7 +304,7 @@ function renderOrders() {
   const paidMonth = orders.filter((o) => PAID.includes(o.status) && (o.paidDate || '').startsWith(month));
   const sold = paidMonth.reduce((s, o) => s + (Number(o.paidAmount != null ? o.paidAmount : o.total) || 0), 0);
 
-  const otd30 = C.otd(orders.filter((o) => C.fulfilledDate(o) >= addDays(today, -29)));
+  const otd30 = C.otd(orders.filter((o) => !o.muestra && C.fulfilledDate(o) >= addDays(today, -29)));
   $('stats').innerHTML = [
     [open.length, 'Por entregar'],
     [urgent.length, `Vencen en ≤ ${plural(data.settings.alertDays, 'día', 'días')} o atrasados`],
@@ -906,6 +906,7 @@ $('export-stock').addEventListener('click', () => {
 
 // ---------- OTD (On Time Delivery): % de pedidos entregados a más tardar el último día prometido ----------
 function renderOtd(list) {
+  list = list.filter((o) => !o.muestra); // las muestras (me las quedo yo) no son entregas a clientes
   const r = C.otd(list);
   const groups = [['rm', 'RM'], ['regiones', 'Regiones'], ['retiro', 'Retiro']].map(([z, label]) => {
     const g = C.otd(list.filter((o) => ((o.shipping || {}).zone || 'rm') === z));
@@ -1944,13 +1945,19 @@ function mLineHtml(l, i) {
     <td><button type="button" class="link" data-f="del" aria-label="Quitar">✕</button></td>
   </tr>`;
 }
+// Costo unitario de una línea (promedio de Compras por SKU → producto → categoría); 0 si no hay compras
+function costoLinea(l) {
+  const p = productById(l.id);
+  if (!p) return { v: 0, src: 'sin' };
+  return costIndex().unit({ id: p.id, color: l.color, size: l.size, sku: C.variantSku(p, l.color, l.size) });
+}
 function mDefaults(l) {
   const p = productById(l.id);
   if (!p) return l;
   l.color = p.colors.length ? (p.colors.includes(l.color) ? l.color : p.colors[0]) : '';
   l.size = p.sizes.includes(l.size) ? l.size : p.sizes[0];
   l.design = p.designs && p.designs.length ? (p.designs.some((d) => d.id === l.design) ? l.design : p.designs[0].id) : '';
-  l.price = p.price;
+  l.price = manual && manual.muestra ? Math.round(costoLinea(l).v) : p.price;
   return l;
 }
 function mTotals() {
@@ -1960,11 +1967,13 @@ function mTotals() {
   return { sub, ship };
 }
 function openManual() {
+  manual = null;
   manual = { lines: [mDefaults({ id: (data.products.find((p) => p.type === 'polera' && p.status !== 'oculto') || data.products[0]).id, qty: 1 })] };
   const f = $('manual-form');
   f.hidden = false;
   const points = CFG.pickupPoints || [];
   f.innerHTML = `<h2>Venta manual <small class="hint">(transferencia o efectivo, sin Mercado Pago)</small></h2>
+    <label class="check muestra-check"><input type="checkbox" id="mv-muestra"> <span><b>Muestra</b>: me la quedo yo, a precio costo <small class="hint">(precio = costo de Compras, entregada y sin correos)</small></span></label>
     <div class="grid3">
       <label>Nombre del cliente<input id="mv-name" maxlength="80" required></label>
       <label>Teléfono (opcional)<input id="mv-phone" maxlength="20" type="tel"></label>
@@ -2002,6 +2011,26 @@ function openManual() {
 $('manual-new').addEventListener('click', openManual);
 $('manual-form').addEventListener('change', (e) => {
   if (!manual) return;
+  if (e.target.id === 'mv-muestra') {
+    manual.muestra = e.target.checked;
+    manual.lines.forEach((l) => {
+      const p = productById(l.id);
+      if (p) l.price = manual.muestra ? Math.round(costoLinea(l).v) : p.price;
+    });
+    if (manual.muestra) {
+      if (!$('mv-name').value.trim()) $('mv-name').value = 'Muestra TWH';
+      $('mv-ship').value = 'mano';
+      $('mv-addr').hidden = true;
+      $('mv-status').value = 'entregado';
+      $('mv-mails').checked = false;
+      $('mv-stock').checked = true;
+      const sin = manual.lines.filter((l) => costoLinea(l).src === 'sin');
+      if (sin.length) toast('Hay productos sin costo en Compras: quedan a $0, ajusta el precio a mano', true);
+    } else if ($('mv-name').value === 'Muestra TWH') $('mv-name').value = '';
+    $('mv-lines').innerHTML = manual.lines.map(mLineHtml).join('');
+    mTotals();
+    return;
+  }
   if (e.target.id === 'mv-ship') {
     $('mv-addr').hidden = e.target.value !== 'despacho';
     $('mv-status').value = e.target.value === 'mano' ? 'entregado' : 'preparando';
@@ -2012,7 +2041,7 @@ $('manual-form').addEventListener('change', (e) => {
     const l = manual.lines[i];
     const f = e.target.dataset.f;
     if (f === 'id') { l.id = e.target.value; mDefaults(l); }
-    if (f === 'color' || f === 'size' || f === 'design') l[f] = e.target.value;
+    if (f === 'color' || f === 'size' || f === 'design') { l[f] = e.target.value; if (manual.muestra) l.price = Math.round(costoLinea(l).v); }
     tr.outerHTML = mLineHtml(l, i);
   }
   mTotals();
@@ -2080,15 +2109,16 @@ $('manual-form').addEventListener('submit', async (e) => {
     paidAt: serverTimestamp(), paidDate,
     promisedFrom: shipSel === 'mano' ? paidDate : range.from, promisedDate: shipSel === 'mano' ? paidDate : range.to,
     mpFee: 0, noEmails: !$('mv-mails').checked,
+    ...(manual.muestra ? { muestra: true } : {}),
     adminNote: $('mv-note').value.trim().slice(0, 300),
-    notifs: [{ at: new Date().toISOString(), kind: `venta manual (${PAY_METHODS[$('mv-pay').value]})`, channel: 'panel', to: auth.currentUser.email, ok: true, note: '' }],
+    notifs: [{ at: new Date().toISOString(), kind: manual.muestra ? 'muestra (a precio costo)' : `venta manual (${PAY_METHODS[$('mv-pay').value]})`, channel: 'panel', to: auth.currentUser.email, ok: true, note: '' }],
   };
   if (status !== 'pagado') order.preparingDate = paidDate;
   if (status === 'entregado') { order.shippedDate = paidDate; order.deliveredDate = paidDate; }
   try {
     await setDoc(doc(db, 'pedidos', id), order);
     if ($('mv-stock').checked) await moveStock(order, -1);
-    toast(`Venta ${id} guardada ✓`);
+    toast(manual.muestra ? `Muestra ${id} guardada ✓ (a costo, descontada del stock)` : `Venta ${id} guardada ✓`);
     manual = null;
     $('manual-form').hidden = true;
     orderFilter = status === 'entregado' ? 'entregado' : 'abiertos';
