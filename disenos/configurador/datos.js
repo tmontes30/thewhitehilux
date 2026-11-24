@@ -2,26 +2,49 @@
 window.TWH_CFG = {
  "logos": [
   {
-   "id": "race-dept",
-   "name": "4WD Race Dept.",
+   "id": "rally-stripes",
+   "name": "Rally Team",
+   "num": 1,
    "aspect": 1,
-   "l": 0.1,
-   "r": 0.9533,
-   "t": 0.2617,
-   "b": 0.84
+   "l": 0.0667,
+   "r": 0.92,
+   "t": 0.2567,
+   "b": 0.8733
   },
   {
-   "id": "race-dept-ops",
-   "name": "4WD Race Dept. (oficial)",
+   "id": "twh-4x4",
+   "name": "TWH 4X4",
+   "num": 2,
    "aspect": 1,
-   "l": 0.1,
-   "r": 0.9,
-   "t": 0.3167,
-   "b": 0.84
+   "l": 0.1333,
+   "r": 0.9167,
+   "t": 0.28,
+   "b": 0.9133
+  },
+  {
+   "id": "diff-lock",
+   "name": "Rear Diff Lock",
+   "num": 3,
+   "aspect": 1,
+   "l": 0.03,
+   "r": 0.97,
+   "t": 0.03,
+   "b": 0.97
+  },
+  {
+   "id": "mud-terrain",
+   "name": "Mud Terrain",
+   "num": 4,
+   "aspect": 1,
+   "l": 0.105,
+   "r": 0.895,
+   "t": 0.0667,
+   "b": 0.9267
   },
   {
    "id": "aired-down",
    "name": "Aired Down",
+   "num": 5,
    "aspect": 1,
    "l": 0.08,
    "r": 0.9017,
@@ -29,17 +52,9 @@ window.TWH_CFG = {
    "b": 0.9267
   },
   {
-   "id": "iron-cross",
-   "name": "Cruz Chopper",
-   "aspect": 1,
-   "l": 0.0683,
-   "r": 0.9283,
-   "t": 0.0933,
-   "b": 0.9067
-  },
-  {
    "id": "checkered-shield",
    "name": "Escudo 4x4 Team",
+   "num": 6,
    "aspect": 1,
    "l": 0.155,
    "r": 0.845,
@@ -49,6 +64,7 @@ window.TWH_CFG = {
   {
    "id": "low-range",
    "name": "Low Range Club",
+   "num": 7,
    "aspect": 1,
    "l": 0.11,
    "r": 0.8883,
@@ -56,44 +72,19 @@ window.TWH_CFG = {
    "b": 0.86
   },
   {
-   "id": "mud-terrain",
-   "name": "Mud Terrain",
+   "id": "recovery-crew",
+   "name": "Recovery Crew",
+   "num": 8,
    "aspect": 1,
-   "l": 0.105,
-   "r": 0.895,
-   "t": 0.0667,
-   "b": 0.9267
-  },
-  {
-   "id": "off-road-script",
-   "name": "Off Road (manuscrita)",
-   "aspect": 1,
-   "l": 0.08,
-   "r": 0.9483,
-   "t": 0.225,
-   "b": 0.8467
-  },
-  {
-   "id": "tall-stack",
-   "name": "Off Road Dept.",
-   "aspect": 1,
-   "l": 0.0917,
-   "r": 0.9133,
-   "t": 0.1567,
-   "b": 0.86
-  },
-  {
-   "id": "topo-explorers",
-   "name": "Off Road Explorers",
-   "aspect": 1,
-   "l": 0.1067,
-   "r": 0.8933,
-   "t": 0.1267,
-   "b": 0.9333
+   "l": 0.0883,
+   "r": 0.9117,
+   "t": 0.1817,
+   "b": 0.9667
   },
   {
    "id": "road-sign",
    "name": "Off Road Recovery",
+   "num": 9,
    "aspect": 1,
    "l": 0.125,
    "r": 0.8667,
@@ -101,17 +92,19 @@ window.TWH_CFG = {
    "b": 0.94
   },
   {
-   "id": "coordenadas",
-   "name": "Off Road Team",
+   "id": "sunset",
+   "name": "Sunset",
+   "num": 10,
    "aspect": 1,
-   "l": 0.0583,
-   "r": 0.9633,
-   "t": 0.18,
-   "b": 0.8933
+   "l": 0.1817,
+   "r": 0.8067,
+   "t": 0.12,
+   "b": 0.9533
   },
   {
    "id": "patente",
    "name": "Patente TWH·4X4",
+   "num": 11,
    "aspect": 1,
    "l": 0.05,
    "r": 0.95,
@@ -121,6 +114,7 @@ window.TWH_CFG = {
   {
    "id": "rally-plate",
    "name": "Placa Rally 01",
+   "num": 12,
    "aspect": 1,
    "l": 0.075,
    "r": 0.9067,
@@ -128,17 +122,69 @@ window.TWH_CFG = {
    "b": 0.9667
   },
   {
-   "id": "tire-blueprint",
-   "name": "Plano 35\"",
+   "id": "race-dept",
+   "name": "4WD Race Dept.",
+   "num": 13,
    "aspect": 1,
-   "l": 0.0967,
-   "r": 0.9267,
-   "t": 0.0783,
-   "b": 0.9433
+   "l": 0.1,
+   "r": 0.9533,
+   "t": 0.2617,
+   "b": 0.84
+  },
+  {
+   "id": "off-road-script",
+   "name": "Off Road (manuscrita)",
+   "num": 14,
+   "aspect": 1,
+   "l": 0.08,
+   "r": 0.9483,
+   "t": 0.225,
+   "b": 0.8467
+  },
+  {
+   "id": "coordenadas",
+   "name": "Off Road Team",
+   "num": 15,
+   "aspect": 1,
+   "l": 0.0583,
+   "r": 0.9633,
+   "t": 0.18,
+   "b": 0.8933
+  },
+  {
+   "id": "supply-co",
+   "name": "TWH Supply Co.",
+   "num": 16,
+   "aspect": 1,
+   "l": 0.105,
+   "r": 0.895,
+   "t": 0.1983,
+   "b": 0.8017
+  },
+  {
+   "id": "iron-cross",
+   "name": "Cruz Chopper",
+   "num": 17,
+   "aspect": 1,
+   "l": 0.0683,
+   "r": 0.9283,
+   "t": 0.0933,
+   "b": 0.9067
+  },
+  {
+   "id": "warp-text",
+   "name": "Warp",
+   "num": 18,
+   "aspect": 1,
+   "l": 0.0417,
+   "r": 0.9383,
+   "t": 0.1133,
+   "b": 0.9667
   },
   {
    "id": "mountain-patch",
    "name": "Race Shop",
+   "num": 19,
    "aspect": 1,
    "l": 0.095,
    "r": 0.8833,
@@ -146,44 +192,29 @@ window.TWH_CFG = {
    "b": 0.8467
   },
   {
-   "id": "rally-raid",
-   "name": "Rally Raid 4X4",
+   "id": "script-checker",
+   "name": "White Hilux Script",
+   "num": 20,
    "aspect": 1,
-   "l": 0.0683,
-   "r": 0.91,
-   "t": 0.16,
-   "b": 0.9267
+   "l": 0.0367,
+   "r": 0.9683,
+   "t": 0.2483,
+   "b": 0.76
   },
   {
-   "id": "rally-stripes",
-   "name": "Rally Team",
+   "id": "tire-blueprint",
+   "name": "Plano 35\"",
+   "num": 21,
    "aspect": 1,
-   "l": 0.0667,
-   "r": 0.92,
-   "t": 0.2567,
-   "b": 0.8733
-  },
-  {
-   "id": "diff-lock",
-   "name": "Rear Diff Lock",
-   "aspect": 1,
-   "l": 0.03,
-   "r": 0.97,
-   "t": 0.03,
-   "b": 0.97
-  },
-  {
-   "id": "recovery-crew",
-   "name": "Recovery Crew",
-   "aspect": 1,
-   "l": 0.0883,
-   "r": 0.9117,
-   "t": 0.1817,
-   "b": 0.9667
+   "l": 0.0967,
+   "r": 0.9267,
+   "t": 0.0783,
+   "b": 0.9433
   },
   {
    "id": "round-stamp",
    "name": "Sello Off Road Supply",
+   "num": 22,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -193,6 +224,7 @@ window.TWH_CFG = {
   {
    "id": "speed-shop",
    "name": "Speed Shop",
+   "num": 23,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.8917,
@@ -200,17 +232,19 @@ window.TWH_CFG = {
    "b": 0.8933
   },
   {
-   "id": "stay-dirty",
-   "name": "Stay Dirty",
+   "id": "tall-stack",
+   "name": "Off Road Dept.",
+   "num": 24,
    "aspect": 1,
-   "l": 0.1283,
-   "r": 0.9067,
-   "t": 0.22,
-   "b": 0.8733
+   "l": 0.0917,
+   "r": 0.9133,
+   "t": 0.1567,
+   "b": 0.86
   },
   {
    "id": "sunburst",
    "name": "Sunburst",
+   "num": 25,
    "aspect": 1,
    "l": 0.1183,
    "r": 0.8817,
@@ -218,26 +252,9 @@ window.TWH_CFG = {
    "b": 0.9667
   },
   {
-   "id": "sunset",
-   "name": "Sunset",
-   "aspect": 1,
-   "l": 0.1817,
-   "r": 0.8067,
-   "t": 0.12,
-   "b": 0.9533
-  },
-  {
-   "id": "logo-shop",
-   "name": "The White Hilux (horizontal)",
-   "aspect": 0.1867,
-   "l": 0.0133,
-   "r": 0.9833,
-   "t": 0.1339,
-   "b": 0.9107
-  },
-  {
    "id": "cl-shop",
    "name": "The White Hilux CL Shop",
+   "num": 26,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.905,
@@ -245,89 +262,59 @@ window.TWH_CFG = {
    "b": 0.9467
   },
   {
-   "id": "twh-extrude",
-   "name": "TWH 3D",
+   "id": "race-dept-ops",
+   "name": "4WD Race Dept. (oficial)",
+   "num": 27,
    "aspect": 1,
-   "l": 0.0883,
-   "r": 0.8933,
-   "t": 0.2233,
-   "b": 0.7533
+   "l": 0.1,
+   "r": 0.9,
+   "t": 0.3167,
+   "b": 0.84
   },
   {
-   "id": "twh-4x4",
-   "name": "TWH 4X4",
-   "aspect": 1,
-   "l": 0.1333,
-   "r": 0.9167,
-   "t": 0.28,
-   "b": 0.9133
-  },
-  {
-   "id": "twh-crate",
-   "name": "TWH Caja militar",
-   "aspect": 1,
-   "l": 0.0917,
-   "r": 0.9083,
-   "t": 0.165,
-   "b": 0.835
-  },
-  {
-   "id": "twh-knockout",
-   "name": "TWH Calado",
-   "aspect": 1,
-   "l": 0.1117,
-   "r": 0.8867,
-   "t": 0.2917,
-   "b": 0.7933
-  },
-  {
-   "id": "twh-circle-type",
-   "name": "TWH Circle",
+   "id": "topo-explorers",
+   "name": "Off Road Explorers",
+   "num": 28,
    "aspect": 1,
    "l": 0.1067,
    "r": 0.8933,
-   "t": 0.1067,
-   "b": 0.8933
+   "t": 0.1267,
+   "b": 0.9333
   },
   {
-   "id": "twh-echo",
-   "name": "TWH Eco",
+   "id": "rally-raid",
+   "name": "Rally Raid 4X4",
+   "num": 29,
    "aspect": 1,
-   "l": 0.0567,
-   "r": 0.9233,
-   "t": 0.1433,
-   "b": 0.9
+   "l": 0.0683,
+   "r": 0.91,
+   "t": 0.16,
+   "b": 0.9267
   },
   {
-   "id": "logo-header",
-   "name": "TWH franjas",
-   "aspect": 0.4583,
-   "l": 0.045,
-   "r": 1,
-   "t": 0.0364,
-   "b": 0.9673
-  },
-  {
-   "id": "twh-stripe-fill",
-   "name": "TWH Franjas",
+   "id": "stay-dirty",
+   "name": "Stay Dirty",
+   "num": 30,
    "aspect": 1,
-   "l": 0.0317,
-   "r": 0.9517,
+   "l": 0.1283,
+   "r": 0.9067,
    "t": 0.22,
-   "b": 0.7533
+   "b": 0.8733
   },
   {
-   "id": "twh-halftone",
-   "name": "TWH Halftone",
+   "id": "winch-crew",
+   "name": "Winch Crew",
+   "num": 31,
    "aspect": 1,
-   "l": 0.0983,
-   "r": 0.8783,
-   "t": 0.195,
-   "b": 0.7667
+   "l": 0.1333,
+   "r": 0.8567,
+   "t": 0.2,
+   "b": 0.8333
   },
   {
    "id": "twh-monogram",
    "name": "TWH Monograma",
+   "num": 32,
    "aspect": 1,
    "l": 0.0667,
    "r": 0.9333,
@@ -335,62 +322,9 @@ window.TWH_CFG = {
    "b": 0.9333
   },
   {
-   "id": "twh-pill",
-   "name": "TWH Pill",
-   "aspect": 1,
-   "l": 0.12,
-   "r": 0.88,
-   "t": 0.2983,
-   "b": 0.74
-  },
-  {
-   "id": "twh-spec",
-   "name": "TWH Spec",
-   "aspect": 1,
-   "l": 0.0933,
-   "r": 0.9383,
-   "t": 0.1767,
-   "b": 0.8367
-  },
-  {
-   "id": "twh-split",
-   "name": "TWH Split",
-   "aspect": 1,
-   "l": 0.1133,
-   "r": 0.8683,
-   "t": 0.205,
-   "b": 0.74
-  },
-  {
-   "id": "supply-co",
-   "name": "TWH Supply Co.",
-   "aspect": 1,
-   "l": 0.105,
-   "r": 0.895,
-   "t": 0.1983,
-   "b": 0.8017
-  },
-  {
-   "id": "twh-tread",
-   "name": "TWH Tread",
-   "aspect": 1,
-   "l": 0.1083,
-   "r": 0.8717,
-   "t": 0.2183,
-   "b": 0.7933
-  },
-  {
-   "id": "twh-triple-line",
-   "name": "TWH Triple línea",
-   "aspect": 1,
-   "l": 0.0883,
-   "r": 0.895,
-   "t": 0.19,
-   "b": 0.82
-  },
-  {
    "id": "twh-varsity",
    "name": "TWH Varsity",
+   "num": 33,
    "aspect": 1,
    "l": 0.1017,
    "r": 0.9217,
@@ -398,8 +332,69 @@ window.TWH_CFG = {
    "b": 0.84
   },
   {
+   "id": "twh-stripe-fill",
+   "name": "TWH Franjas",
+   "num": 34,
+   "aspect": 1,
+   "l": 0.0317,
+   "r": 0.9517,
+   "t": 0.22,
+   "b": 0.7533
+  },
+  {
+   "id": "twh-crate",
+   "name": "TWH Caja militar",
+   "num": 35,
+   "aspect": 1,
+   "l": 0.0917,
+   "r": 0.9083,
+   "t": 0.165,
+   "b": 0.835
+  },
+  {
+   "id": "twh-echo",
+   "name": "TWH Eco",
+   "num": 36,
+   "aspect": 1,
+   "l": 0.0567,
+   "r": 0.9233,
+   "t": 0.1433,
+   "b": 0.9
+  },
+  {
+   "id": "twh-split",
+   "name": "TWH Split",
+   "num": 37,
+   "aspect": 1,
+   "l": 0.1133,
+   "r": 0.8683,
+   "t": 0.205,
+   "b": 0.74
+  },
+  {
+   "id": "twh-spec",
+   "name": "TWH Spec",
+   "num": 38,
+   "aspect": 1,
+   "l": 0.0933,
+   "r": 0.9383,
+   "t": 0.1767,
+   "b": 0.8367
+  },
+  {
+   "id": "twh-pill",
+   "name": "TWH Pill",
+   "num": 39,
+   "aspect": 1,
+   "l": 0.12,
+   "r": 0.88,
+   "t": 0.2983,
+   "b": 0.74
+  },
+  {
    "id": "twh-vertical",
    "name": "TWH Vertical",
+   "num": 40,
    "aspect": 1,
    "l": 0.2,
    "r": 0.8017,
@@ -407,31 +402,84 @@ window.TWH_CFG = {
    "b": 0.8783
   },
   {
-   "id": "warp-text",
-   "name": "Warp",
+   "id": "twh-tread",
+   "name": "TWH Tread",
+   "num": 41,
    "aspect": 1,
-   "l": 0.0417,
-   "r": 0.9383,
-   "t": 0.1133,
-   "b": 0.9667
+   "l": 0.1083,
+   "r": 0.8717,
+   "t": 0.2183,
+   "b": 0.7933
   },
   {
-   "id": "script-checker",
-   "name": "White Hilux Script",
+   "id": "twh-halftone",
+   "name": "TWH Halftone",
+   "num": 42,
    "aspect": 1,
-   "l": 0.0367,
-   "r": 0.9683,
-   "t": 0.2483,
-   "b": 0.76
+   "l": 0.0983,
+   "r": 0.8783,
+   "t": 0.195,
+   "b": 0.7667
   },
   {
-   "id": "winch-crew",
-   "name": "Winch Crew",
+   "id": "twh-circle-type",
+   "name": "TWH Circle",
+   "num": 43,
    "aspect": 1,
-   "l": 0.1333,
-   "r": 0.8567,
-   "t": 0.2,
-   "b": 0.8333
+   "l": 0.1067,
+   "r": 0.8933,
+   "t": 0.1067,
+   "b": 0.8933
+  },
+  {
+   "id": "twh-triple-line",
+   "name": "TWH Triple línea",
+   "num": 44,
+   "aspect": 1,
+   "l": 0.0883,
+   "r": 0.895,
+   "t": 0.19,
+   "b": 0.82
+  },
+  {
+   "id": "twh-extrude",
+   "name": "TWH 3D",
+   "num": 45,
+   "aspect": 1,
+   "l": 0.0883,
+   "r": 0.8933,
+   "t": 0.2233,
+   "b": 0.7533
+  },
+  {
+   "id": "twh-knockout",
+   "name": "TWH Calado",
+   "num": 46,
+   "aspect": 1,
+   "l": 0.1117,
+   "r": 0.8867,
+   "t": 0.2917,
+   "b": 0.7933
+  },
+  {
+   "id": "logo-shop",
+   "name": "The White Hilux (horizontal)",
+   "num": null,
+   "aspect": 0.1867,
+   "l": 0.0133,
+   "r": 0.9833,
+   "t": 0.1339,
+   "b": 0.9107
+  },
+  {
+   "id": "logo-header",
+   "name": "TWH franjas",
+   "num": null,
+   "aspect": 0.4583,
+   "l": 0.045,
+   "r": 1,
+   "t": 0.0364,
+   "b": 0.9673
   }
  ],
  "seed": [

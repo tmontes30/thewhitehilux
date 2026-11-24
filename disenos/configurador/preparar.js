@@ -64,7 +64,11 @@ const ids = ${JSON.stringify(ids)}, srcs = ${JSON.stringify(srcs)};
 const dom = execFileSync(edge, ['--headless=new', '--disable-gpu', '--virtual-time-budget=20000', '--dump-dom', 'file:///' + tmp.replace(/\\/g, '/')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 fs.unlinkSync(tmp);
 const box = JSON.parse(dom.match(/<pre id="o">([^<]*)<\/pre>/)[1].replace(/&quot;/g, '"'));
-const logos = ids.map((id) => ({ id, name: NAMES[id] || id, ...box[id] })).sort((a, b) => a.name.localeCompare(b.name));
+// Mismo orden y número que la hoja de todos los logos (disenos/logos/_todos.png = orden de LOGOS en generar.js);
+// los que no están en esa hoja (ej. TWH franjas, The White Hilux horizontal) van al final, sin número.
+const ORDEN = [...fs.readFileSync(path.join(HERE, '..', 'logos', 'generar.js'), 'utf8').matchAll(/^  '([a-z0-9-]+)': \(/gm)].map((m) => m[1]);
+const logos = ids.map((id) => ({ id, name: NAMES[id] || id, num: ORDEN.indexOf(id) + 1 || null, ...box[id] }))
+  .sort((a, b) => (a.num || 999) - (b.num || 999) || a.name.localeCompare(b.name));
 
 // ---------- 3. Colección actual (punto de partida) ----------
 const { products } = require('../../web/data/catalog.js');
