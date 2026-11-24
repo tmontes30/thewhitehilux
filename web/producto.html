@@ -86,6 +86,7 @@
           '<p class="msg-err" id="err" hidden></p>' +
           '<button type="button" class="btn primary" id="buy-now">Comprar ahora</button>' +
           '<button type="button" class="btn secondary" id="add">Agregar al carrito</button>' +
+          (soon ? '<div class="like-box"><button type="button" class="like-btn" id="like" aria-pressed="false"><span class="heart" aria-hidden="true">♡</span> <span id="like-txt">Me gusta</span></button><p>Indica que te gusta este producto para considerarlo en las siguientes colecciones.</p></div>' : '') +
           '<p class="added" id="added" hidden>Agregado al carrito. <a href="carrito.html">Ver carrito</a></p>' +
           '<div class="perks">' +
             '<div class="perk">' + PERK.truck + '<span>' + 'Envío a todo Chile desde ' + TWH.money(cfg.shipping.rm.price) + ' · <b>gratis en RM</b> sobre ' + TWH.money(cfg.freeShippingFrom) + '</span></div>' +
@@ -210,6 +211,26 @@
       document.getElementById('add').hidden = blocked;
     }
     render();
+
+    // "Me gusta" en productos Próximamente: se cuenta anónimo (pestaña Cliente del panel) y se recuerda en este navegador
+    var likeBtn = document.getElementById('like');
+    if (likeBtn) {
+      var likes = []; try { likes = JSON.parse(localStorage.getItem('twh-likes') || '[]'); } catch (e) { likes = []; }
+      var paintLike = function () {
+        var on = likes.indexOf(p.id) >= 0;
+        likeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        likeBtn.querySelector('.heart').textContent = on ? '♥' : '♡';
+        document.getElementById('like-txt').textContent = on ? '¡Te gusta! Lo tendremos en cuenta' : 'Me gusta';
+      };
+      likeBtn.addEventListener('click', function () {
+        var on = likes.indexOf(p.id) >= 0;
+        if (on) likes = likes.filter(function (x) { return x !== p.id; }); else likes.push(p.id);
+        try { localStorage.setItem('twh-likes', JSON.stringify(likes)); } catch (e) {}
+        TWH.track(on ? 'nolike' : 'like', p.id);
+        paintLike();
+      });
+      paintLike();
+    }
 
     function add() {
       var err = document.getElementById('err');

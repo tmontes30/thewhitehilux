@@ -510,7 +510,7 @@ exports.probarPush = onRequest(
 // ---------- evento (visitas de la tienda, anónimas y agregadas por día) ----------
 // La tienda manda lotes de eventos [grupo, clave] (navigator.sendBeacon, text/plain). Se suman en
 // estadisticas/<YYYY-MM-DD> como { grupo: { clave: n } }. No se guarda nada de la persona (ni IP ni id).
-const GRUPOS_EVENTO = ['pv', 'prod', 'cart', 'click', 'filtro', 'busca', 'vacia', 'fuente', 'disp', 'embudo'];
+const GRUPOS_EVENTO = ['pv', 'prod', 'cart', 'click', 'filtro', 'busca', 'vacia', 'fuente', 'disp', 'embudo', 'like', 'nolike'];
 const PASOS_EMBUDO = ['visitantes', 'sesiones', 'producto', 'carrito', 'checkout', 'compra'];
 exports.evento = onRequest(
   { cors: [/thewhitehilux\.cavedevz\.com$/, /tmontes30\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/], memory: '256MiB' },

@@ -108,6 +108,7 @@ onAuthStateChanged(auth, async (user) => {
       raw = s.data() || {};
       data = C.mergeCatalog(BASE, raw);
       booted();
+      if (!visitas && !loadVisitas.started) { loadVisitas.started = true; loadVisitas(); }
       renderProducts();
       renderSettings();
       renderOrders();
@@ -260,9 +261,9 @@ function orderCard(o) {
         <select data-act="courier" aria-label="Courier"><option value="">Courier…</option>${COURIERS.map((c) => `<option${c === o.courier ? ' selected' : ''}>${c}</option>`).join('')}</select>
         <input data-act="trackingCode" value="${esc(o.trackingCode || '')}" placeholder="N° de seguimiento" maxlength="60">
         <input data-act="trackingUrl" value="${esc(o.trackingUrl || '')}" placeholder="Link de seguimiento (opcional)" maxlength="300">
-        <input data-act="shipCostReal" type="number" min="0" value="${o.shipCostReal != null ? esc(o.shipCostReal) : ''}" placeholder="Costo real del envío $ (para Utilidades)" title="Lo que te cobró el courier (para calcular utilidades)">
       </div>
     </div>` : ''}
+    ${PAID.includes(o.status) && ship.method !== 'retiro' ? shipCostHtml(o) : ''}
     ${notifsHtml(o)}
     <div class="order-foot">
       <textarea data-act="note" rows="1" placeholder="Nota interna (solo tú la ves): cambios de talla, acuerdos con el cliente…">${esc(o.adminNote || '')}</textarea>
@@ -270,6 +271,28 @@ function orderCard(o) {
       ${o.status === 'pendiente_pago' || o.status === 'cancelado' ? '<button type="button" class="btn ghost small" data-act="delete">Eliminar</button>' : ''}
     </div>
   </article>`;
+}
+
+// Costo real del envío (privado: solo para Utilidades; no sale en "Sigue tu pedido" ni en los correos)
+function shipCostHtml(o) {
+  const ship = o.shipping || {};
+  const charged = Number(ship.cost) || 0;
+  const has = o.shipCostReal != null && o.shipCostReal !== '';
+  const real = has ? Number(o.shipCostReal) : null;
+  const tarifa = (CFG.shipping[ship.zone] || {}).price || 0;
+  const diff = has ? charged - real : null;
+  const resumen = has
+    ? `Cobrado al cliente ${charged ? money(charged) : '$0 (envío gratis)'} · te costó ${real ? money(real) : '$0 (lo entregaste tú)'} → <b class="${diff >= 0 ? 'ok' : 'bad'}">${diff >= 0 ? 'ganas' : 'pierdes'} ${money(Math.abs(diff))}</b> en el envío`
+    : `Sin anotar: Utilidades asume ${money(tarifa)} (tarifa de la zona). Anótalo cuando sepas cuánto te costó.`;
+  return `<div class="ship-cost">
+      <h4>🔒 Costo real del envío <span>privado · solo para Utilidades, el cliente no lo ve</span></h4>
+      <div class="ship-cost-row">
+        <label>$ <input data-act="shipCostReal" type="number" min="0" step="1" inputmode="numeric" value="${has ? esc(real) : ''}" placeholder="Ej: 2000" aria-label="Costo real del envío"></label>
+        <button type="button" class="btn ghost small" data-act="shipSelf">Lo entregué yo ($0)</button>
+        ${has ? '<button type="button" class="link" data-act="shipClear">Borrar</button>' : ''}
+      </div>
+      <p class="hint">${resumen}</p>
+    </div>`;
 }
 
 function renderOrders() {
@@ -396,6 +419,8 @@ $('orders').addEventListener('change', async (e) => {
       let v = e.target.value.trim().slice(0, 300);
       if (act === 'trackingUrl' && v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
       await updateDoc(ref, { [act]: v });
+      // "Despacho propio" = lo llevas tú: si no anotaste costo, queda en $0 para Utilidades
+      if (act === 'courier' && v === 'Despacho propio' && (o.shipCostReal == null || o.shipCostReal === '')) await updateDoc(ref, { shipCostReal: 0 });
       toast('Despacho actualizado ✓');
     }
   } catch (err) {
@@ -404,6 +429,16 @@ $('orders').addEventListener('change', async (e) => {
 });
 $('orders').addEventListener('focusout', () => setTimeout(renderOrders, 0));
 $('orders').addEventListener('click', async (e) => {
+  // costo real del envío: "Lo entregué yo" ($0) o borrar
+  const sc = e.target.closest('[data-act="shipSelf"], [data-act="shipClear"]');
+  if (sc) {
+    const self = sc.dataset.act === 'shipSelf';
+    try {
+      await updateDoc(doc(db, 'pedidos', sc.closest('[data-id]').dataset.id), { shipCostReal: self ? 0 : deleteField() });
+      toast(self ? 'Envío propio: costo $0 ✓' : 'Costo de envío borrado');
+    } catch (err) { fail(err); }
+    return;
+  }
   const b = e.target.closest('[data-act="delete"]');
   if (!b) return;
   const id = b.closest('[data-id]').dataset.id;
@@ -475,6 +510,7 @@ function productCard(p) {
         <div class="status-pick" role="group" aria-label="Estado en la tienda">${Object.keys(C.STATUS)
           .map((k) => `<button type="button" data-v="${k}" aria-pressed="${k === st}">${C.STATUS[k]}</button>`)
           .join('')}</div>
+        ${st === 'proximamente' ? `<span class="likes-pill" title="Clientes que marcaron Me gusta en la ficha (desde que existe el botón)">❤ ${likesOf(p.id)} me gusta</span>` : ''}
         <span class="hint">${st === 'proximamente' ? 'Se ve con el tag PRÓXIMAMENTE y no se puede comprar.' : st === 'oculto' ? 'No aparece en la tienda.' : total === 0 ? 'Sin stock: se ve AGOTADO.' : 'A la venta.'}</span>
       </div>
       <label>Descripción<textarea data-f="desc" rows="3" maxlength="1200">${esc(p.desc)}</textarea></label>
@@ -2069,6 +2105,13 @@ let clPeriod = '30d';
 const CL_PERIODS = ['hoy', '7d', '30d', 'mes', 'mesant', 'todo'];
 const PAGINAS = { inicio: 'Inicio', busqueda: 'Resultados de búsqueda', producto: 'Ficha de producto', carrito: 'Carrito', gracias: 'Gracias por tu compra', 'pago-pendiente': 'Pago pendiente', 'pago-fallido': 'Pago fallido', seguimiento: 'Sigue tu pedido', nosotros: 'Nosotros', terminos: 'Términos', cambios: 'Cambios y devoluciones', privacidad: 'Privacidad', 'estado:proximamente': 'Próximamente' };
 
+// "Me gusta" netos de un producto (todo el historial): like − nolike
+function likesOf(id) {
+  if (!visitas) return '…';
+  let n = 0;
+  Object.values(visitas).forEach((v) => { n += Number((v.like || {})[id]) || 0; n -= Number((v.nolike || {})[id]) || 0; });
+  return Math.max(0, n);
+}
 async function loadVisitas() {
   try {
     const s = await getDocs(collection(db, 'estadisticas'));
@@ -2079,6 +2122,7 @@ async function loadVisitas() {
     fail(err);
   }
   renderCliente();
+  renderProducts();
 }
 $('cl-refresh').addEventListener('click', () => { $('cl-refresh').disabled = true; loadVisitas().finally(() => ($('cl-refresh').disabled = false)); });
 $('cl-period').addEventListener('click', (e) => {
@@ -2153,6 +2197,10 @@ function renderCliente() {
   clTable('cl-prod', ['Producto', 'Vistas', 'Al carro', '% al carro', 'Vendidas'],
     prows.map((r) => [esc(r.name), r.v, r.c, r.v ? pct(r.c, r.v) + '%' : '—', r.s]));
 
+  const likeIds = [...new Set([...Object.keys(S.like || {}), ...Object.keys(S.nolike || {})])];
+  const lrows = likeIds.map((id) => ({ id, name: (productById(id) || {}).name || id, n: Math.max(0, ((S.like || {})[id] || 0) - ((S.nolike || {})[id] || 0)), v: (S.prod || {})[id] || 0 }))
+    .filter((r) => r.n > 0).sort((a, b) => b.n - a.n);
+  clTable('cl-likes', ['Producto', 'Me gusta', 'Vistas', '% le gustó'], lrows.map((r) => [esc(r.name), r.n, r.v, r.v ? pct(r.n, r.v) + '%' : '—']), 'Todavía nadie marcó Me gusta en este período.');
   clTable('cl-click', ['Botón o link', 'Toques'], topN(S.click, 20).map(([k, n]) => [esc(k), n]));
   clTable('cl-pages', ['Página', 'Vistas'], topN(S.pv, 15).map(([k, n]) => [esc(pageName(k)), n]));
   clTable('cl-search', ['Filtro o búsqueda', 'Veces'], [...topN(S.filtro, 12).map(([k, n]) => [esc(k), n]), ...topN(S.busca, 12).map(([k, n]) => ['Búsqueda “' + esc(k) + '”', n])].sort((a, b) => b[1] - a[1]));
@@ -2185,6 +2233,7 @@ function renderCliente() {
   if (dTot >= 20 && pct(cel, dTot) >= 60) tips.push(['info', `${pct(cel, dTot)}% entra desde el celular: revisa siempre cómo se ve la tienda en el teléfono antes de publicar algo.`]);
   const wa = Object.entries(S.click || {}).filter(([k]) => /WhatsApp/i.test(k)).reduce((s, [, n]) => s + n, 0);
   if (wa >= 5) tips.push(['info', `Tocaron WhatsApp ${wa} veces: hay gente con dudas antes de comprar. Mira qué preguntan y súmalo a las descripciones.`]);
+  if (lrows.length && lrows[0].n >= 3) tips.push(['potenciar', `Lo que más esperan de Próximamente: ${lrows.slice(0, 3).map((r) => `<b>${esc(r.name)}</b> (${r.n} ❤)`).join(', ')}. Priorízalos en la próxima compra.`]);
   const ICO = { mejorar: '🔧', potenciar: '🚀', info: 'ℹ️' };
   $('cl-insights').innerHTML = (tips.length ? tips : [['info', 'Todo se ve sano en este período. Mira el embudo semana a semana.']])
     .map(([t, h]) => `<li class="${t}"><span>${ICO[t]}</span><p>${h}</p></li>`).join('');
