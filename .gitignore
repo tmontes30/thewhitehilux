@@ -21,3 +21,7 @@ estrategia/
 
 # Pedidos a proveedores (cantidades, costos): privado
 pedido-proveedor/
+
+# Fotos del proveedor de neumáticos (originales; a la tienda van solo las preparadas)
+/Neumaticos/
+disenos/neumaticos/todos-neumas.*
