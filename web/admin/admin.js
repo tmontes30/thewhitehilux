@@ -151,7 +151,7 @@ function showTab(name) {
   // ?v= evita que el navegador muestre una versión vieja guardada en caché
   if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html?v=' + Date.now();
   document.body.classList.toggle('wide', name === 'configurador');
-  if (name === 'cliente' && !visitas) loadVisitas();
+  if (name === 'cliente') { if (visitas) renderCliente(); else { loadVisitas.started = true; loadVisitas(); } }
 }
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-tab]');
@@ -2157,6 +2157,12 @@ function pageName(k) {
 }
 
 function renderCliente() {
+  try { renderClienteIn(); } catch (err) {
+    console.error(err);
+    $('cl-kpis').innerHTML = `<div class="card" style="grid-column:1/-1"><b>No se pudo mostrar Cliente.</b><p class="hint">Mándale una captura de esto a quien te ayuda con la tienda: ${esc(err && err.message)}</p></div>`;
+  }
+}
+function renderClienteIn() {
   if (!$('tab-cliente')) return;
   $('cl-period').innerHTML = CL_PERIODS.map((k) => `<button type="button" class="chip" data-cp="${k}" aria-pressed="${k === clPeriod}">${PERIODS[k]}</button>`).join('');
   if (!visitas) { $('cl-kpis').innerHTML = '<p class="hint">Cargando visitas…</p>'; return; }

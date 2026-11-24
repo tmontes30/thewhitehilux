@@ -35,6 +35,13 @@ jobs:
           cp -r web/. _site/
           rm -rf _site/lib _site/tests _site/package.json _site/package-lock.json _site/node_modules _site/.gitignore
           touch _site/.nojekyll
+      - name: Versión en los archivos (el navegador baja siempre los .js/.css nuevos)
+        run: |
+          V=${GITHUB_SHA::8}
+          for f in _site/*.html _site/admin/*.html _site/admin/configurador/*.html; do
+            if [ -f "$f" ]; then sed -E -i "s#((src|href)=\"[^\":?]+\.(js|css))\"#\1?v=$V\"#g" "$f"; fi
+          done
+          echo "Archivos versionados en el inicio: $(grep -o "?v=$V" _site/index.html | wc -l)"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v5
         with:
