@@ -88,7 +88,7 @@
                 '<label for="medida">Tu medida o vehículo <small>(opcional)</small></label>' +
                 '<input id="medida" maxlength="80" placeholder="Ej: 265/70 R17 · Hilux 2018" autocomplete="off">' +
                 '<a class="btn wa-btn" id="cotizar" target="_blank" rel="noopener" data-track="Cotizar · ' + TWH.esc(p.name) + '">' + TWH.WA_ICON + 'Cotizar por WhatsApp</a>' +
-                '<p>Tenemos <b>todas las medidas</b>. Al cotizar te enviamos modelos, disponibilidad y precio.</p>' +
+                '<p>Tenemos <b>todas las medidas</b>. Al cotizar te enviamos modelos, disponibilidad y precio. <b>El precio incluye instalación y balanceo</b> en local (RM).</p>' +
               '</div>'
             : '') +
           '<p class="stock" id="stock"' + (coti ? ' hidden' : '') + '></p>' +
@@ -100,6 +100,7 @@
           '<p class="added" id="added" hidden>Agregado al carrito. <a href="carrito.html">Ver carrito</a></p>' +
           '<div class="perks">' + (coti
             ? '<div class="perk">' + PERK.box + '<span><b>Todas las medidas</b> para camionetas y 4x4</span></div>' +
+              '<div class="perk">' + PERK.pin + '<span><b>Incluye instalación y balanceo</b> en local (RM)</span></div>' +
               '<div class="perk">' + PERK.shield + '<span><b>Te respondemos por WhatsApp</b> con modelos y precios</span></div>' +
               '<div class="perk">' + PERK.truck + '<span>Envío a todo Chile <b>a coordinar</b> al cotizar</span></div>' +
               '</div>'
