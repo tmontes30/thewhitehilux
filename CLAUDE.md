@@ -47,6 +47,11 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 - Publicar tienda: `git push` (GitHub Actions corre pruebas y publica `web/`). Funciones: `firebase deploy --only functions`. Nunca subir `ideas/`, `Modelos foto/`, `fotos-originales/` ni `disenos/configurador/bases/` (están en .gitignore).
 - Las páginas funcionan abiertas con doble clic (rutas relativas y sin fetch de archivos locales). El pago solo funciona publicado.
 
+## Neumáticos (en preparación, aún no publicado)
+
+- Fotos del proveedor en `Neumaticos/` (privada, en .gitignore). `python disenos/neumaticos/preparar.py` → `web/assets/img/neumaticos/at-NN.jpg`, `rt-NN.jpg`, `mt-NN.jpg` (900 px, cuadradas, fotos reales con etiqueta TWH + franjas | AT/RT/MT) y la hoja `disenos/neumaticos/todos-neumas.png/.html` para revisar. La foto 9 no se usa (marca de agua NEUMACENTER). El dueño prefirió fotos reales (no fondo blanco recortado).
+- Plan acordado: 3 publicaciones (AT, RT, MT) sin precio, botón "Cotizar por WhatsApp" (medidas y modelos), pestaña Neumáticos en la tienda y gestión en el panel como los otros productos. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich (AT y MT). "Tenemos todas las medidas; al cotizar se envía más info." Esperar el OK del dueño antes de publicar.
+
 ## Reglas de negocio actuales
 
 - Colores ofrecidos: poleras en **negro y blanco**; polerones y jockeys solo en **negro** (por ahora).

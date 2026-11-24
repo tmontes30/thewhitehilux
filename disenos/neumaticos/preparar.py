@@ -19,20 +19,21 @@ for f in os.listdir(OUT):
         os.remove(os.path.join(OUT, f))
 SIZE = 900
 
-# (n.º de foto en la carpeta ordenada por nombre, tipo, recorte cuadrado (x, y, lado) en px de la original, nota)
+# (n.º de foto en la carpeta ordenada por nombre, tipo, recorte cuadrado (x, y, lado) en px de la original, nota, fondo)
+# fondo 'blanco' = se recorta el neumático y va sobre blanco con sombra suave; 'foto' = se deja la foto (montado en vehículo)
 # La 9 no se usa: trae la marca de agua de otra tienda (NEUMACENTER).
 FOTOS = [
-    (7,  'at', (0, 0, 447), 'RoadX RX Quest AT21'),
-    (6,  'at', (0, 330, 1200), 'Sumaxx All Terrain (Jeep)'),
-    (2,  'at', (0, 160, 1200), '33x12.50R17LT'),
-    (1,  'at', (0, 70, 900), 'All Terrain (stack)'),
-    (11, 'at', (0, 400, 1200), 'Montado en camioneta'),
-    (12, 'at', (0, 400, 1200), 'XBRI Brutus T/A (marca a confirmar)'),
-    (10, 'rt', (0, 180, 1200), 'Set de 4 (RT)'),
-    (3,  'mt', (0, 62, 375), 'RoadX MT'),
-    (8,  'mt', (0, 64, 387), 'Mud Terrain'),
-    (4,  'mt', (0, 120, 1200), 'Set de 4'),
-    (5,  'mt', (0, 400, 1200), 'Montado en Ranger'),
+    (7,  'at', (0, 0, 447), 'RoadX RX Quest AT21', 'foto'),
+    (6,  'at', (0, 330, 1200), 'Sumaxx All Terrain (Jeep)', 'foto'),
+    (2,  'at', (0, 160, 1200), '33x12.50R17LT', 'foto'),
+    (1,  'at', (0, 70, 900), 'All Terrain (stack)', 'foto'),
+    (11, 'at', (0, 400, 1200), 'Montado en camioneta', 'foto'),
+    (12, 'at', (0, 400, 1200), 'XBRI Brutus T/A', 'foto'),
+    (10, 'rt', (0, 180, 1200), 'Set de 4 (RT)', 'foto'),
+    (3,  'mt', (0, 62, 375), 'RoadX MT', 'foto'),
+    (8,  'mt', (0, 64, 387), 'Mud Terrain', 'foto'),
+    (4,  'mt', (0, 120, 1200), 'Set de 4', 'foto'),
+    (5,  'mt', (0, 400, 1200), 'Montado en Ranger', 'foto'),
 ]
 INK, BG, ORANGE, RED, DRED = (242, 240, 232), (27, 28, 26), (242, 165, 65), (228, 87, 46), (179, 32, 42)
 
@@ -79,13 +80,41 @@ def preparar(src, box):
     im = ImageEnhance.Color(im).enhance(1.05)
     return im.filter(ImageFilter.UnsharpMask(radius=2, percent=70 if s >= 800 else 120, threshold=2))
 
+_sesion = None
+def fondo_blanco(im):
+    """Recorta el neumático (rembg) y lo pone centrado sobre blanco con una sombra suave abajo."""
+    global _sesion
+    from rembg import remove, new_session
+    if _sesion is None:
+        _sesion = new_session('isnet-general-use')
+    rgba = remove(im, session=_sesion, post_process_mask=True)
+    a = rgba.split()[-1].point(lambda v: 255 if v > 40 else 0)
+    bb = a.getbbox()
+    if not bb:
+        return im
+    obj = rgba.crop(bb)
+    # cabe en 80 % del cuadrado, un poco sobre el centro (deja aire para la etiqueta)
+    k = min(SIZE * 0.80 / obj.width, SIZE * 0.74 / obj.height)
+    obj = obj.resize((max(1, int(obj.width * k)), max(1, int(obj.height * k))), Image.LANCZOS)
+    ox = (SIZE - obj.width) // 2
+    oy = int(SIZE * 0.44 - obj.height / 2)
+    lienzo = Image.new('RGBA', (SIZE, SIZE), (255, 255, 255, 255))
+    sombra = Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0))
+    ImageDraw.Draw(sombra).ellipse((ox + obj.width * 0.08, oy + obj.height - 14, ox + obj.width * 0.92, oy + obj.height + 22), fill=(0, 0, 0, 70))
+    lienzo = Image.alpha_composite(lienzo, sombra.filter(ImageFilter.GaussianBlur(14)))
+    lienzo.alpha_composite(obj, (ox, oy))
+    return lienzo.convert('RGB')
+
 fuentes = sorted(glob.glob(os.path.join(SRC, '*.jpeg')) + glob.glob(os.path.join(SRC, '*.jpg')) + glob.glob(os.path.join(SRC, '*.png')))
 cont = {'at': 0, 'mt': 0, 'rt': 0}
 hechas = []
-for n, tipo, box, nota in FOTOS:
+for n, tipo, box, nota, fondo in FOTOS:
     cont[tipo] += 1
     nombre = '%s-%02d.jpg' % (tipo, cont[tipo])
-    im = etiqueta(preparar(fuentes[n - 1], box), tipo)
+    im = preparar(fuentes[n - 1], box)
+    if fondo == 'blanco':
+        im = fondo_blanco(im)
+    im = etiqueta(im, tipo)
     im.save(os.path.join(OUT, nombre), quality=86, optimize=True, progressive=True)
     hechas.append((tipo, nombre, n, nota))
     print('ok', nombre, '<- foto', n, '·', nota)
