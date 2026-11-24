@@ -183,9 +183,21 @@ async function contornos(page, svg) {
         p.reorient(true, true);
         u = u ? u.unite(p, { insert: false }) : p;
       });
+      // El borde va solo por FUERA de las letras: los huecos (o, a, d, e...) quedan siempre abiertos y parejos.
+      // (Un borde dibujado también hacia adentro tapaba por completo los huecos chicos y no los grandes.)
+      const kids = u.children ? u.children.slice() : [u];
+      // contorno exterior vs. hueco: por el sentido del trazo (el más grande es exterior; los huecos van al revés)
+      const mayor = kids.reduce((m, k) => (Math.abs(k.area) > Math.abs(m.area) ? k : m), kids[0]);
+      const outers = kids.filter((k) => k.clockwise === mayor.clockwise);
+      let lleno = null;
+      outers.forEach((k) => { const c = new paper.Path({ segments: k.segments, closed: true, insert: false }); lleno = lleno ? lleno.unite(c, { insert: false }) : c; });
+      if (!lleno) lleno = u;
+      const huecos = lleno.subtract(u, { insert: false });
       let out;
-      try { out = PaperOffset.offset(u, G.r, { join: 'round', insert: false }); }
-      catch (e) { avisos.push('no se pudo convertir el borde de un texto: ' + e.message); return; }
+      try {
+        out = PaperOffset.offset(lleno, G.r, { join: 'round', insert: false });
+        if (huecos && !huecos.isEmpty()) out = out.subtract(huecos, { insert: false });
+      } catch (e) { avisos.push('no se pudo convertir el borde de un texto: ' + e.message); return; }
       const b = document.createElementNS(NS, 'path');
       b.setAttribute('d', out.pathData);
       b.setAttribute('fill', G.color);
