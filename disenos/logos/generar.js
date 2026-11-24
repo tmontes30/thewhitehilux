@@ -47,27 +47,33 @@ const FONT_CACHE = {};
 function ptGeo(file, text, size, x, y, o = {}) {
   const opentype = require('opentype.js');
   const font = FONT_CACHE[file] || (FONT_CACHE[file] = opentype.loadSync(path.join(__dirname, '..', 'fuentes', file + '.ttf')));
-  const build = (sz) => {
+  const build = (sz, ox, oy) => {
     const k = sz / font.unitsPerEm;
     const glyphs = font.stringToGlyphs(text);
     let cx = 0, d = '';
+    const bb = { x1: Infinity, y1: Infinity, x2: -Infinity, y2: -Infinity };
     glyphs.forEach((g, i) => {
-      d += g.getPath(cx, 0, sz).toPathData(2);
+      const p = g.getPath(ox + cx, oy, sz);
+      const b = p.getBoundingBox();
+      if (b.x2 > b.x1) { bb.x1 = Math.min(bb.x1, b.x1); bb.y1 = Math.min(bb.y1, b.y1); bb.x2 = Math.max(bb.x2, b.x2); bb.y2 = Math.max(bb.y2, b.y2); }
+      d += p.toPathData(2);
       cx += g.advanceWidth * k + (o.ls || 0);
       if (i < glyphs.length - 1) cx += font.getKerningValue(g, glyphs[i + 1]) * k;
     });
-    return { d, natural: cx - (o.ls || 0) };
+    return { d, natural: cx - (o.ls || 0), bb, sz };
   };
-  let g = build(size);
+  let g = build(size, 0, 0);
   // fit: ajusta el tamaño (parejo, sin deformar) para que el texto mida ese ancho
-  if (o.fit) g = build(size * o.fit / g.natural);
+  if (o.fit) g = build(size * o.fit / g.natural, 0, 0);
   const sx = o.w ? o.w / g.natural : 1;
   const width = g.natural * sx;
   const anchor = o.anchor || 'middle';
   const x0 = anchor === 'middle' ? x - width / 2 : anchor === 'end' ? x - width : x;
   const sk = o.skew ? ` skewX(${-o.skew})` : '';
   const sc = sx !== 1 ? ` scale(${r2(sx * 1000) / 1000} 1)` : '';
-  return { d: g.d, tr: `translate(${r2(x0)} ${r2(y)})${sk}${sc}`, width };
+  // abs: trazado ya en coordenadas finales (sin transform), para calar o combinar con otras figuras
+  const A = build(g.sz, x0, y);
+  return { d: g.d, tr: `translate(${r2(x0)} ${r2(y)})${sk}${sc}`, width, abs: A.d, bb: A.bb, size: g.sz };
 }
 // Texto en trazo. o.stroke / o.sw = contorno (o.behind: el contorno va detrás del relleno); fill 'none' = solo contorno
 function pt(file, text, size, x, y, fill, o = {}) {
@@ -526,6 +532,122 @@ const LOGOS = {
       f(120, INK, { stroke: BG, sw: 6, behind: true }) +
       t(150, 52, '4X4 · OFF ROAD · CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
       t(150, 270, 'THE WHITE HILUX · EST. 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+  // ---------- 37-46: TWH modernos (2026-11-24) ----------
+  // 37. Split: TWH cortado al medio, la mitad de abajo desplazada en rojo
+  'twh-split': () => {
+    const G = ptGeo('Anton-Regular', 'TWH', 100, 150, 196, { fit: 206 });
+    const m = r2((G.bb.y1 + G.bb.y2) / 2);
+    return `<defs><clipPath id="spt"><rect x="0" y="0" width="300" height="${r2(m - 3)}"/></clipPath><clipPath id="spb"><rect x="0" y="${r2(m + 3)}" width="300" height="300"/></clipPath></defs>` +
+      `<g clip-path="url(#spt)"><path d="${G.abs}" fill="${INK}"/></g>` +
+      `<g clip-path="url(#spb)"><g transform="translate(12 0)"><path d="${G.abs}" fill="${RED}"/></g></g>` +
+      `<rect x="34" y="${r2(m - 1)}" width="54" height="2" fill="${MUST}"/>` +
+      t(44, r2(G.bb.y1 - 16), 'THE WHITE HILUX', 12, INK, COND, cond('letter-spacing="5"')) +
+      t(256, r2(G.bb.y2 + 26), '4X4 · EST. 2001', 12, MUST, COND, 'text-anchor="end" ' + cond('letter-spacing="5"'));
+  },
+
+  // 38. Spec: TWH en contorno fino con cotas de plano técnico
+  'twh-spec': () => {
+    const G = ptGeo('RussoOne-Regular', 'TWH', 90, 150, 176, { fit: 196 });
+    const { x1, y1, x2, y2 } = G.bb;
+    const cruz = (x, y) => `<path d="M${x - 7} ${y} H${x + 7} M${x} ${y - 7} V${y + 7}" stroke="${MUST}" stroke-width="1.5"/>`;
+    return `<path d="${G.abs}" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+      `<path d="M${r2(x1)} ${r2(y1 - 22)} H${r2(x2)} M${r2(x1)} ${r2(y1 - 28)} V${r2(y1 - 16)} M${r2(x2)} ${r2(y1 - 28)} V${r2(y1 - 16)}" stroke="${INK}" stroke-width="1.2"/>` +
+      `<rect x="128" y="${r2(y1 - 30)}" width="44" height="14" fill="${BG}"/>` + t(150, r2(y1 - 19), '4X4', 11, MUST, COND, mid + ' ' + cond('letter-spacing="2"')) +
+      `<path d="M${r2(x2 + 18)} ${r2(y1)} V${r2(y2)} M${r2(x2 + 12)} ${r2(y1)} H${r2(x2 + 24)} M${r2(x2 + 12)} ${r2(y2)} H${r2(x2 + 24)}" stroke="${INK}" stroke-width="1.2"/>` +
+      `<text transform="translate(${r2(x2 + 30)} ${r2((y1 + y2) / 2)}) rotate(90)" text-anchor="middle" font-family="${COND}" font-weight="700" style="font-stretch:condensed" font-size="11" fill="${MUST}" letter-spacing="2">2001</text>` +
+      cruz(36, 60) + cruz(264, 60) + cruz(36, 244) + cruz(264, 244) +
+      t(150, 236, 'TWH · SPEC 4X4-01 · OFF ROAD', 11, INK, COND, mid + ' ' + cond('letter-spacing="4"'));
+  },
+
+  // 39. Pill: píldora tipo sticker moderno con círculo 4X4
+  'twh-pill': () =>
+    t(150, 98, 'EST. 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="8"')) +
+    `<rect x="36" y="110" width="228" height="82" rx="41" fill="${INK}"/>` +
+    pt('RubikMonoOne-Regular', 'TWH', 50, 126, 168, BG, { fit: 128 }) +
+    `<circle cx="222" cy="151" r="31" fill="${RED}"/>` +
+    pt('BebasNeue-Regular', '4X4', 30, 222, 162, INK, { ls: 1 }) +
+    t(150, 222, 'OFF ROAD CLUB', 16, INK, COND, mid + ' ' + cond('letter-spacing="9"')),
+
+  // 40. Vertical: T, W y H apiladas con texto vertical (editorial)
+  'twh-vertical': () => {
+    const L = (ch, y, c) => pt('Anton-Regular', ch, 76, 116, y, c, {});
+    return L('T', 108, INK) + L('W', 182, INK) + L('H', 256, RED) +
+      `<rect x="178" y="40" width="6" height="216" fill="${RED}"/>` +
+      `<text transform="translate(206 148) rotate(90)" text-anchor="middle" font-family="${COND}" font-weight="700" style="font-stretch:condensed" font-size="17" fill="${INK}" letter-spacing="7">THE WHITE HILUX</text>` +
+      `<text transform="translate(232 148) rotate(90)" text-anchor="middle" font-family="${COND}" font-weight="700" style="font-stretch:condensed" font-size="11" fill="${MUST}" letter-spacing="5">4X4 · OFF ROAD · EST. 2001</text>` +
+      `<rect x="60" y="40" width="2" height="216" fill="${INK}" fill-opacity=".35"/>`;
+  },
+
+  // 41. Tread: TWH con el dibujo de un neumático calado en las letras
+  'twh-tread': () => {
+    const G = ptGeo('Anton-Regular', 'TWH', 100, 150, 190, { fit: 214, ls: 10 });
+    // tacos inclinados en filas alternadas (como el dibujo de un neumático de barro)
+    let tread = '';
+    for (let r = 0, y = 70; y < 210; y += 17, r++) for (let x = (r % 2 ? 22 : 8); x < 300; x += 28) tread += `<path d="M${x} ${y} l12 0 l-6 11 l-12 0 Z" fill="${BG}"/>`;
+    return `<defs><clipPath id="trd"><path d="${G.abs}"/></clipPath></defs>` +
+      `<path d="${G.abs}" fill="${INK}"/><g clip-path="url(#trd)">${tread}</g>` +
+      `<path d="M40 214 H260" stroke="${MUST}" stroke-width="3"/>` +
+      t(150, 238, 'GRIP · TRACTION · 4X4', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      t(150, r2(G.bb.y1 - 14), 'THE WHITE HILUX', 12, MUST, COND, mid + ' ' + cond('letter-spacing="8"'));
+  },
+
+  // 42. Halftone: TWH relleno de puntos que crecen hacia abajo
+  'twh-halftone': () => {
+    const G = ptGeo('Anton-Regular', 'TWH', 100, 150, 200, { fit: 214 });
+    const { y1, y2 } = G.bb;
+    let dots = '';
+    for (let y = Math.floor(y1); y <= y2 + 4; y += 6.5) {
+      const f = (y - y1) / (y2 - y1);
+      const rr = r2(0.7 + Math.max(0, Math.min(1, f)) * 2.9);
+      const off = Math.round((y - y1) / 6.5) % 2 ? 3.25 : 0;
+      for (let x = 34 + off; x < 270; x += 6.5) dots += `<circle cx="${r2(x)}" cy="${r2(y)}" r="${rr}"/>`;
+    }
+    return `<defs><clipPath id="htn"><path d="${G.abs}"/></clipPath></defs>` +
+      `<g clip-path="url(#htn)" fill="${INK}">${dots}</g>` +
+      `<path d="${G.abs}" fill="none" stroke="${RED}" stroke-width="1.4"/>` +
+      t(150, r2(y1 - 18), 'OFF ROAD · 4X4', 13, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
+      t(150, r2(y2 + 30), 'THE WHITE HILUX · 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 43. Circle: "TWH ·" en anillo completo + TWH grande al centro
+  'twh-circle-type': () =>
+    `<path id="ctp" d="M150 46 A104 104 0 1 1 149.9 46" fill="none"/>` +
+    `<text font-family="${BLACK}" font-size="19" fill="${INK}"><textPath href="#ctp" textLength="648" lengthAdjust="spacing">TWH • TWH • TWH • TWH • TWH • TWH • TWH • TWH •</textPath></text>` +
+    `<circle cx="150" cy="150" r="80" fill="${RED}"/>` +
+    pt('BebasNeue-Regular', 'TWH', 70, 150, 162, INK, { fit: 106, ls: 2 }) +
+    t(150, 186, 'OFF ROAD · 4X4', 10, BG, COND, mid + ' ' + cond('letter-spacing="4"')),
+
+  // 44. Triple línea: TWH de trazo continuo con líneas paralelas setenteras
+  'twh-triple-line': () => {
+    const d = 'M46 104 H110 M78 104 V198 M124 104 L142 198 L160 142 L178 198 L196 104 M212 104 V198 M254 104 V198 M212 151 H254';
+    const s = (c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return s(ORANGE, 26) + s(BG, 19) + s(RED, 13) + s(BG, 6) +
+      t(150, 66, 'THE WHITE HILUX', 13, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
+      t(150, 246, 'RETRO RACING · 4X4 · 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 45. 3D: TWH con volumen extruido
+  'twh-extrude': () => {
+    const G = ptGeo('RussoOne-Regular', 'TWH', 90, 144, 172, { fit: 198 });
+    let ext = '';
+    for (let i = 14; i >= 1; i--) ext += `<g transform="translate(${r2(i * 0.9)} ${r2(i * 0.9)})"><path d="${G.abs}" fill="${i > 9 ? DRED : RED}"/></g>`;
+    return ext + `<path d="${G.abs}" fill="${INK}" stroke="${BG}" stroke-width="1.5" stroke-linejoin="round"/>` +
+      t(150, 76, 'EST. 2001', 13, MUST, COND, mid + ' ' + cond('letter-spacing="9"')) +
+      t(150, 226, 'OFF ROAD · 4X4 · CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 46. Calado: barra roja con TWH calado (minimalista suizo)
+  'twh-knockout': () => {
+    // letras dentro de la barra (106-206), centradas en alto
+    const g0 = ptGeo('Anton-Regular', 'TWH', 90, 150, 0, { fit: 150 });
+    const G = ptGeo('Anton-Regular', 'TWH', 90, 150, r2(156 - (g0.bb.y1 + g0.bb.y2) / 2), { fit: 150 });
+    return t(34, 96, 'THE WHITE HILUX', 12, INK, COND, cond('letter-spacing="4"')) +
+      t(266, 96, '4X4', 12, MUST, COND, 'text-anchor="end" ' + cond('letter-spacing="4"')) +
+      `<path d="M34 106 H266 V206 H34 Z ${G.abs}" fill="${RED}" fill-rule="evenodd"/>` +
+      `<path d="M34 220 H266" stroke="${INK}" stroke-width="1.5"/>` +
+      t(34, 238, 'OFF ROAD', 12, INK, COND, cond('letter-spacing="4"')) +
+      t(266, 238, 'EST. 2001 · CHILE', 12, INK, COND, 'text-anchor="end" ' + cond('letter-spacing="4"'));
   }
 };
 
