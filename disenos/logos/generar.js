@@ -41,6 +41,29 @@ function opsTWH(fill) {
   return `<g transform="translate(${r2(dx)} ${r2(dy)}) translate(0 ${r2(b.y2)}) skewX(-12) translate(0 ${r2(-b.y2)})"><path d="${p.toPathData(2)}" fill="${fill}"/></g>`;
 }
 
+// Texto con una tipografía libre de disenos/fuentes, convertido a trazo (no depende de fuentes instaladas).
+// pt('BebasNeue-Regular', 'TWH', 60, x, y(base), color, { anchor: 'middle'|'start'|'end', ls: espaciado px, w: ancho final px, skew: grados })
+const FONT_CACHE = {};
+function pt(file, text, size, x, y, fill, o = {}) {
+  const opentype = require('opentype.js');
+  const font = FONT_CACHE[file] || (FONT_CACHE[file] = opentype.loadSync(path.join(__dirname, '..', 'fuentes', file + '.ttf')));
+  const k = size / font.unitsPerEm;
+  const glyphs = font.stringToGlyphs(text);
+  let cx = 0, d = '';
+  glyphs.forEach((g, i) => {
+    d += g.getPath(cx, 0, size).toPathData(2);
+    cx += g.advanceWidth * k + (o.ls || 0);
+    if (i < glyphs.length - 1) cx += font.getKerningValue(g, glyphs[i + 1]) * k;
+  });
+  const natural = cx - (o.ls || 0);
+  const sx = o.w ? o.w / natural : 1;
+  const width = natural * sx;
+  const anchor = o.anchor || 'middle';
+  const x0 = anchor === 'middle' ? x - width / 2 : anchor === 'end' ? x - width : x;
+  const sk = o.skew ? ` skewX(${-o.skew})` : '';
+  return `<g transform="translate(${r2(x0)} ${r2(y)})${sk} scale(${r2(sx * 1000) / 1000} 1)"><path d="${d}" fill="${fill}"/></g>`;
+}
+
 const LOGOS = {
   // 1. El que te gustó: TWH + franjas de rally
   'rally-stripes': () =>
@@ -377,6 +400,144 @@ const LOGOS = {
     return opsTWH(INK) + s(166, ORANGE, 0) + s(176, RED, 10) + s(186, DRED, 20) +
       ital(150, 228, t(0, 0, '4WD RACE DEPT.', 22, RED, BLACK, mid)) +
       t(150, 252, 'CHILE · SINCE 2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+  // ---------- 28-37: tanda 2026-11-24 (4x4 / off road, en la línea de los elegidos para las poleras) ----------
+  // 28. Curvas de nivel (mapa topográfico) + TWH
+  'topo-explorers': () => {
+    let lines = '';
+    for (let k = 0; k < 7; k++) {
+      let d = '';
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        const r = 26 + k * 13 + 5 * Math.sin(3 * a + k * 0.7) + 3.5 * Math.cos(5 * a - k * 1.3) + 2 * Math.sin(2 * a + k);
+        d += (i ? 'L' : 'M') + r2(150 + r * Math.cos(a) * 1.18) + ' ' + r2(132 + r * Math.sin(a) * 0.9) + ' ';
+      }
+      lines += `<path d="${d}Z" fill="none" stroke="${k === 3 ? MUST : INK}" stroke-width="${k === 3 ? 2.5 : 1.6}" stroke-opacity="${k === 3 ? 1 : 0.55}"/>`;
+    }
+    return `<defs><clipPath id="topo"><rect x="34" y="40" width="232" height="184" rx="10"/></clipPath></defs>` +
+      `<g clip-path="url(#topo)">${lines}</g>` +
+      `<rect x="34" y="40" width="232" height="184" rx="10" fill="none" stroke="${INK}" stroke-width="4"/>` +
+      `<rect x="88" y="104" width="124" height="58" rx="4" fill="${BG}"/>` +
+      pt('BebasNeue-Regular', 'TWH', 66, 150, 156, INK, { ls: 4 }) +
+      pt('BebasNeue-Regular', 'OFF ROAD EXPLORERS', 26, 150, 258, INK, { ls: 3 }) +
+      t(150, 280, '33°S · 70°W · CHILE', 12, MUST, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 29. Placa ovalada de competición con número
+  'rally-raid': () => {
+    let ch = '';
+    for (let r = 0; r < 2; r++) for (let k = 0; k < 18; k++) if ((r + k) % 2 === 0) ch += `<rect x="${51 + k * 11}" y="${232 + r * 9}" width="11" height="9" fill="${INK}"/>`;
+    return t(150, 58, 'TWH · RALLY RAID · 4X4', 14, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      `<ellipse cx="150" cy="146" rx="112" ry="72" fill="${INK}"/>` +
+      `<ellipse cx="150" cy="146" rx="102" ry="62" fill="none" stroke="${BG}" stroke-width="2.5"/>` +
+      pt('RacingSansOne-Regular', '44', 104, 150, 184, RED, { w: 150 }) +
+      pt('BlackOpsOne-Regular', 'TWH', 22, 150, 112, BG, { ls: 4 }) +
+      ch + t(150, 278, 'OFF ROAD · CHILE · 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 30. Stay Dirty: manuscrita con salpicaduras de barro
+  'stay-dirty': () => {
+    const dots = [[64, 92, 7], [78, 78, 3.5], [232, 96, 6], [248, 116, 3], [92, 206, 4], [216, 200, 8], [236, 214, 3.5], [56, 176, 3], [120, 72, 2.5], [196, 70, 4]];
+    return dots.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${MUST}"/>`).join('') +
+      `<path d="M58 96 q10 -8 20 -2 M220 206 q8 10 20 4" stroke="${MUST}" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+      `<g transform="rotate(-8 150 150)">` + pt('Yellowtail-Regular', 'Stay Dirty', 72, 150, 164, INK, { w: 236 }) +
+      `<path d="M66 182 C120 170 196 168 246 160 C206 178 140 186 86 190 Z" fill="${RED}"/></g>` +
+      ital(150, 238, t(0, 0, 'TWH 4X4', 26, INK, BLACK, mid + ' letter-spacing="2"')) +
+      t(150, 262, 'MUD DEPT. · CHILE', 12, MUST, COND, mid + ' ' + cond('letter-spacing="7"'));
+  },
+
+  // 31. Sello redondo de expedición con rosa de los vientos
+  'expedition-co': () => {
+    let star = '';
+    for (let k = 0; k < 8; k++) {
+      const a = (k * Math.PI) / 4 - Math.PI / 2, L = k % 2 ? 26 : 46, w = k % 2 ? 6 : 9;
+      const p = (rr, aa) => r2(150 + rr * Math.cos(aa)) + ' ' + r2(150 + rr * Math.sin(aa));
+      star += `<path d="M${p(L, a)} L${p(w, a + Math.PI / 2)} L150 150 Z" fill="${k % 2 ? MUST : INK}"/><path d="M${p(L, a)} L${p(w, a - Math.PI / 2)} L150 150 Z" fill="${k % 2 ? ORANGE : MUST}"/>`;
+    }
+    return `<circle cx="150" cy="150" r="128" fill="none" stroke="${INK}" stroke-width="5"/>` +
+      `<circle cx="150" cy="150" r="88" fill="none" stroke="${INK}" stroke-width="2"/>` +
+      ring('exp', 102, 114, 'TWH EXPEDITION CO.', 'OVERLAND · 4X4 · CHILE', 19, 15) +
+      t(56, 157, '★', 13, INK, 'Arial', mid) + t(244, 157, '★', 13, INK, 'Arial', mid) +
+      `<circle cx="150" cy="150" r="56" fill="none" stroke="${INK}" stroke-width="1.2" stroke-dasharray="2 4"/>` + star +
+      `<circle cx="150" cy="150" r="5" fill="${BG}" stroke="${INK}" stroke-width="2"/>` +
+      t(150, 88, 'N', 14, RED, BLACK, mid);
+  },
+
+  // 32. Cordillera con sol y camino
+  'andes-trail': () =>
+    `<defs><clipPath id="andes"><rect x="40" y="40" width="220" height="150"/></clipPath></defs>` +
+    `<g clip-path="url(#andes)">` +
+    `<circle cx="196" cy="118" r="44" fill="${MUST}"/>` +
+    `<rect x="40" y="112" width="220" height="5" fill="${BG}"/><rect x="40" y="124" width="220" height="4" fill="${BG}"/><rect x="40" y="135" width="220" height="3" fill="${BG}"/>` +
+    `<path d="M40 190 L40 150 L66 128 L80 138 L104 96 L118 112 L134 84 L156 120 L170 108 L196 142 L214 126 L240 150 L260 140 L260 190 Z" fill="${INK}"/>` +
+    `<path d="M104 96 L112 106 L106 104 L100 112 L96 109 Z M134 84 L144 100 L136 97 L130 104 L126 98 Z" fill="${BG}"/>` +
+    `<path d="M152 190 C150 176 128 172 132 160 C136 150 160 152 158 142" fill="none" stroke="${BG}" stroke-width="6" stroke-linecap="round"/>` +
+    `<path d="M152 190 C150 176 128 172 132 160 C136 150 160 152 158 142" fill="none" stroke="${MUST}" stroke-width="1.5" stroke-dasharray="4 4"/></g>` +
+    `<rect x="40" y="40" width="220" height="150" fill="none" stroke="${INK}" stroke-width="4"/>` +
+    pt('BlackOpsOne-Regular', 'ANDES TRAIL', 34, 150, 236, INK, { w: 220 }) +
+    t(150, 262, 'TWH · 4X4 · EST. 2001', 13, MUST, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 33. Kit de suspensión (2") estilo carrera
+  'lift-kit': () =>
+    t(150, 70, 'TWH SUSPENSION DEPT.', 14, INK, COND, mid + ' ' + cond('letter-spacing="5"')) +
+    pt('RacingSansOne-Regular', '2"', 132, 96, 188, RED, { w: 104 }) +
+    ital(206, 136, t(0, 0, 'LIFT', 44, INK, BLACK, mid)) +
+    ital(206, 182, t(0, 0, 'KIT', 44, INK, BLACK, mid)) +
+    `<path d="M44 202 H262 L254 210 H44 Z" fill="${ORANGE}"/><path d="M44 216 H252 L244 224 H44 Z" fill="${RED}"/><path d="M44 230 H242 L234 238 H44 Z" fill="${DRED}"/>` +
+    t(150, 270, 'MORE CLEARANCE · MORE TRAIL', 12, MUST, COND, mid + ' ' + cond('letter-spacing="4"')),
+
+  // 34. Regla de vadeo con olas
+  'deep-water': () => {
+    let ticks = '';
+    for (let k = 0; k <= 7; k++) {
+      const y = 214 - k * 22;
+      ticks += `<path d="M58 ${y} H${k % 2 ? 70 : 78}" stroke="${INK}" stroke-width="2.5"/>`;
+      if (k % 2 === 0 && k) ticks += t(86, y + 4, String(k * 100), 11, INK, COND, cond());
+    }
+    for (let k = 0; k < 7; k++) ticks += `<path d="M58 ${r2(203 - k * 22)} H64" stroke="${INK}" stroke-width="1.2"/>`;
+    const wave = (y, c, w) => `<path d="M40 ${y} q12 -9 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+    return `<rect x="52" y="56" width="6" height="160" fill="${INK}"/>` + ticks +
+      `<path d="M44 66 H66 M44 66 l6 -6 M44 66 l6 6" stroke="${RED}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
+      t(118, 70, '700 MM', 16, RED, COND, cond('letter-spacing="2"')) +
+      pt('BebasNeue-Regular', 'DEEP', 58, 194, 128, INK, { ls: 3 }) +
+      pt('BebasNeue-Regular', 'WATER', 58, 194, 178, INK, { ls: 3 }) +
+      wave(200, MUST, 4) + wave(214, ORANGE, 3) + wave(227, RED, 2.5) +
+      t(150, 262, 'TWH · CROSSING CREW', 14, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 35. Arcoíris setentero con letras en arco
+  'off-road-racing': () => {
+    const arc = (r, c, w) => `<path d="M${150 - r} 176 A${r} ${r} 0 0 1 ${150 + r} 176" fill="none" stroke="${c}" stroke-width="${w}"/>`;
+    return `<path id="orr" d="M44 176 A106 106 0 0 1 256 176" fill="none"/>` +
+      `<text font-family="${BLACK}" font-size="21" letter-spacing="3" fill="${INK}"><textPath href="#orr" startOffset="50%" text-anchor="middle">OFF ROAD RACING</textPath></text>` +
+      arc(84, ORANGE, 12) + arc(70, RED, 12) + arc(56, DRED, 12) +
+      pt('AlfaSlabOne-Regular', 'TWH', 30, 150, 174, INK, { w: 76 }) +
+      `<rect x="40" y="186" width="220" height="4" fill="${INK}"/>` +
+      pt('BebasNeue-Regular', 'TEAM 4X4', 34, 150, 228, MUST, { ls: 8 }) +
+      t(150, 254, 'EST. 2001 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="7"'));
+  },
+
+  // 36. Winch Crew: cable y gancho
+  'winch-crew': () =>
+    pt('BlackOpsOne-Regular', 'WINCH', 64, 150, 128, INK, { w: 216 }) +
+    pt('BlackOpsOne-Regular', 'CREW', 64, 150, 196, RED, { w: 168 }) +
+    `<path d="M36 214 H206" stroke="${MUST}" stroke-width="4" stroke-dasharray="7 3"/>` +
+    `<rect x="206" y="207" width="18" height="14" rx="3" fill="${INK}"/>` +
+    `<path d="M224 214 H236 C252 214 258 228 250 240 C244 249 230 248 226 240" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>` +
+    `<path d="M226 240 L234 236" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>` +
+    t(150, 70, 'TWH RECOVERY', 14, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
+    t(120, 268, '12.000 LBS · PULL HARD', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"')),
+
+  // 37. Letrero de control (checkpoint) de rally
+  'checkpoint': () => {
+    let ch = '';
+    for (let r = 0; r < 2; r++) for (let k = 0; k < 16; k++) if ((r + k) % 2 === 0) ch += `<rect x="${62 + k * 11}" y="${50 + r * 11}" width="11" height="11" fill="${INK}"/>`;
+    return ch +
+      `<g transform="rotate(-4 150 150)"><rect x="66" y="80" width="168" height="150" rx="18" fill="${MUST}"/>` +
+      `<rect x="76" y="90" width="148" height="130" rx="12" fill="none" stroke="${BG}" stroke-width="3"/>` +
+      pt('RacingSansOne-Regular', 'CP', 92, 150, 176, BG, { w: 112 }) +
+      pt('BlackOpsOne-Regular', '4X4', 28, 150, 208, BG, { ls: 4 }) + `</g>` +
+      t(150, 262, 'TWH RALLY · STAGE 01', 14, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   }
 };
 
