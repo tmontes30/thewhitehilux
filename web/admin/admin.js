@@ -86,7 +86,8 @@ onAuthStateChanged(auth, async (user) => {
   TABS.forEach((t) => ($('tab-' + t).hidden = true));
   if (!isAdmin) booted();
   // este navegador es del admin: la tienda no cuenta sus visitas en la pestaña Cliente
-  if (isAdmin) { try { localStorage.setItem('twh-admin', '1'); } catch (e) { /* sin almacenamiento */ } }
+  // (salvo que el admin haya pedido contarlo, para probar: interruptor en la pestaña Cliente)
+  if (isAdmin) { try { if (localStorage.getItem('twh-contar') !== '1') localStorage.setItem('twh-admin', '1'); } catch (e) { /* sin almacenamiento */ } }
   if (user && !isAdmin) {
     $('login-msg').textContent = `La cuenta ${user.email} no tiene acceso al panel.`;
     $('login-btn').textContent = 'Entrar con otra cuenta';
@@ -151,7 +152,10 @@ function showTab(name) {
   // ?v= evita que el navegador muestre una versión vieja guardada en caché
   if (name === 'configurador' && !$('cfg-frame').src) $('cfg-frame').src = 'configurador/configurador.html?v=' + Date.now();
   document.body.classList.toggle('wide', name === 'configurador');
-  if (name === 'cliente') { if (visitas) renderCliente(); else { loadVisitas.started = true; loadVisitas(); } }
+  // visitas y "me gusta": se recargan si los datos tienen más de 1 minuto
+  if (name === 'cliente' || name === 'productos') {
+    if (!visitas || Date.now() - (loadVisitas.at || 0) > 60000) { loadVisitas.started = true; loadVisitas(); } else if (name === 'cliente') renderCliente();
+  }
 }
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-tab]');
@@ -2143,6 +2147,7 @@ function likesOf(id) {
   return Math.max(0, n);
 }
 async function loadVisitas() {
+  loadVisitas.at = Date.now();
   try {
     const s = await getDocs(collection(db, 'estadisticas'));
     visitas = {};
@@ -2155,6 +2160,15 @@ async function loadVisitas() {
   renderProducts();
 }
 $('cl-refresh').addEventListener('click', () => { $('cl-refresh').disabled = true; loadVisitas().finally(() => ($('cl-refresh').disabled = false)); });
+$('cl-self').addEventListener('change', (e) => {
+  if (e.target.id !== 'cl-contar') return;
+  try {
+    if (e.target.checked) { localStorage.setItem('twh-contar', '1'); localStorage.removeItem('twh-admin'); }
+    else { localStorage.removeItem('twh-contar'); localStorage.setItem('twh-admin', '1'); }
+  } catch (err) { /* sin almacenamiento */ }
+  toast(e.target.checked ? 'Este navegador ahora se cuenta: prueba en la tienda y luego aprieta Actualizar' : 'Este navegador ya no se cuenta');
+  renderCliente();
+});
 $('cl-period').addEventListener('click', (e) => {
   const b = e.target.closest('[data-cp]');
   if (!b) return;
@@ -2200,6 +2214,10 @@ function renderClienteIn() {
   const S = clSum(from, to);
   const E = S.embudo || {};
   const dias = Object.keys(visitas).sort();
+  let contar = false;
+  try { contar = localStorage.getItem('twh-contar') === '1'; } catch (e) { /* */ }
+  $('cl-self').innerHTML = `<label class="check"><input type="checkbox" id="cl-contar"${contar ? ' checked' : ''}> Contar mis visitas y "me gusta" desde este navegador (para probar)</label>
+    <span class="hint">${contar ? 'Activado: lo que hagas en la tienda desde aquí sí se cuenta. Desactívalo después de probar.' : 'Desactivado: este navegador no se cuenta (así tus visitas no ensucian los datos).'}</span>`;
   $('cl-note').textContent = dias.length
     ? `Datos desde el ${fmtDate(dias[0])}. No cuenta tus propias visitas (este navegador está marcado como admin) ni robots.`
     : 'Todavía no hay visitas registradas: se empiezan a contar desde que se publicó esta pestaña. No cuenta tus propias visitas.';

@@ -311,3 +311,4 @@ label.check input { width: auto; }
 
 /* Venta manual: casilla Muestra */
 .muestra-check { display: flex; gap: 8px; align-items: flex-start; background: #faf6ea; border: 1px solid #ecdfb8; border-radius: 10px; padding: 10px 12px; margin: 4px 0 12px; }
+.cl-self { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0 0 12px; font-size: 13px; }
