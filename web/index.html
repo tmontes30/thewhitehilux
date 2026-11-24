@@ -149,8 +149,9 @@ TWH.loadData().then(function (d) {
   document.getElementById('cat-tiles').innerHTML = Object.keys(cats).map(function (k) {
     var ps = d.products.filter(function (p) { return p.type === k; });
     if (!ps.length) return '';
-    var from = Math.min.apply(null, ps.map(function (p) { return p.price; }));
-    return '<a class="cat-tile" href="' + url({ cat: k }) + '"><div class="pic">' + TWH.picture(ps[0], 0) + '</div><div><b>' + cats[k] + '</b><span>Desde ' + TWH.money(from) + '</span></div></a>';
+    var priced = ps.filter(function (p) { return p.price > 0; });
+    var from = priced.length ? Math.min.apply(null, priced.map(function (p) { return p.price; })) : 0;
+    return '<a class="cat-tile" href="' + url({ cat: k }) + '"><div class="pic">' + TWH.picture(ps[0], 0) + '</div><div><b>' + cats[k] + '</b><span>' + (from ? 'Desde ' + TWH.money(from) : 'A cotizar') + '</span></div></a>';
   }).join('');
 
   // Filtros
@@ -246,8 +247,8 @@ TWH.loadData().then(function (d) {
         '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +
         '<div class="body"><span class="title">' + TWH.esc(p.name) + '</span>' +
         TWH.priceHtml(p) +
-        (p.status !== 'proximamente' && !C.isSoldOut(p) ? '<span class="pickup-chip">Retiro gratis ' + pickWord + '</span>' : '') +
-        '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">Envío a todo Chile</span>') +
+        (p.status !== 'proximamente' && !p.cotizar && !C.isSoldOut(p) ? '<span class="pickup-chip">Retiro gratis ' + pickWord + '</span>' : '') +
+        '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">' + (p.cotizar ? 'Todas las medidas · cotiza por WhatsApp' : 'Envío a todo Chile') + '</span>') +
         '<span class="cdots">' + dots + '</span></div></div></a>';
     }).join('');
   }

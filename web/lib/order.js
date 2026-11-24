@@ -77,7 +77,8 @@ function priceCart(items, products, config, opts = {}) {
 
   const maxQty = config.maxQtyPerLine || 10;
   const lines = items.map((it) => {
-    const product = products.find((p) => p.id === it.id && p.active !== false && (!p.status || p.status === 'disponible'));
+    // los productos a cotizar (neumáticos) nunca se pagan en la tienda: se cotizan por WhatsApp
+    const product = products.find((p) => p.id === it.id && p.active !== false && !p.cotizar && (!p.status || p.status === 'disponible'));
     if (!product) throw new OrderError('Un producto del carrito ya no está disponible. Revisa el carrito.');
     const size = str(it.size, 10);
     if (!product.sizes.includes(size)) throw new OrderError(`Elige una talla válida para ${product.name}.`);

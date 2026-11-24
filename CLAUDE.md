@@ -47,10 +47,12 @@ Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca *
 - Publicar tienda: `git push` (GitHub Actions corre pruebas y publica `web/`). Funciones: `firebase deploy --only functions`. Nunca subir `ideas/`, `Modelos foto/`, `fotos-originales/` ni `disenos/configurador/bases/` (están en .gitignore).
 - Las páginas funcionan abiertas con doble clic (rutas relativas y sin fetch de archivos locales). El pago solo funciona publicado.
 
-## Neumáticos (en preparación, aún no publicado)
+## Neumáticos (publicado 2026-11-24)
 
-- Fotos del proveedor en `Neumaticos/` (privada, en .gitignore). `python disenos/neumaticos/preparar.py` → `web/assets/img/neumaticos/at-NN.jpg`, `rt-NN.jpg`, `mt-NN.jpg` (900 px, cuadradas, fotos reales con etiqueta TWH + franjas | AT/RT/MT) y la hoja `disenos/neumaticos/todos-neumas.png/.html` para revisar. La foto 9 no se usa (marca de agua NEUMACENTER). El dueño prefirió fotos reales (no fondo blanco recortado).
-- Plan acordado: 3 publicaciones (AT, RT, MT) sin precio, botón "Cotizar por WhatsApp" (medidas y modelos), pestaña Neumáticos en la tienda y gestión en el panel como los otros productos. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich (AT y MT). "Tenemos todas las medidas; al cotizar se envía más info." Esperar el OK del dueño antes de publicar.
+- 3 productos en `web/data/catalog.js` (`neumaticos-at`, `neumaticos-rt`, `neumaticos-mt`), categoría `neumaticos` (menú "Neumáticos"), con `cotizar: true`, `price: 0`, sin tallas ni colores, `images` de `web/assets/img/neumaticos/`. Marcas en desc/features: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich.
+- "A cotizar": `store.js` `priceHtml` muestra "A cotizar" (o "Desde $X" si el panel le pone precio; las ofertas de Descuentos aplican). La ficha (`producto.html`, `coti`) no tiene carrito ni compra: campo opcional de medida/vehículo y botón **Cotizar por WhatsApp** (`wa.me/config.whatsapp` con producto + medida; se cuenta como toque en la pestaña Cliente). `lib/order.js` rechaza `cotizar` en pagos (funciones redeployadas).
+- Panel → Productos: nombre, SKU (NEU-…), "Precio desde (opcional, 0 = A cotizar)", estado y descripción; sin stock por talla.
+- Fotos: `python disenos/neumaticos/preparar.py` desde `Neumaticos/` (privada): reales, cuadradas 900 px, etiqueta TWH + franjas | AT/RT/MT; hoja `disenos/neumaticos/todos-neumas.png/.html`. La foto 9 no se usa (marca de agua NEUMACENTER). El dueño prefirió fotos reales (no fondo blanco recortado; rembg instalado pero desactivado).
 
 ## Reglas de negocio actuales
 

@@ -193,6 +193,12 @@
 
   // Precio con oferta: tachado + porcentaje
   function priceHtml(p, cls) {
+    // Productos a cotizar (neumáticos): "A cotizar", o "Desde $X" si en el panel se puso un precio de referencia
+    if (p.cotizar) {
+      if (!p.price) return '<span class="' + (cls || 'price') + ' cotizar">A cotizar</span>';
+      return (p.compareAt ? '<span class="price-old">' + money(p.compareAt) + '</span>' : '') +
+        '<span class="' + (cls || 'price') + '"><small class="desde">Desde</small> ' + money(p.price) + (p.compareAt ? ' <em class="off">' + p.offerPct + '% OFF</em>' : '') + '</span>';
+    }
     if (!p.compareAt) return '<span class="' + (cls || 'price') + '">' + money(p.price) + '</span>';
     return '<span class="price-old">' + money(p.compareAt) + '</span><span class="' + (cls || 'price') + '">' + money(p.price) + ' <em class="off">' + p.offerPct + '% OFF</em></span>';
   }
@@ -288,5 +294,5 @@
   document.addEventListener('DOMContentLoaded', renderChrome);
   document.addEventListener('DOMContentLoaded', iniciarVisitas);
 
-  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON, priceHtml: priceHtml, track: track, paso: paso };
+  window.TWH = { core: window.TWHCore, loadData: loadData, Cart: Cart, money: money, esc: esc, picture: picture, pictureCount: pictureCount, updateBadge: updateBadge, ICON: ICON, WA_ICON: WA_ICON, priceHtml: priceHtml, track: track, paso: paso };
 })();

@@ -541,17 +541,20 @@ function productCard(p) {
       <div class="row">
         <label>Nombre<input data-f="name" value="${esc(p.name)}" maxlength="120"></label>
         <label>SKU<input data-f="sku" class="sku-input" value="${esc(p.sku)}" maxlength="24" title="Código base; cada talla/color agrega su sufijo, ej. ${esc(C.variantSku(p, p.colors[0] || '', p.sizes[0]))}"></label>
-        <label>Precio normal (CLP)<input data-f="price" type="number" min="100" step="10" value="${p.listPrice}"></label>
+        ${p.cotizar
+          ? `<label>Precio desde (opcional)<input data-f="price" type="number" min="0" step="10" value="${p.listPrice || 0}" title="0 = se muestra 'A cotizar'. Con precio se muestra 'Desde $X' (y las ofertas de Descuentos le aplican)"></label>`
+          : `<label>Precio normal (CLP)<input data-f="price" type="number" min="100" step="10" value="${p.listPrice}"></label>`}
       </div>
       <div class="actions">
         <div class="status-pick" role="group" aria-label="Estado en la tienda">${Object.keys(C.STATUS)
           .map((k) => `<button type="button" data-v="${k}" aria-pressed="${k === st}">${C.STATUS[k]}</button>`)
           .join('')}</div>
         ${st === 'proximamente' ? `<span class="likes-pill" title="Clientes que marcaron Me gusta en la ficha (desde que existe el botón)">❤ ${likesOf(p.id)} me gusta</span>` : ''}
-        <span class="hint">${st === 'proximamente' ? 'Se ve con el tag PRÓXIMAMENTE y no se puede comprar.' : st === 'oculto' ? 'No aparece en la tienda.' : total === 0 ? 'Sin stock: se ve AGOTADO.' : 'A la venta.'}</span>
+        <span class="hint">${st === 'proximamente' ? 'Se ve con el tag PRÓXIMAMENTE y no se puede ' + (p.cotizar ? 'cotizar.' : 'comprar.') : st === 'oculto' ? 'No aparece en la tienda.' : p.cotizar ? 'Visible: se cotiza por WhatsApp.' : total === 0 ? 'Sin stock: se ve AGOTADO.' : 'A la venta.'}</span>
       </div>
       <label>Descripción<textarea data-f="desc" rows="3" maxlength="1200">${esc(p.desc)}</textarea></label>
-      <div class="stock-box">
+      ${p.cotizar ? `<p class="hint">💬 Se cotiza por WhatsApp (sin carrito ni stock). Precio en 0 = "A cotizar"; con precio = "Desde $X".</p>` : ''}
+      <div class="stock-box"${p.cotizar ? ' hidden' : ''}>
         <div class="head">
           <label><input type="checkbox" data-act="stock-on" ${p.stock ? 'checked' : ''}> Controlar stock por talla</label>
           ${p.stock ? `<span class="hint"><b>${plural(total, 'unidad', 'unidades')}</b> en total</span><button type="button" class="btn small" data-act="arrivals">+ Registrar llegada</button>` : '<span class="hint">Sin control: siempre se puede comprar.</span>'}
@@ -754,7 +757,7 @@ $('products').addEventListener('click', async (e) => {
       const price = Math.round(Number(card.querySelector('[data-f="price"]').value));
       const desc = card.querySelector('[data-f="desc"]').value.trim();
       if (name.length < 3) return toast('El nombre es muy corto', true);
-      if (!Number.isInteger(price) || price < 100) return toast('Revisa el precio', true);
+      if (!Number.isInteger(price) || (p.cotizar ? price < 0 : price < 100)) return toast('Revisa el precio', true);
       if (name !== p.name) args.push(fp(id, 'name'), name);
       if (price !== p.listPrice) args.push(fp(id, 'price'), price);
       const sku = C.cleanSku(card.querySelector('[data-f="sku"]').value);

@@ -58,6 +58,8 @@
     var guide = p.sizeGuide && SIZE_GUIDES[p.sizeGuide];
     var C = TWH.core, set = d.settings;
     var soon = p.status === 'proximamente';
+    // Productos a cotizar (neumáticos): sin carrito ni pago; se cotiza por WhatsApp con la medida del cliente
+    var coti = !!p.cotizar;
     function left(size) { var n = C.stockOf(p, st.color, size); return n == null ? Infinity : n; }
     function inCart(size) {
       return TWH.Cart.items().filter(function (x) { return x.id === p.id && x.size === size && (x.color || '') === (st.color || ''); })
@@ -68,7 +70,7 @@
     var now = new Date();
     var rRM = C.promiseRange(now, 'rm', set), rReg = C.promiseRange(now, 'regiones', set), rPick = C.promiseRange(now, 'retiro', set);
     var pickWord = C.dayWord(rPick.to);
-    var pickTag = !soon && !C.isSoldOut(p) ? '<p class="pickup-tag">' + PERK.pin + '<span><b>Retiro gratis ' + pickWord + '</b> en Las Condes o Lo Barnechea</span></p>' : '';
+    var pickTag = !soon && !coti && !C.isSoldOut(p) ? '<p class="pickup-tag">' + PERK.pin + '<span><b>Retiro gratis ' + pickWord + '</b> en Las Condes o Lo Barnechea</span></p>' : '';
 
     root.innerHTML =
       '<section class="pdp">' +
@@ -77,18 +79,31 @@
           '<p class="cond">' + tag + '<span>Nuevo</span></p>' +
           '<h1>' + TWH.esc(p.name) + '</h1>' +
           '<p class="price-box">' + TWH.priceHtml(p) + '</p>' + (p.offer && p.offer.name ? '<p class="offer-name">' + TWH.esc(p.offer.name) + '</p>' : '') +
-          '<p class="fees">Paga en cuotas con Mercado Pago</p>' + pickTag +
+          (coti ? '' : '<p class="fees">Paga en cuotas con Mercado Pago</p>') + pickTag +
           (p.designs ? '<div><p class="opt-label">Diseño: <b id="design-name"></b></p><div class="choices" id="designs"></div></div>' : '') +
           (p.colors.length ? '<div><p class="opt-label">Color: <b id="color-name"></b></p><div class="choices" id="colors"></div></div>' : '') +
           (p.sizes.length > 1 ? '<div><p class="opt-label">Talla: <b id="size-name">Elige una talla</b></p><div class="choices" id="sizes"></div></div>' : '') +
-          '<p class="stock" id="stock"></p>' +
-          '<div class="qty-row" id="qty-row"><label for="qty">Cantidad:</label><select id="qty"></select></div>' +
+          (coti
+            ? '<div class="cotizar-box">' +
+                '<label for="medida">Tu medida o vehículo <small>(opcional)</small></label>' +
+                '<input id="medida" maxlength="80" placeholder="Ej: 265/70 R17 · Hilux 2018" autocomplete="off">' +
+                '<a class="btn wa-btn" id="cotizar" target="_blank" rel="noopener" data-track="Cotizar · ' + TWH.esc(p.name) + '">' + TWH.WA_ICON + 'Cotizar por WhatsApp</a>' +
+                '<p>Tenemos <b>todas las medidas</b>. Al cotizar te enviamos modelos, disponibilidad y precio.</p>' +
+              '</div>'
+            : '') +
+          '<p class="stock" id="stock"' + (coti ? ' hidden' : '') + '></p>' +
+          '<div class="qty-row" id="qty-row"' + (coti ? ' hidden' : '') + '><label for="qty">Cantidad:</label><select id="qty"></select></div>' +
           '<p class="msg-err" id="err" hidden></p>' +
-          '<button type="button" class="btn primary" id="buy-now">Comprar ahora</button>' +
-          '<button type="button" class="btn secondary" id="add">Agregar al carrito</button>' +
+          '<button type="button" class="btn primary" id="buy-now"' + (coti ? ' hidden' : '') + '>Comprar ahora</button>' +
+          '<button type="button" class="btn secondary" id="add"' + (coti ? ' hidden' : '') + '>Agregar al carrito</button>' +
           (soon ? '<div class="like-box"><button type="button" class="like-btn" id="like" aria-pressed="false"><span class="heart" aria-hidden="true">♡</span> <span id="like-txt">Me gusta</span></button><p>Indica que te gusta este producto para considerarlo en las siguientes colecciones.</p></div>' : '') +
           '<p class="added" id="added" hidden>Agregado al carrito. <a href="carrito.html">Ver carrito</a></p>' +
-          '<div class="perks">' +
+          '<div class="perks">' + (coti
+            ? '<div class="perk">' + PERK.box + '<span><b>Todas las medidas</b> para camionetas y 4x4</span></div>' +
+              '<div class="perk">' + PERK.shield + '<span><b>Te respondemos por WhatsApp</b> con modelos y precios</span></div>' +
+              '<div class="perk">' + PERK.truck + '<span>Envío a todo Chile <b>a coordinar</b> al cotizar</span></div>' +
+              '</div>'
+            : '') + (coti ? '<div hidden>' : '') +
             '<div class="perk">' + PERK.truck + '<span>' + 'Envío a todo Chile desde ' + TWH.money(cfg.shipping.rm.price) + ' · <b>gratis en RM</b> sobre ' + TWH.money(cfg.freeShippingFrom) + '</span></div>' +
             '<div class="perk">' + PERK.box + '<span><b>Llega ' + C.rangeText(rRM) + '</b> en RM' + ' · regiones ' + C.rangeText(rReg) + ' (comprando hoy)</span></div>' +
             '<div class="perk">' + PERK.pin + '<span><b>Retiro gratis ' + pickWord + '</b> en Las Condes o Lo Barnechea</span></div>' +
@@ -100,14 +115,15 @@
       '<section class="section-card"><h2>Características principales</h2><table class="specs"><tbody>' +
         p.features.map(function (f) { return '<tr><th>' + TWH.esc(f[0]) + '</th><td>' + TWH.esc(f[1]) + '</td></tr>'; }).join('') +
         (p.colors.length ? '<tr><th>Colores</th><td>' + p.colors.map(function (c) { return cfg.colors[c]; }).join(', ') + '</td></tr>' : '') +
-        '<tr><th>Tallas</th><td>' + p.sizes.join(', ') + '</td></tr>' +
+        (p.sizes.length ? '<tr><th>Tallas</th><td>' + p.sizes.join(', ') + '</td></tr>' : '') +
       '</tbody></table>' +
       (guide ? '<h2 style="margin-top:24px">Guía de tallas (cm)</h2><table class="specs"><tbody><tr><th>Talla</th><td><b>Ancho × Largo</b></td></tr>' +
         guide.map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + r[1] + ' × ' + r[2] + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
       '</section>' +
       '<section class="section-card"><h2>Descripción</h2><p class="desc">' + TWH.esc(p.desc) + '</p></section>' +
       '<section class="related"><h2>También te puede gustar</h2><div class="grid wide">' +
-      d.products.filter(function (x) { return x.id !== p.id; }).slice(0, 4).map(function (x) {
+      d.products.filter(function (x) { return x.id !== p.id && x.status !== 'oculto'; })
+        .sort(function (a, b) { return (a.type === p.type ? 0 : 1) - (b.type === p.type ? 0 : 1); }).slice(0, 4).map(function (x) {
         return '<a class="item" href="producto.html?id=' + encodeURIComponent(x.id) + '"><div class="pic">' + (x.status === 'proximamente' ? '<span class="tag-pre">PRÓXIMAMENTE</span>' : (C.isSoldOut(x) ? '<span class="tag-pre tag-out">AGOTADO</span>' : '')) + '<div class="main">' + TWH.picture(x, 0) + '</div></div>' +
           '<div class="body"><span class="title">' + TWH.esc(x.name) + '</span>' + TWH.priceHtml(x) + '</div></a>';
       }).join('') + '</div></section>';
@@ -162,6 +178,7 @@
         }
       }
       setView(st.view);
+      if (coti) return; // a cotizar: no hay colores, tallas, stock ni botones de compra
       var cs = document.getElementById('colors');
       if (cs) {
         // los botones de color (con foto) se crean una vez; después solo se marca el elegido
@@ -211,6 +228,19 @@
       document.getElementById('add').hidden = blocked;
     }
     render();
+
+    // Cotizar por WhatsApp: el mensaje lleva el producto y la medida que escriba el cliente
+    var cot = document.getElementById('cotizar');
+    if (cot) {
+      var setLink = function () {
+        var m = document.getElementById('medida').value.trim();
+        var txt = 'Hola! Quiero cotizar ' + p.name + '.' + (m ? ' Medida/vehículo: ' + m + '.' : '') + ' ¿Qué modelos y precios tienen?';
+        cot.href = 'https://wa.me/' + cfg.whatsapp + '?text=' + encodeURIComponent(txt);
+      };
+      document.getElementById('medida').addEventListener('input', setLink);
+      setLink();
+      if (soon) { cot.removeAttribute('href'); cot.classList.add('off'); cot.textContent = 'Próximamente'; }
+    }
 
     // "Me gusta" en productos Próximamente: se cuenta anónimo (pestaña Cliente del panel) y se recuerda en este navegador
     var likeBtn = document.getElementById('like');

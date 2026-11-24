@@ -36,7 +36,7 @@
 
   // ---------- SKU ----------
   // SKU base por producto (editable en el panel) y SKU por variante: BASE-COLOR-TALLA[-DISEÑO]
-  var TYPE_CODE = { polera: 'POL', poleron: 'PLR', jockey: 'JCK', stickers: 'STK' };
+  var TYPE_CODE = { polera: 'POL', poleron: 'PLR', jockey: 'JCK', stickers: 'STK', neumaticos: 'NEU' };
   var COLOR_CODE = { negro: 'NEG', blanco: 'BLA' };
   var SKIP_WORDS = /^(twh|algodon|de|del|con|el|la|y|10|cm)$/;
   function defaultSku(p) {

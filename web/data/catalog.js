@@ -26,7 +26,7 @@
       // Puntos de retiro gratis (el cliente elige uno; se coordina el lugar exacto por WhatsApp)
       pickupPoints: ['Los Trapenses, Lo Barnechea (cerca del Líder Pie Andino)', 'Parque Araucano, Las Condes (Rosario Norte)'],
       colors: { negro: 'Negro', blanco: 'Blanco' },
-      categories: { polera: 'Poleras', poleron: 'Polerones', jockey: 'Jockeys', stickers: 'Stickers' },
+      categories: { polera: 'Poleras', poleron: 'Polerones', jockey: 'Jockeys', stickers: 'Stickers', neumaticos: 'Neumáticos' },
       regions: ['Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso', 'Región Metropolitana',
         "O'Higgins", 'Maule', 'Ñuble', 'Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes']
     },
@@ -211,6 +211,27 @@
         images: [], sizeGuide: null, active: true,
         desc: 'Elige tu diseño entre todos los logos TWH. Vinilo troquelado de 10 cm, resistente al agua y al sol. Ideal para la camioneta, el notebook o la nevera.',
         features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '26 a elección'], ['Uso', 'Exterior e interior']]
+      },
+      {
+        id: 'neumaticos-at', name: 'Neumáticos AT All Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        sizes: [], colors: [], views: [],
+        images: ['assets/img/neumaticos/at-01.jpg', 'assets/img/neumaticos/at-02.jpg', 'assets/img/neumaticos/at-03.jpg', 'assets/img/neumaticos/at-04.jpg', 'assets/img/neumaticos/at-05.jpg', 'assets/img/neumaticos/at-06.jpg'], sizeGuide: null, active: true,
+        desc: 'Neumáticos AT (All Terrain): el equilibrio entre ciudad, carretera, ripio y tierra, con buena tracción y andar silencioso. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich. Tenemos todas las medidas para camionetas y 4x4: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
+        features: [['Tipo', 'All Terrain (AT)'], ['Uso', 'Ciudad, carretera, ripio y tierra'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Precio', 'A cotizar por WhatsApp']]
+      },
+      {
+        id: 'neumaticos-rt', name: 'Neumáticos RT Rugged Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        sizes: [], colors: [], views: [],
+        images: ['assets/img/neumaticos/rt-01.jpg'], sizeGuide: null, active: true,
+        desc: 'Neumáticos RT (Rugged Terrain): a medio camino entre AT y MT. Más agarre en piedra, barro y ripio suelto que un AT, pero más cómodos y silenciosos en ruta que un MT. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich (según medida y disponibilidad). Tenemos todas las medidas: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
+        features: [['Tipo', 'Rugged Terrain (RT)'], ['Uso', 'Mixto: ruta, ripio, piedra y barro'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Precio', 'A cotizar por WhatsApp']]
+      },
+      {
+        id: 'neumaticos-mt', name: 'Neumáticos MT Mud Terrain', type: 'neumaticos', price: 0, cotizar: true,
+        sizes: [], colors: [], views: [],
+        images: ['assets/img/neumaticos/mt-01.jpg', 'assets/img/neumaticos/mt-02.jpg', 'assets/img/neumaticos/mt-03.jpg', 'assets/img/neumaticos/mt-04.jpg'], sizeGuide: null, active: true,
+        desc: 'Neumáticos MT (Mud Terrain): tacos grandes y hombros agresivos para barro, piedra, arena y huella dura. Hechos para el off road de verdad. Marcas: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich. Tenemos todas las medidas: cotiza por WhatsApp y te enviamos modelos, disponibilidad y precio.',
+        features: [['Tipo', 'Mud Terrain (MT)'], ['Uso', 'Barro, piedra, arena y huella dura'], ['Marcas', 'Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich'], ['Medidas', 'Todas: consúltanos la tuya'], ['Precio', 'A cotizar por WhatsApp']]
       }
     ]
   };
