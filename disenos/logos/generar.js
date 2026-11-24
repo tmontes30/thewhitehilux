@@ -44,24 +44,36 @@ function opsTWH(fill) {
 // Texto con una tipografía libre de disenos/fuentes, convertido a trazo (no depende de fuentes instaladas).
 // pt('BebasNeue-Regular', 'TWH', 60, x, y(base), color, { anchor: 'middle'|'start'|'end', ls: espaciado px, w: ancho final px, skew: grados })
 const FONT_CACHE = {};
-function pt(file, text, size, x, y, fill, o = {}) {
+function ptGeo(file, text, size, x, y, o = {}) {
   const opentype = require('opentype.js');
   const font = FONT_CACHE[file] || (FONT_CACHE[file] = opentype.loadSync(path.join(__dirname, '..', 'fuentes', file + '.ttf')));
-  const k = size / font.unitsPerEm;
-  const glyphs = font.stringToGlyphs(text);
-  let cx = 0, d = '';
-  glyphs.forEach((g, i) => {
-    d += g.getPath(cx, 0, size).toPathData(2);
-    cx += g.advanceWidth * k + (o.ls || 0);
-    if (i < glyphs.length - 1) cx += font.getKerningValue(g, glyphs[i + 1]) * k;
-  });
-  const natural = cx - (o.ls || 0);
-  const sx = o.w ? o.w / natural : 1;
-  const width = natural * sx;
+  const build = (sz) => {
+    const k = sz / font.unitsPerEm;
+    const glyphs = font.stringToGlyphs(text);
+    let cx = 0, d = '';
+    glyphs.forEach((g, i) => {
+      d += g.getPath(cx, 0, sz).toPathData(2);
+      cx += g.advanceWidth * k + (o.ls || 0);
+      if (i < glyphs.length - 1) cx += font.getKerningValue(g, glyphs[i + 1]) * k;
+    });
+    return { d, natural: cx - (o.ls || 0) };
+  };
+  let g = build(size);
+  // fit: ajusta el tamaño (parejo, sin deformar) para que el texto mida ese ancho
+  if (o.fit) g = build(size * o.fit / g.natural);
+  const sx = o.w ? o.w / g.natural : 1;
+  const width = g.natural * sx;
   const anchor = o.anchor || 'middle';
   const x0 = anchor === 'middle' ? x - width / 2 : anchor === 'end' ? x - width : x;
   const sk = o.skew ? ` skewX(${-o.skew})` : '';
-  return `<g transform="translate(${r2(x0)} ${r2(y)})${sk} scale(${r2(sx * 1000) / 1000} 1)"><path d="${d}" fill="${fill}"/></g>`;
+  const sc = sx !== 1 ? ` scale(${r2(sx * 1000) / 1000} 1)` : '';
+  return { d: g.d, tr: `translate(${r2(x0)} ${r2(y)})${sk}${sc}`, width };
+}
+// Texto en trazo. o.stroke / o.sw = contorno (o.behind: el contorno va detrás del relleno); fill 'none' = solo contorno
+function pt(file, text, size, x, y, fill, o = {}) {
+  const G = ptGeo(file, text, size, x, y, o);
+  const st = o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw || 2}" stroke-linejoin="round"${o.behind ? ' paint-order="stroke"' : ''}` : '';
+  return `<g transform="${G.tr}"><path d="${G.d}" fill="${fill}"${st}/></g>`;
 }
 
 const LOGOS = {
@@ -452,7 +464,69 @@ const LOGOS = {
     pt('BlackOpsOne-Regular', 'CREW', 64, 150, 196, RED, { w: 168 }) +
     `<path d="M40 214 H260" stroke="${MUST}" stroke-width="4" stroke-dasharray="7 3"/>` +
     t(150, 70, 'TWH RECOVERY', 14, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
-    t(150, 250, '12.000 LBS · PULL HARD', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'))
+    t(150, 250, '12.000 LBS · PULL HARD', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"')),
+  // ---------- 32-36: TWH en estilos nuevos (2026-11-24) ----------
+  // 32. Monograma: T, W y H entrelazadas en un anillo (como sello de marca clásica)
+  'twh-monogram': () => {
+    const L = (ch, size, x, y, fill) => pt('AlfaSlabOne-Regular', ch, size, x, y, fill, { stroke: BG, sw: 7, behind: true });
+    return `<circle cx="150" cy="150" r="128" fill="none" stroke="${INK}" stroke-width="4"/>` +
+      `<circle cx="150" cy="150" r="96" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
+      ring('mono', 106, 117, 'THE WHITE HILUX', '4X4 · EST. 2001', 17, 14) +
+      t(48, 156, '★', 12, MUST, 'Arial', mid) + t(252, 156, '★', 12, MUST, 'Arial', mid) +
+      L('T', 74, 98, 178, MUST) + L('H', 74, 204, 178, RED) + L('W', 80, 151, 182, INK) +
+      `<path d="M92 196 H210" stroke="${INK}" stroke-width="2"/>` + t(151, 214, 'OFF ROAD', 11, INK, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 33. Varsity: TWH en arco, triple contorno con sombra
+  'twh-varsity': () => {
+    const letra = (ch, ang) => {
+      const a = (ang * Math.PI) / 180, R = 250, cx = 150 + R * Math.sin(a), cy = 400 - R * Math.cos(a);
+      const g = (fill, o) => pt('Graduate-Regular', ch, 82, 0, 0, fill, o);
+      return `<g transform="translate(${r2(cx)} ${r2(cy)}) rotate(${ang})">` +
+        `<g transform="translate(5 5)">${g(DRED, { stroke: DRED, sw: 14 })}</g>` +
+        g(INK, { stroke: INK, sw: 14 }) + g(BG, { stroke: BG, sw: 7 }) + g(RED) + `</g>`;
+    };
+    return letra('T', -17) + letra('W', 0) + letra('H', 17) +
+      pt('Graduate-Regular', 'OFF ROAD', 30, 150, 214, INK, { ls: 6 }) +
+      `<path d="M58 228 H242" stroke="${MUST}" stroke-width="3"/>` +
+      t(150, 252, 'DIVISION · EST. 2001', 13, MUST, COND, mid + ' ' + cond('letter-spacing="7"'));
+  },
+
+  // 34. TWH gigante en cursiva relleno con las franjas de rally + líneas de velocidad
+  'twh-stripe-fill': () => {
+    const G = ptGeo('Kanit-BlackItalic', 'TWH', 120, 160, 186, { fit: 214 });
+    const bands = [[96, MUST], [118, ORANGE], [140, RED], [162, DRED]].map(([y, c]) => `<rect x="30" y="${y}" width="250" height="24" fill="${c}"/>`).join('');
+    const speed = [[110, 52], [130, 70], [150, 44], [170, 60]].map(([y, w]) => `<rect x="${44 - w + 44}" y="${y}" width="${w}" height="5" rx="2.5" fill="${INK}"/>`).join('');
+    return `<defs><clipPath id="sfill"><path transform="${G.tr}" d="${G.d}"/></clipPath></defs>` +
+      `<g transform="${G.tr}"><path d="${G.d}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/></g>` +
+      `<g clip-path="url(#sfill)">${bands}</g>` + speed +
+      t(150, 76, 'THE WHITE HILUX', 14, INK, COND, mid + ' ' + cond('letter-spacing="7"')) +
+      t(150, 226, 'SINCE 2001 · OFF ROAD CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 35. Caja de equipo militar: TWH esténcil, "Property of", lote y flechas
+  'twh-crate': () => {
+    const br = (x, y, dx, dy) => `<path d="M${x} ${y + dy * 22} V${y} H${x + dx * 22}" fill="none" stroke="${MUST}" stroke-width="5"/>`;
+    const flecha = (x) => `<path d="M${x} 166 V136 M${x - 8} 146 L${x} 134 L${x + 8} 146" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    return `<rect x="40" y="62" width="220" height="176" fill="none" stroke="${INK}" stroke-width="3"/>` +
+      br(30, 52, 1, 1) + br(270, 52, -1, 1) + br(30, 248, 1, -1) + br(270, 248, -1, -1) +
+      t(150, 92, 'PROPERTY OF', 13, MUST, COND, mid + ' ' + cond('letter-spacing="8"')) +
+      pt('SairaStencilOne-Regular', 'TWH', 84, 150, 170, INK, { fit: 136 }) +
+      flecha(58) + flecha(242) +
+      `<rect x="40" y="186" width="220" height="26" fill="${INK}"/>` +
+      t(150, 205, 'OFF ROAD DIV. · 4X4', 15, BG, COND, mid + ' ' + cond('letter-spacing="5"')) +
+      t(150, 230, 'LOT Nº 2001 · HANDLE WITH MUD', 10, INK, COND, mid + ' ' + cond('letter-spacing="3"'));
+  },
+
+  // 36. Eco: TWH sólido que se repite en contorno (streetwear)
+  'twh-echo': () => {
+    const f = (y, fill, o) => pt('BowlbyOneSC-Regular', 'TWH', 60, 150, y, fill, { fit: 168, ...o });
+    // cada copia lleva relleno del color de fondo: tapa a la de abajo y queda escalonado
+    return f(222, BG, { stroke: DRED, sw: 2.5 }) + f(190, BG, { stroke: RED, sw: 2.5 }) + f(158, BG, { stroke: MUST, sw: 2.5 }) +
+      f(120, INK, { stroke: BG, sw: 6, behind: true }) +
+      t(150, 52, '4X4 · OFF ROAD · CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      t(150, 270, 'THE WHITE HILUX · EST. 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'));
+  }
 };
 
 // ---------- salida ----------
