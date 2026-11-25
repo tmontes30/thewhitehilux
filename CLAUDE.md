@@ -1,90 +1,233 @@
 # The White Hilux · CL Shop
 
-Programa de diseño profesional de ropa lifestyle 4x4 / off road para la marca **The White Hilux** (Instagram @the.whitehilux, Chile), y su tienda online.
+Marca de ropa lifestyle 4x4 / off road **The White Hilux (TWH)** (Instagram @the.whitehilux, Chile) y su **tienda online** con panel de administración.
 
-**Objetivo:** una página de ventas online 100% funcional (en proceso). Se publica en **GitHub Pages** (repo `tmontes30/thewhitehilux`, dominio **thewhitehilux.cavedevz.com**) con backend **Firebase** (proyecto `the-white-hilux`: Firestore, login Google, Cloud Functions con Mercado Pago). Tiene panel de admin en `/admin/` para pedidos, alertas de entrega, precios, descripciones, estados (Disponible / Próximamente / Oculto) y stock por talla.
+- **Tienda:** sitio estático en **GitHub Pages** (repo `tmontes30/thewhitehilux`, dominio **thewhitehilux.cavedevz.com**; DNS en GoDaddy).
+- **Backend:** **Firebase** proyecto `the-white-hilux` (Firestore nam5, login Google para el panel, Cloud Functions gen2 en `southamerica-east1`; el trigger `correoEstado` en `us-central1` porque Firestore está en nam5). Plan Blaze con presupuestos de alerta.
+- **Pagos:** Mercado Pago **Checkout Pro vía API de Orders** (producción, cuenta del dueño). **Correos:** Resend. **Notificaciones:** Web Push al panel (PWA en el iPhone).
+- **Panel de admin:** `/admin/` (solo el correo admin de `firestore.rules` y `firebase-config.js`).
+- Estado al 2026-11-25: tienda en producción (ventas reales), 22 productos (10 poleras, 3 polerones, 5 jockeys, 1 sticker con 54 diseños, 3 neumáticos a cotizar), 54 logos.
 
-## Carpetas
+> El dueño habla español: responder siempre en español, simple y claro. Quiere iterar rápido: entregar archivos locales (PNG/SVG/HTML con doble clic), **no** páginas publicadas en claude.ai.
 
-| Carpeta | Qué es |
+---
+
+## 1. Carpetas
+
+| Carpeta | Qué es | ¿Se sube a GitHub? |
+|---|---|---|
+| `web/` | La tienda (HTML/CSS/JS estático) y el panel `web/admin/`. Lo que se publica. | Sí |
+| `functions/` | Cloud Functions (pagos, webhook, correos, push, visitas). `functions/shared/` es una **copia** de `web/lib`, `core.js` y `catalog.js` hecha por `node functions/sync.js` (corre antes de cada deploy). | Sí (sin `.env`) |
+| `disenos/logos/` | Generador de logos (`generar.js`), `svg/`, `png/`, `_todos.png` (hoja numerada), `tipografias.js` (pruebas de tipografía). | Sí |
+| `disenos/fuentes/` | Tipografías libres OFL (Black Ops One, Bebas Neue, Anton, Racing Sans One, Kanit, Russo One, Saira Stencil, Rubik Mono, Staatliches, Yellowtail, Rye, etc.) con sus licencias. | Sí |
+| `disenos/configurador/` | Configurador de productos nuevos (`configurador.html`), `aplicar.js`, `APLICAR-COLECCION.bat`, `preparar.js`, `posiciones.js`, `datos.js`, `etiqueta.js`, `copiar-al-panel.js`. `bases/` (fotos base limpias) es privada. | Sí (menos `bases/`) |
+| `disenos/montajes/` | Scripts antiguos de fotos con modelo (`modelos.js`, `accesorios.js`, `montar.js`). | Sí |
+| `disenos/pedido/` | Pedido al proveedor (`generar-pedido.js`), conversor a contornos (`contornos.js`), logo suelto (`logo-suelto.js`). | Sí |
+| `disenos/etiquetas/` | Etiqueta de cuello (`generar.js`). | Sí |
+| `disenos/neumaticos/` | `preparar.py` (fotos de neumáticos). `todos-neumas.*` es privada. | Sí (script) |
+| `ideas/` | Referencias de otras marcas (Dirt Brothers, Troy Lee, Toke, Kaya Unite…). Solo **inspiración de estilo**. | **No** |
+| `Modelos foto/`, `fotos-originales/` | Fotos base de modelos y fotos propias con la Hilux. | **No** |
+| `Neumaticos/` | Fotos originales del proveedor de neumáticos. | **No** (`/Neumaticos/` en .gitignore) |
+| `pedido-proveedor/` | Pedidos generados para el proveedor (PDF, SVG, ZIP, `compra.json` con costos). | **No** |
+| `estrategia/` | Planificación de negocio y costos (`planificador.html`, `costos.js`, `exportar-excel.js`). Ver `estrategia/README.md`. | **No** |
+
+Secretos: solo en `.env` (raíz, privado) y en `functions/.env` / secretos de Firebase. **Nunca** imprimirlos ni subirlos.
+
+---
+
+## 2. Tienda (`web/`)
+
+### Datos
+- `web/data/catalog.js`: catálogo **base** (productos, fotos, tallas, colores, diseños del sticker, envíos, config). Lo leen las páginas y el servidor.
+- El **panel** guarda en Firestore `tienda/catalogo` el nombre, precio, descripción, estado (Disponible / Próximamente / Oculto), SKU y stock de cada producto, más ofertas y ajustes; eso **pisa** al catálogo base. `web/assets/js/core.js` hace la mezcla (`mergeCatalog`), el stock, los SKU, los días hábiles y el OTD (lo comparten tienda, panel y funciones).
+- Config en `catalog.js`: `whatsapp`, `email`, `freeShippingFrom` (40.000, solo RM), envío RM 3.990 / regiones 5.990 / retiro 0, `pickupPoints`, `colors`, `categories` (polera, poleron, jockey, stickers, neumaticos), `regions`, `legal`.
+
+### Páginas
+- `index.html`: portada (banner `web/assets/img/hilux/`, accesos por categoría) + listado.
+  - Con categoría o búsqueda aparecen **filtros rápidos de talla** (solo prendas con stock en esa talla; también Próximamente con stock cargado; tallas sin stock tachadas) y **color**; parámetros `talla`/`color` que la ficha usa para dejar marcada la talla y el color.
+  - Sin filtro de color, las prendas con stock en otro color (ej. básicas en blanco) se muestran en ese color y se **reparten** entre las negras.
+  - En el inicio los **neumáticos van al final** (la ropa es protagonista).
+  - Con filtros, el banner no aparece (clase `filtered` en `<html>` antes de cargar) y hay un círculo de carga; los links de filtros no llevan `#productos` (en el celular saltaba hacia abajo).
+- `producto.html`: ficha estilo Mercado Libre (galería, color, talla, cantidad, Comprar / Agregar). Promesa de entrega y retiro. Productos Próximamente: botón discreto **Me gusta**. Productos a cotizar: ver §7.
+- `carrito.html` (envío/retiro, punto de retiro, cupón), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`, `seguimiento.html` (Sigue tu pedido), `nosotros.html` (galería de las Hilux), `terminos.html`, `cambios.html`, `privacidad.html` (incluye que se miden visitas de forma anónima).
+- `assets/js/store.js`: encabezado/pie (menú con categorías, "Sigue tu pedido"; pie con "© The White Hilux", sin nombre ni RUT; WhatsApp sin mostrar el número), carrito en localStorage, `priceHtml`, botón flotante de WhatsApp y el **contador de visitas** (§5).
+- En computador la tienda usa `zoom` según el ancho (`site.css`: ≥1100 .72 … ≥2500 1.15; `.wrap` máx. 1560).
+- Las páginas funcionan con doble clic (rutas relativas, catálogo base); el pago solo funciona publicado.
+- Ícono de pestaña: `web/assets/logos/favicon-twh.svg` (TWH rojo en Black Ops One, estirado en alto para leerse a 16 px, fondo oscuro).
+
+### Compra, entrega y pedidos
+- `lib/order.js` recalcula precios, aplica ofertas/cupones y **valida stock en el servidor**; rechaza productos no disponibles, `cotizar` y diseños de sticker agotados.
+- Promesa de entrega con **rango** (`core.js` `promiseRange`): primer día = días hábiles desde el pago (RM 3, regiones 5), último = +`rangeDays` (1). El cliente ve "Llega entre el martes 24 y el miércoles 25". `promisedFrom` / `promisedDate` (= último día; lo usan alertas y OTD).
+- **Retiro gratis** en `config.pickupPoints`: Los Trapenses (Lo Barnechea, cerca del Líder Pie Andino) y Parque Araucano (Las Condes, Rosario Norte); el cliente elige uno en el carrito (las funciones validan el punto: si se cambian, redeploy). Mismo día hábil si paga antes de `pickupCutoff` (06:30, no se muestra), si no el día hábil siguiente; tags "Retiro gratis hoy/mañana". Los pedidos con retiro pasan directo a **En preparación** al pagarse.
+- El stock se descuenta **solo al aprobarse el pago** (webhook idempotente).
+- Pedidos en Firestore `pedidos/*` (id `TWH-…`). Seguimiento público (`seguimiento`) solo con N° de pedido + correo; no expone dirección ni teléfono.
+
+### Ropa y etiquetas
+- Poleras: logo chico en el pecho (lado del corazón) y diseño mediano en la parte alta de la espalda; básicas solo con logo en el pecho. Características: Material "Work Gear, tela gruesa de calidad"; Modelo "Mide 1,74 m, pesa 76 kg y usa talla XL" (sin campo "Corte").
+- Etiqueta de cuello ("TWH" + franjas + "RACE SHOP" + talla; 60×40 mm): `disenos/configurador/etiqueta.js` (lo usan el configurador y `node disenos/etiquetas/generar.js`). Dos versiones: clara (prenda negra) y oscura (prenda blanca). En el configurador cada polera/polerón tiene "Etiqueta en el cuello" (sí por defecto).
+
+### Sticker (`sticker-twh`)
+- Un **diseño por cada logo numerado** de la hoja (`disenos/logos/_todos.png`), en ese orden (54). $2.990, vinilo 10 cm.
+- **Stock por diseño**: `core.js` `stockColors(p)` devuelve los ids de diseño cuando el producto tiene `designs`; en todos lados la variante de stock es `l.design || l.color` (servidor `lib/order.js` y webhook, panel `moveStock`/Compras/venta manual, carrito, ficha). Panel: "Controlar stock por diseño" (una fila por logo con miniatura). Tienda: diseños sin stock en gris y AGOTADO; la ficha abre en el primero con stock. Variante SKU del diseño = 10 caracteres del id.
+- Sin control de stock + Disponible = todos los diseños se pueden comprar sin límite.
+
+---
+
+## 3. Panel de admin (`web/admin/`)
+
+Login con Google (correo admin). Al entrar muestra un círculo de carga (no el login) hasta confirmar la sesión. Pestañas:
+
+- **Pedidos**: alertas de entregas por vencer, filtros, búsqueda, estado (cambia fechas `preparingDate`/`shippedDate`/`deliveredDate`), courier + N° + link de seguimiento, nota interna, registro de avisos enviados (`notifs`: correos y push).
+  - **🔒 Costo real del envío** (`shipCostReal`, privado; nunca sale al cliente): monto o "Lo entregué yo ($0)"; elegir courier "Despacho propio" lo deja en $0 si estaba vacío. Utilidades lo usa; vacío = tarifa de la zona.
+  - **+ Venta manual** (transferencia/efectivo): crea `pedidos/*` con `source: "manual"`, `paymentMethod`, `mpFee: 0`, precio editable, entrega en mano / retiro / despacho, descuenta stock (opcional) y `noEmails`. Casilla **Muestra** (prendas que se queda el dueño a precio costo: precio = costo promedio de Compras, `muestra: true`, utilidad ≈ $0, fuera del OTD).
+- **Ventas**: KPIs, ventas por día, más vendidos, stock bajo, ventas por SKU/categoría/región, descuentos usados, OTD por RM/regiones/retiro. **Tocar** una fila/barra filtra todo el tablero (pedido, producto, SKU, categoría, región, día o mes).
+- **Utilidades**: ingresos − costo de lo vendido (promedio por SKU desde Compras; si no hay, promedio de su categoría; si no, $0 con aviso) − envío real − comisión MP (real `mpFee` que guarda el webhook; si no, % estimado) − empaque − otros gastos mensuales. Supuestos en `privado/utilidades`. Comisión MP "al instante": crédito 2,69% + IVA, débito 2,19% + IVA, dinero en cuenta 3,19% + IVA = **3,81%** (supuesto por defecto, editable en el panel). Pagos se buscan con `/v1/payments/search?external_reference=`. Recuperación de la inversión, por mes, por producto y por pedido (tocar para filtrar).
+- **Cliente** (visitas anónimas, §5): KPIs, embudo, productos vistas vs. carro vs. ventas, ❤ Me gusta, lo más tocado, páginas, búsquedas, lo no encontrado, origen, equipo y recomendaciones automáticas. Interruptor "Contar mis visitas desde este navegador" (para probar).
+- **Productos y stock**: resumen de inventario arriba (unidades, valor a costo, a precio de venta, margen); filtros por **categoría** y por **estado** (combinables); por producto: nombre, SKU, precio, estado, descripción, stock por talla/color (o por diseño en el sticker), "+ Registrar llegada"; ❤ me gusta en Próximamente; CSV de inventario por SKU. Neumáticos: "Precio desde (opcional)" y sin stock.
+- **Compras** (`compras/*`): compras a proveedores con costo total IVA incl., ETA y líneas por SKU/talla; costo unitario = total repartido parejo (o costo propio por línea). "Llegó: sumar al stock" o "Cargar al stock antes de que llegue" (marca `stockAdded`, así "Llegó" no vuelve a sumar). Importa `pedido-proveedor/<fecha>/compra.json`. Los costos reales viven solo en Firestore y en carpetas privadas: **nunca** escribirlos en este archivo ni en el repo.
+- **Descuentos**: ofertas automáticas (`tienda/catalogo.offers`, precio tachado) y códigos (`cupones/*`, privados; los valida la función `validarCupon`).
+- **Configurador**: copia del configurador (§6).
+- **Ajustes**: días de entrega RM/regiones, largo del rango, hora de corte de retiro, días de alerta, feriados, notificaciones push del iPhone.
+- **Celular / app del iPhone** (≤820 px): barra inferior (Pedidos · Ventas · **+** venta manual · Productos · Más), hoja "Más" con el resto, encabezado compacto con el nombre de la sección, safe-area del notch (`viewport-fit=cover`, status bar black-translucent), campos de 16 px (sin zoom de iOS), botones de 44 px; la venta manual se abre a pantalla completa con líneas en tarjetas, cantidad −/+ y barra fija con total y Guardar. CSV ocultos en el celular. Todo en el bloque "Celular / app del iPhone" de `admin.css`.
+- PWA: `admin/manifest.webmanifest`, `admin/sw.js` (sin caché; solo push), ícono TWH negro sobre blanco (`favicon.svg`, icon-192/512, apple-touch-icon).
+
+---
+
+## 4. Funciones y datos (Firebase)
+
+| Función | Qué hace |
 |---|---|
-| `ideas/` | Referencias de poleras que le gustan al dueño (Dirt Brothers, Troy Lee, Toke, Kaya Unite, etc.). Se usan como **inspiración de estilo**, nunca para copiar diseños, nombres ni marcas. |
-| `Modelos foto/` | Fotos base de modelos con polera negra y blanca (frente y espalda) y mockups. Se usan para crear las fotos de producto de la tienda poniendo encima los logos TWH. |
-| `fotos-originales/` | Fotos lifestyle propias (con la Hilux, bicis, terreno). Base de los montajes publicitarios. |
-| `disenos/logos/` | Logos de la marca. `generar.js` los crea; salen en `svg/` (vectorial), `png/` (vista 1000 px) y `_todos.png` (hoja con todos numerados). También copia versiones sin fondo a `web/assets/logos/` (`<logo>.svg` para prenda oscura y `<logo>-claro.svg` para prenda clara). |
-| `disenos/montajes/` | `montar.js`: pone logos TWH sobre las fotos lifestyle. `modelos.js`: genera las fotos de producto con modelo (negro y blanco). Ambos borran el estampado original píxel a píxel y dejan el resultado en `web/assets/img/`. |
-| `web/` | La tienda (sitio estático en GitHub Pages) y el panel `web/admin/`. Ver `web/README.md`. |
-| `estrategia/` | Privada (en .gitignore). Planificación de negocio: `planificador.html` (doble clic: márgenes, plan de compra con curva de tallas, escenarios, cuándo comprar, ventas reales), datos en `costos.js` (único archivo a editar), `node estrategia/exportar-excel.js` genera `planificacion-twh.xlsx` con fórmulas. Ver `estrategia/README.md`. |
-| `functions/` | Cloud Functions de Firebase: `crearPreferencia`, `webhook`, `alertaEntregas`. Copian `web/lib`, `core.js` y `catalog.js` a `functions/shared/` con `sync.js`. |
+| `crearPreferencia` | Recibe el carrito, recalcula todo con `lib/order.js`, guarda el pedido y crea el pago en Mercado Pago (Orders API → `checkout_url`). |
+| `webhook` | Aviso de Mercado Pago: si está aprobado marca pagado, calcula la promesa, descuenta stock (por talla/color o diseño), guarda `mpFee`, manda correos y push. Idempotente. |
+| `validarCupon` | Vista previa del descuento en el carrito. |
+| `seguimiento` | "Sigue tu pedido" (N° + correo). |
+| `correoEstado` | Trigger (us-central1): correo al cliente en despachado/listo para retiro y entregado, una vez cada uno (`emails.<estado>`); no si `noEmails`. |
+| `alertaEntregas` | 9:00: push con pedidos por vencer (sin correo). |
+| `probarPush` | Push de prueba (requiere sesión admin). |
+| `evento` | Visitas de la tienda (§5). |
+| `simularPago` | Solo para pruebas en emulador. |
 
-## Tienda (`web/`)
+Firestore: `tienda/catalogo` (lectura pública, escritura admin), `pedidos/*`, `cupones/*`, `privado/*`, `compras/*`, `pushSubs/*`, `estadisticas/<YYYY-MM-DD>` (lectura admin; las escribe `evento`). Reglas en `firestore.rules`.
 
-- `data/catalog.js`: catálogo **base** (fotos, tallas, colores, envíos, diseños de stickers). Lo leen las páginas y el servidor.
-- Precio, nombre, descripción, estado y stock se editan en el **panel** (Firestore `tienda/catalogo`) y pisan a catalog.js. `assets/js/core.js` hace la mezcla, el stock y los días hábiles (lo comparten tienda, panel y funciones).
-- Descuentos: ofertas automáticas en `tienda/catalogo.offers` (precio tachado) y códigos en la colección privada `cupones/*` (función `validarCupon`). SKU por variante: base del producto + color + talla (`core.js` `variantSku`). Pestaña Ventas del panel con reportes por SKU.
-- Botón flotante de WhatsApp: número en `config.whatsapp` de catalog.js. En computador la tienda usa `zoom` (.78 / .72) para verse como al 70-80%.
-- Seguimiento: `web/seguimiento.html` + función `seguimiento` (responde solo si N° de pedido y correo coinciden; no expone dirección ni teléfono). En el panel, cada pedido tiene courier, N° y link de seguimiento; los estados guardan `preparingDate`/`shippedDate`/`deliveredDate`.
-- `aplicar.js` conserva el id de las prendas que ya existen (el configurador guarda el id): renombrar no pierde stock ni ventas. Los nombres siguen el diseño real (ej. 'Polera Race Shop', 'Polera Básica Escudo 4x4 Team').
-- Etiqueta de cuello ("TWH" + franjas + "RACE SHOP" + talla, sin CL SHOP; 60×40 mm): dibujo en `disenos/configurador/etiqueta.js` (lo usan el configurador y `node disenos/etiquetas/generar.js` → `svg/`, `png/` 600 dpi transparente, `_todas.png`). Solo 2 versiones: clara para prendas negras y oscura para blancas. En el configurador cada polera/polerón tiene "Etiqueta en el cuello" (sí/no, por defecto sí); se guarda en `cfg.etiqueta` y agrega la fila "Etiqueta" a las características.
-- Logos 26-33 (deporte y mecánica dibujados a mano en SVG) se probaron el 2026-11-18 y se descartaron: el dueño los encontró básicos. No recrear ilustraciones complejas a mano. Camino acordado: ilustraciones con licencia comercial (Freepik/Adobe Stock/etc., archivos en ideas/licenciados/), ilustrador o IA, y Claude las adapta a TWH. Nunca copiar diseños de otras marcas (TLD, Greenish). Quedan disponibles las tipografías libres en disenos/fuentes/ y opentype.js (cd disenos && npm install).
-- Pedido a proveedor: `node disenos/pedido/generar-pedido.js` → `pedido-proveedor/<fecha>/` (privado, en .gitignore): pedido.html/pdf, logos/*.pdf a tamaño real, etiquetas/*.pdf. Reglas (curva, colores, cm de estampado) arriba del script. Logos y etiquetas salen **en contornos** (lo pidió la imprenta: sin tipografías ni bordes): `disenos/pedido/contornos.js` pasa cada `<text>` a figuras (posición de letras del navegador, forma con fontkit desde C:/Windows/Fonts, Bahnschrift con variación wght/wdth) y cada stroke a figura rellena (paper + paperjs-offset; texto con borde por detrás = silueta agrandada solo hacia afuera: los huecos de las letras quedan abiertos y parejos, lo pidió la imprenta 2026-11-24). Un logo suelto: `node disenos/pedido/logo-suelto.js <logo> <cm> [clara|oscura]` → `pedido-proveedor/sueltos/<fecha>/`; también deja `.svg` junto a cada `.pdf`. Textos con borde usan `stroke-linejoin="round"` (las esquinas en punta salían como pinchos en Illustrator). Versión en contornos: `pedido-proveedor/2026-11-23/`. Pedido 2026-11-18 (ajustado): 96 poleras; modelos 1-7 solo negro 2L 2XL 2XXL; 3 básicas negro+blanco 1M 2L 3XL 3XXL (CURVA y CURVA_MODELO en el script).
-- Contacto en Ayuda: `config.email` y `config.whatsapp` de catalog.js.
-- Pedidos en Firestore `pedidos/*`. Promesa de entrega con **rango** (`core.js` `promiseRange`): primer día = días hábiles desde el pago (RM 3, regiones 5) y último = +`rangeDays` (1); el cliente ve "Llega entre el martes 24 y el miércoles 25". `promisedFrom`/`promisedDate` (= último día, el que usan alertas y OTD). Retiro gratis en Las Condes o Lo Barnechea (`config.pickupPoints`): mismo día hábil si pagan antes de `pickupCutoff` (06:30, no se muestra al cliente), si no el día hábil siguiente; tags "Retiro gratis hoy/mañana" en tarjetas y ficha. Todo editable en Ajustes. El stock se descuenta solo al aprobarse el pago.
-- Puntos de retiro (`config.pickupPoints`): Los Trapenses (Lo Barnechea, cerca del Líder Pie Andino) y Parque Araucano (Las Condes, Rosario Norte); el cliente elige uno en el carrito. Si se cambian, redeploy de funciones (validan el punto).
-- Sticker (`sticker-twh`): un diseño por cada logo numerado de la hoja (`disenos/logos/_todos.png`), en ese orden. **Stock por diseño**: `core.js` `stockColors(p)` devuelve los ids de diseño cuando hay `designs`, y en todos lados la variante de stock es `l.design || l.color` (servidor `lib/order.js` y webhook, panel `moveStock`/Compras/venta manual, carrito, ficha). En el panel: "Controlar stock por diseño" (una fila por logo con miniatura); en la tienda los diseños sin stock salen en gris y AGOTADO, y la ficha abre en el primero con stock. Variante SKU del diseño = 10 caracteres del id.
-- Panel → Productos y stock: filtros por **categoría** (`#prod-cats`) y por estado, combinables.
-- Pestaña Compras del panel (`compras/*`, solo admin): registro de compras con costo total IVA incl., ETA y líneas por SKU/talla; costo unitario = total repartido parejo (o costo propio por línea); "Llegó: sumar al stock" suma por talla; "Cargar al stock antes de que llegue" suma ya (para mostrar tallas con el producto en Próximamente) y marca `stockAdded`, así "Llegó" no vuelve a sumar. Importa `pedido-proveedor/<fecha>/compra.json` (lo genera `generar-pedido.js --costo=N`; el costo nunca va al repo ni al ZIP del proveedor).
-- Pestaña Utilidades del panel: ingresos − costo de lo vendido (costo promedio por SKU desde Compras; si no hay, promedio de su categoría; si no, $0 con aviso) − envío real (`shipCostReal` en el pedido, o tarifa de la zona) − comisión MP (real `mpFee`, que guarda el webhook buscando el pago; si no, % estimado) − empaque − otros gastos mensuales. Supuestos en `privado/utilidades` (solo admin). Comisión MP elegida: al instante (crédito 2,69% + IVA, débito 2,19% + IVA; dinero en cuenta MP 3,19% + IVA = 3,81%, visto en la primera venta real). Pagos de Checkout Pro (Orders API) se encuentran con /v1/payments/search?external_reference=.
-- Costo real del envío por pedido (`shipCostReal`, privado): recuadro "🔒 Costo real del envío" en cada pedido pagado con despacho, con botón "Lo entregué yo ($0)" y resumen cobrado vs. costo; elegir courier "Despacho propio" lo deja en $0 si estaba vacío. Utilidades lo usa; si está vacío asume la tarifa de la zona. Nunca sale en seguimiento ni en correos.
-- Venta manual (Pedidos → "+ Venta manual"): para transferencia/efectivo. Crea `pedidos/*` desde el panel (reglas: el admin puede crear) con `source: "manual"`, `paymentMethod`, `mpFee: 0`, precio editable por línea, entrega en mano / retiro / despacho, descuenta stock (opcional) y `noEmails` (sin correos salvo que se marque). Casilla **Muestra** (prendas que se queda el dueño a precio costo): precio = costo promedio de Compras (`costoLinea`), entrega en mano, entregado, sin correos, descuenta stock; guarda `muestra: true` (pill "Muestra · a precio costo", utilidad ≈ $0, fuera del OTD).
-- Pestaña **Cliente** del panel (visitas, anónimas): `store.js` cuenta páginas vistas (`pv`), fichas vistas (`prod`), agregados al carro (`cart`, en `Cart.add`), toques de botones/links (`click`, rótulo "Zona · texto" o `data-track`), filtros (`filtro`), búsquedas (`busca`), tallas tachadas o búsquedas sin resultado (`vacia`, atributo `data-vacia`), origen (`fuente`: utm_source o referrer) y equipo (`disp`), más el embudo por sesión (`embudo`: visitantes por día, sesiones, producto, carrito, checkout, compra). Se manda en lotes por sendBeacon a la función `evento`, que solo acepta esos grupos y suma en `estadisticas/<YYYY-MM-DD>` (solo el admin lo lee). No cuenta: navegador del admin (`localStorage twh-admin`, se marca al entrar al panel salvo que en Cliente se active "Contar mis visitas desde este navegador" = `twh-contar`), robots/webdriver ni páginas con doble clic. El panel muestra KPIs, embudo, productos vistas vs. carro vs. ventas, lo más tocado, búsquedas, lo no encontrado, origen, equipo y recomendaciones automáticas. Informado en privacidad.html. **Me gusta** en fichas Próximamente (`#like`, discreto bajo el botón, recordado en `localStorage twh-likes`): grupos `like`/`nolike`; el panel muestra "❤ N me gusta" en Productos (netos, todo el historial) y una tabla en Cliente.
-- Panel en el celular (≤820 px, app del iPhone): barra inferior `#mnav` (Pedidos · Ventas · "+" venta manual · Productos · Más), hoja "Más" `#msheet` con el resto de pestañas, encabezado compacto con `#mtitle`, safe-area del notch (`viewport-fit=cover`, status bar black-translucent), campos de 16 px (sin zoom de iOS), botones de 44 px; la venta manual se abre como hoja a pantalla completa con líneas en tarjetas, cantidad con −/+ y barra fija con total y Guardar. CSV ocultos en el celular. Todo en el bloque "Celular / app del iPhone" de admin.css.
-- Ícono del panel/app iPhone: TWH negro sobre blanco (`admin/favicon.svg` → icon-192/512, apple-touch-icon).
-- OTD (entregas a tiempo): `core.js` `otd()`; en Ventas (tarjeta por RM/regiones/retiro) y en Pedidos (30 días). Retiro cuenta como cumplido al pasar a "despachado" (listo para retiro).
-- Correos con Resend: dominio thewhitehilux.cavedevz.com verificado (DNS en GoDaddy), remitente pedidos@thewhitehilux.cavedevz.com (`functions/.env` RESEND_FROM), respuestas a ORDER_EMAIL. Salen: pago confirmado (cliente + copia al dueño) y `correoEstado` (trigger Firestore en us-central1): despachado/listo para retiro y entregado, una vez cada uno (`emails.<estado>` en el pedido).
-- Notificaciones push del panel (PWA instalable: `admin/manifest.webmanifest`, `admin/sw.js`): el iPhone se suscribe en Ajustes → Notificaciones (solo con el panel agregado al inicio). Suscripciones en `pushSubs/*`; avisos al pagarse un pedido (webhook) y en `alertaEntregas` (9:00); botón de prueba = función `probarPush`. Clave VAPID pública en `firebase-config.js` y `functions/.env`; privada en `.env` raíz y secreto `VAPID_PRIVATE_KEY`.
-- Páginas: `index.html` (portada + listado con filtros; al entrar a una categoría o buscar aparecen filtros rápidos de **talla** (solo muestra prendas con stock en esa talla, también Próximamente con stock cargado; tallas sin stock tachadas) y **color**, parámetros `talla`/`color` que la ficha usa para dejar marcada la talla y el color. Sin filtro de color, las prendas con stock en otro color (ej. básicas en blanco) se muestran en ese color y se reparten entre las negras para que el listado no se vea todo negro), `producto.html` (ficha estilo Mercado Libre), `carrito.html`, `nosotros.html` (galería de las Hilux), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`.
-- `functions/index.js`: pago con Mercado Pago Checkout Pro y webhook idempotente. `lib/order.js` recalcula precios y valida stock en el servidor.
-- Pruebas: `cd web && npm test`. Flujo completo: `firebase emulators:start --project the-white-hilux` + `node functions/test/e2e.js`; panel de prueba en `http://127.0.0.1:5500/admin/?emu-login`.
-- Publicar tienda: `git push` (GitHub Actions corre pruebas y publica `web/`). Funciones: `firebase deploy --only functions`. Nunca subir `ideas/`, `Modelos foto/`, `fotos-originales/` ni `disenos/configurador/bases/` (están en .gitignore).
-- Las páginas funcionan abiertas con doble clic (rutas relativas y sin fetch de archivos locales). El pago solo funciona publicado.
+Correos (Resend): dominio thewhitehilux.cavedevz.com verificado (DNS GoDaddy), remitente `pedidos@thewhitehilux.cavedevz.com` (`functions/.env` RESEND_FROM), respuestas a ORDER_EMAIL. Encabezado con el escudo TWH (PNG `web/assets/img/email/logo-escudo.png`; los correos no muestran SVG).
 
-## Neumáticos (publicado 2026-11-24)
+Push: clave VAPID pública en `firebase-config.js` y `functions/.env`; privada en `.env` raíz y secreto `VAPID_PRIVATE_KEY`. El iPhone se suscribe en Ajustes (con el panel agregado al inicio). La app del panel y Safari guardan datos por separado.
 
-- 3 productos en `web/data/catalog.js` (`neumaticos-at`, `neumaticos-rt`, `neumaticos-mt`), categoría `neumaticos` (menú "Neumáticos"), con `cotizar: true`, `price: 0`, sin tallas ni colores, `images` de `web/assets/img/neumaticos/`. Marcas en desc/features: Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich.
-- "A cotizar": `store.js` `priceHtml` muestra "A cotizar" (o "Desde $X" si el panel le pone precio; las ofertas de Descuentos aplican). La ficha (`producto.html`, `coti`) no tiene carrito ni compra: campo opcional de medida/vehículo y botón **Cotizar por WhatsApp** (`wa.me/config.whatsapp` con producto + medida; se cuenta como toque en la pestaña Cliente). `lib/order.js` rechaza `cotizar` en pagos (funciones redeployadas).
-- Panel → Productos: nombre, SKU (NEU-…), "Precio desde (opcional, 0 = A cotizar)", estado y descripción; sin stock por talla.
-- Fotos: `python disenos/neumaticos/preparar.py` desde `Neumaticos/` (privada): reales, cuadradas 900 px, etiqueta TWH + franjas | AT/RT/MT; hoja `disenos/neumaticos/todos-neumas.png/.html`. La foto 9 no se usa (marca de agua NEUMACENTER). El dueño prefirió fotos reales (no fondo blanco recortado; rembg instalado pero desactivado).
+---
 
-## Reglas de negocio actuales
+## 5. Visitas (pestaña Cliente)
 
-- Colores ofrecidos: poleras en **negro y blanco**; polerones y jockeys solo en **negro** (por ahora).
-- Polerones a $34.990: 3 básicos con logo chico en el pecho. Jockeys 5 paneles a $15.990: 5 modelos con logo chico (parche tejido o bordado).
-- Las fotos lifestyle con estampado reemplazado (fotos-originales/) están **fuera de la tienda** porque los logos no quedaban bien centrados ni con buen tamaño. No volver a usarlas sin fotos nuevas con la prenda real. El banner usa web/assets/img/hilux/.
-- Fotos de polerón y jockey: `node disenos/montajes/accesorios.js`.
-- Todas las poleras: **$19.990**. Stickers: $2.990 cada uno, el cliente elige el diseño.
-- Envío gratis **solo en la RM** sobre $40.000. Regiones paga envío.
-- Poleras: logo chico arriba en el pecho (lado del corazón) y diseño mediano en la parte alta de la espalda, sin ocupar toda la polera. Hay poleras básicas con solo logo en el pecho.
-- Logo oficial de la tienda (desde 2026-11-19): **race-dept-ops** (logo 27 = diseño del 13 race-dept con TWH en Black Ops One, convertido a trazo con opentype.js), archivo recortado `web/assets/logos/logo-oficial.svg` (lo genera `generar.js`): encabezado, portada, pie, panel y configurador. El favicon de la tienda es `web/assets/logos/favicon-twh.svg` (TWH rojo en Black Ops One, estirado en alto para que se lea a 16 px, fondo oscuro); el jockey sigue con `logo-header.svg`. Opciones de tipografía probadas: `node disenos/logos/tipografias.js` → `disenos/logos/tipografias/_opciones.png` (fuentes OFL en disenos/fuentes/). `logo-shop.svg` / `cl-shop.svg` quedan como diseños.
-- No usar textos de "preventa" ni "hecho en Chile". No usar eslóganes chilenos tipo "Pa' la cordillera" o "Fierro viejo".
+- `store.js` cuenta (anónimo): páginas vistas `pv`, fichas `prod`, agregados al carro `cart` (en `Cart.add`), toques `click` (rótulo "Zona · texto" o `data-track`), filtros `filtro`, búsquedas `busca`, tallas tachadas o búsquedas sin resultado `vacia` (`data-vacia`), origen `fuente` (utm_source o referrer), equipo `disp`, embudo por sesión `embudo` (visitantes por día, sesiones, producto, carrito, checkout, compra), `like`/`nolike`.
+- Se manda en lotes (sendBeacon, text/plain) a `evento`, que solo acepta esos grupos y suma en `estadisticas/<fecha>`. No guarda IP ni ids.
+- No cuenta: navegador del admin (`localStorage twh-admin`, se marca al entrar al panel, salvo el interruptor `twh-contar`), robots/headless/webdriver, páginas con doble clic. Para que el origen "Instagram" sea exacto, usar links con `?utm_source=instagram`.
 
-## Configurador (flujo principal para crear poleras, polerones, jockeys y stickers)
+---
 
-Desde 2026-11-24 el configurador **solo crea productos nuevos** y nunca modifica los que ya están en la tienda.
-1. El dueño abre `disenos/configurador/configurador.html` (doble clic) o el panel → Configurador. Parte **vacío**: "¿Qué quieres crear?" (Polera / Polerón / Jockey / Sticker). El editor va por pasos (logo frente/espalda con buscador, posición, tamaño, altura, colores, etiqueta, nombre automático editable) con vista previa al lado y **Guardar**.
-2. Lo guardado queda en **la sesión** (sessionStorage `twh-cfg-sesion`: sigue al recargar, se borra al cerrar la pestaña): bandeja con Editar / Duplicar / Borrar. **Exportar productos nuevos** descarga `twh-coleccion-nuevos-<fecha>.json` con `modo: "agregar"`.
-3. Doble clic en `disenos/configurador/APLICAR-COLECCION.bat`: toma el `twh-coleccion*.json` más reciente de Descargas, corre `aplicar.js` (modo agregar: genera las fotos, **agrega** las prendas al final de la ropa en `web/data/catalog.js` con `status: 'proximamente'` y suma los stickers como diseño nuevo de `sticker-twh`; no borra fotos ni toca productos existentes) y las pruebas; si pasan, publica (git add solo de catalog.js, fotos de productos, copia del panel y datos.js). Después, en el panel: stock y pasar a Disponible.
-- Un JSON del configurador antiguo (sin `modo`) reemplazaba toda la colección: `aplicar.js` ahora lo rechaza salvo `--reemplazar`.
+## 6. Logos y configurador
 
-- El configurador también está en el panel (pestaña **Configurador**): es una copia generada en `web/admin/configurador/` por `disenos/configurador/copiar-al-panel.js` (el .bat la corre antes de publicar). Editar siempre el original en `disenos/configurador/`. Su sesión es la de esa pestaña del navegador (se vacía al cerrarla).
-- Posiciones y tamaños de los logos: `disenos/configurador/posiciones.js` (lo comparten la vista previa y las fotos finales).
-- Fotos base limpias: `disenos/configurador/bases/`. Logos nuevos o bases nuevas: `node disenos/configurador/preparar.js` (con `--sin-bases` solo actualiza la lista de logos y la colección inicial).
+### Logos (`disenos/logos/generar.js`)
+- Cada logo es una función en el objeto `LOGOS`; **el orden del objeto = el número** en `_todos.png` (y en el configurador y el sticker). Hoy hay **54**: 1–21 los originales que quedan, 22 `race-dept-ops` (oficial), 23–24 Stay Dirty y Winch Crew, 25–35 TWH (Monograma, Varsity, Franjas, Caja militar, Eco, Split, Spec, Pill, Vertical, 3D, Calado), 36–41 minimalistas (paletas nuevas), 42–54 insignias de carrera (escudos, placas, sello Speed Shop, banderas cruzadas, Pit Pass, hexágono, óvalo, Motor Club…).
+- Favoritos del dueño (estilo carrera vintage): **5** `checkered-shield` (escudo con cuadros y TWH rojo), **17** `round-stamp` (placa de esquinas cortadas), **18** `speed-shop` (bandera inclinada + Speed Shop) y **22** `race-dept-ops`. Las insignias 42–54 son variaciones de estos.
+- Helpers: `t()` texto, `ital()`, `cond()`, `ring()` (texto en anillo), `opsTWH()`, `pt()`/`ptGeo()` (texto de `disenos/fuentes/` convertido a trazo con opentype.js; opciones `fit`, `w`, `ls`, `skew`, `stroke`, `behind`, y `abs`/`bb` para calar o cortar), `cuadros()`, `franjas3()`, `ESCUDO`/`ESCUDO_IN`. Paletas: INK/BG/ORANGE/RED/DRED/MUST/OLIVE + TEAL, SAND, SKY, COBALT, FOREST, MINT, CLAY + NAVY, GOLD, LIME, PURPLE, RUST, BRG, YELLOW, PETROL.
+- Generar: `node disenos/logos/generar.js [ids…]` → `svg/`, `png/`, `_todos.png/svg` y copias sin fondo en `web/assets/logos/` (`<id>.svg` para prenda oscura y `<id>-claro.svg` para prenda clara: INK→oscuro, BG→claro).
+- **Logo oficial** (desde 2026-11-19): `race-dept-ops` = TWH en Black Ops One + 3 franjas + "4WD RACE DEPT." + "CHILE · SINCE 2001"; recorte `web/assets/logos/logo-oficial.svg` (encabezado, portada, pie, panel, configurador). El jockey "TWH Franjas" usa `logo-header.svg`.
+- **Agregar un logo**: función nueva en `LOGOS` → generar → `preparar.js` (nombre en `NAMES`) `--sin-bases` → `copiar-al-panel.js` → y si va al sticker, sumarlo a `designs` de `sticker-twh` en el orden de la hoja.
+- **Eliminar un logo**: antes revisar si lo usa algún producto o diseño del sticker (`grep` en `web/data/catalog.js`); sacarlo de `LOGOS`, borrar `png/svg/web` (`git rm`), regenerar la hoja, quitarlo del sticker y de `datos.js` del configurador, y redeploy de funciones (catálogo del servidor).
+- **No recrear ilustraciones complejas a mano** (se probaron y se descartaron, 2026-11-18). Para ilustraciones: con licencia comercial, ilustrador o IA, y Claude las adapta a TWH. **Nunca copiar diseños de otras marcas o artistas** (ej. Loose & Lost / Nick Sawyers, TLD, Greenish), aunque sea "parecido con mi Hilux".
 
-## Cómo trabajar
+### Configurador (crear productos nuevos)
+Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
+1. `disenos/configurador/configurador.html` (doble clic) o panel → Configurador. Parte **vacío**: "¿Qué quieres crear?" (Polera / Polerón / Jockey / Sticker). Editor por pasos con vista previa: logo frente/espalda (buscador por nombre o **número**, tiles con número), posición, tamaño, altura, colores, etiqueta, nombre automático editable. **Guardar**.
+2. Lo guardado queda en **la sesión** (sessionStorage `twh-cfg-sesion`): bandeja con Editar / Duplicar / Borrar. **Exportar productos nuevos** → `twh-coleccion-nuevos-<fecha>.json` con `modo: "agregar"`.
+3. Doble clic en `APLICAR-COLECCION.bat`: toma el `twh-coleccion*.json` más reciente de Descargas, corre `aplicar.js` (genera las fotos con modelo, **agrega** las prendas al final de la ropa en `catalog.js` con `status: 'proximamente'`, suma stickers como diseño nuevo; no toca lo existente) y las pruebas; si pasan, publica (git add solo de catalog.js, fotos de productos, copia del panel y datos.js).
+4. Después, en el panel: stock y pasar a Disponible.
+- Un JSON antiguo (sin `modo`) reemplazaba toda la colección: `aplicar.js` lo rechaza salvo `--reemplazar`.
+- La copia del panel (`web/admin/configurador/`) la genera `copiar-al-panel.js`: editar siempre el original. Logos y números: `preparar.js --sin-bases` (orden = `LOGOS` de generar.js; los que no están en la hoja van al final sin número). Posiciones: `posiciones.js`. Fotos base: `bases/` (`preparar.js` sin `--sin-bases` las regenera).
 
-- El dueño quiere iterar rápido: entregar archivos locales (PNG/SVG en carpetas, HTML que se abre con doble clic), no páginas publicadas en claude.ai.
-- Para cambiar un logo: editar su función en `disenos/logos/generar.js` y correr `node disenos/logos/generar.js <nombre>`. Revisar `_todos.png`.
-- Para rehacer fotos: `node disenos/montajes/modelos.js <producto>` o `node disenos/montajes/montar.js <foto>`.
-- Verificar visualmente con capturas de Edge en modo headless antes de entregar.
-- Marca: no usar el logo ni la palabra Toyota en diseños. "Hilux" es marca registrada de Toyota: los diseños que la usan quedan para Instagram o con advertencia; para marketplaces se prefieren los que dicen solo TWH.
-- Fotos con otras personas o con estampados de otras marcas (Montes, Rusty, West Coast Choppers): se usan solo como base y se reemplaza el estampado por logos TWH. Antes de publicar, confirmar los derechos de las fotos y el permiso de las personas.
+---
+
+## 7. Neumáticos (publicado 2026-11-24)
+
+- 3 productos en `catalog.js` (`neumaticos-at` desde $490.000, `neumaticos-rt` y `neumaticos-mt` desde $690.000), categoría `neumaticos`, `cotizar: true`, sin tallas ni colores, fotos en `web/assets/img/neumaticos/` (orden: AT portada at-06 y al pasar el mouse at-03; MT portada mt-03 y luego mt-02).
+- Marcas (AT y MT; RT según disponibilidad): Comforser, Summaxx, RoadX, Roadcruza, XBRI y BFGoodrich. "Tenemos todas las medidas; al cotizar te enviamos modelos, disponibilidad y precio." **El precio incluye instalación y balanceo en local (RM).**
+- Precio: `priceHtml` muestra "Desde $X" si hay precio (ofertas aplican) o "A cotizar" si es 0. Ficha sin carrito: campo opcional de medida/vehículo + botón **Cotizar por WhatsApp** (mensaje con producto y medida; se cuenta en Cliente). El servidor rechaza pagarlos.
+- Panel: nombre, SKU (NEU-…), "Precio desde (opcional, 0 = A cotizar)", estado, descripción; sin stock.
+- Fotos: `python disenos/neumaticos/preparar.py` desde `Neumaticos/` (privada): reales, cuadradas 900 px, etiqueta TWH + franjas | AT/RT/MT; hoja `todos-neumas.png/.html`. La foto 9 no se usa (marca de agua de otra tienda). El dueño prefirió fotos reales (rembg quedó instalado pero el fondo blanco está desactivado: fallaba con la goma negra).
+
+---
+
+## 8. Proveedor de estampado
+
+- `node disenos/pedido/generar-pedido.js [--costo=N]` → `pedido-proveedor/<fecha>/` (privado): `pedido.html/pdf`, `logos/*.pdf` + `.svg` a tamaño real, `etiquetas/*.pdf` + `.svg`, `compra.json` y ZIP para el proveedor (sin costos). Reglas (curva, colores, cm de estampado) arriba del script.
+- Pedido 2026-11-18: 96 poleras; modelos con espalda solo negro (2L 2XL 2XXL); 3 básicas negro + blanco (1M 2L 3XL 3XXL).
+- **Todo sale en contornos** (lo pidió la imprenta): `disenos/pedido/contornos.js` pasa cada `<text>` a figuras (posición de letras del navegador, forma con fontkit desde C:/Windows/Fonts; Bahnschrift con variación wght/wdth) y cada borde a figura rellena (paper + paperjs-offset). Texto con borde por detrás = silueta agrandada **solo hacia afuera** (huecos de letras abiertos y parejos; corrección 2026-11-24 por el "Off Road" de Coordenadas). Textos con borde usan `stroke-linejoin="round"` (las puntas salían como pinchos en Illustrator).
+- Un logo suelto: `node disenos/pedido/logo-suelto.js <logo> <cm> [clara|oscura]` → `pedido-proveedor/sueltos/<fecha>/` (PDF + SVG en contornos).
+
+---
+
+## 9. Reglas de negocio
+
+- Poleras **$19.990** (negro y blanco). Polerones **$34.990** (negro). Jockeys 5 paneles **$15.990** (negro; parche tejido o bordado). Sticker **$2.990** (54 diseños). Neumáticos desde $490.000 / $690.000 a cotizar.
+- Envío gratis **solo en la RM** sobre $40.000; regiones paga envío. Retiro gratis en los dos puntos.
+- Fotos lifestyle con estampado reemplazado (`fotos-originales/`) están **fuera de la tienda** (los logos no quedaban bien); no volver a usarlas sin fotos nuevas con la prenda real.
+- No usar textos de "preventa" ni "hecho en Chile", ni eslóganes tipo "Pa' la cordillera" o "Fierro viejo".
+- Marca: no usar el logo ni la palabra Toyota. "Hilux" es marca registrada: los diseños que la dicen quedan para Instagram o con advertencia; para marketplaces se prefieren los que dicen solo TWH. En el pie: "Hilux es marca de Toyota; no estamos afiliados".
+- Fotos con otras personas o estampados de otras marcas: solo como base y reemplazando el estampado; confirmar derechos y permisos antes de publicar.
+- Páginas legales con los datos del vendedor (en `config.legal`); el pie no muestra nombre ni RUT.
+
+---
+
+## 10. Cómo trabajar y publicar
+
+- **Pruebas:** `cd web && npm test` (25). Flujo completo: `firebase emulators:start --project the-white-hilux` + `node functions/test/e2e.js` (repetir si la primera vez falla con "Function s…"); panel de prueba en `http://127.0.0.1:5500/admin/?emu-login` (servidor estático propio en el puerto 5500). Para probar visitas con puppeteer: sobrescribir `navigator.webdriver` y usar un user agent normal (el filtro de robots descarta "Headless").
+- **Verificar visualmente** con capturas de Edge headless (computador y 390 px de iPhone) antes de entregar.
+- **Publicar tienda:** `git push` → GitHub Actions (`.github/workflows/pages.yml`) corre pruebas, agrega versión `?v=<commit>` a los `.js/.css` (sin caché vieja) y publica `web/` con `upload-pages-artifact@v5` + `deploy-pages@v5` (reintento automático si GitHub no encuentra el artefacto). Vigilar con `gh run watch`.
+- **Publicar funciones:** `firebase deploy --only functions[:nombre]` (corre `sync.js`). Hacerlo cuando cambie `lib/order.js`, `core.js` o `catalog.js` en algo que valide el servidor (precios, productos, diseños, puntos de retiro).
+- **Git:** repo público → **nunca `git add -A`**; agregar archivos explícitos. Commits con `git -c user.name=tmontes30 -c user.email=tmontes30@users.noreply.github.com commit …` (no hay identidad global). No subir `ideas/`, `Modelos foto/`, `fotos-originales/`, `Neumaticos/`, `disenos/configurador/bases/`, `pedido-proveedor/`, `estrategia/`, `.env`.
+- **Saltos de línea:** el repo usa LF. En Python escribir con `open(p, 'w', encoding='utf8', newline='')` (si no, Windows pone CRLF y el archivo entero aparece cambiado). No usar `sed` con corchetes `[ ]` en el patrón (los trata como clase de caracteres y rompe el archivo). Revisar con `git diff --ignore-cr-at-eol --stat`.
+- Para cambiar un logo: editar su función y `node disenos/logos/generar.js <id>`; revisar `_todos.png`. Para fotos con modelo de un producto nuevo: el configurador (`aplicar.js`).
+- Si alguien reporta que "no ve" un cambio: recargar con Ctrl+F5 o, en el iPhone, cerrar la app del panel y abrirla de nuevo.
+
+---
+
+## 11. Historial del proyecto
+
+**2026-11-17 — Base de la tienda**
+- Tienda en GitHub Pages + Firebase: panel de admin, pedidos, stock por talla y estados (Disponible / Próximamente / Oculto). Pago con Checkout Pro vía API de Orders (reemplaza Preferencias).
+- Descuentos (ofertas y cupones), SKU por variante, pestaña Ventas. Configurador de colección con publicación automática (`APLICAR-COLECCION.bat`) y su copia en el panel. Panel tipo 70% en computador.
+
+**2026-11-18 — Operación y proveedor**
+- `estrategia/` (costos) sale del repo público. Seguimiento de pedidos, contacto en Ayuda, nombres según el diseño, etiqueta de cuello (TWH + franjas + RACE SHOP).
+- Se probaron logos 26–33 dibujados a mano (deporte y mecánica): **descartados** por básicos.
+- Generador de pedido al proveedor (curvas por modelo, ZIP). Páginas legales. Logo oficial de la web: Race Dept.
+- Entrega con rango de fechas, retiro gratis hoy/mañana (Los Trapenses / Parque Araucano), OTD, notificaciones push al iPhone. Pestaña Compras (registro de la primera compra de 96 poleras). Correos al despachar/entregar. Pestaña Utilidades.
+
+**2026-11-19 — Afinar la tienda**
+- Zoom adaptable al ancho. Comisión MP real 3,81%. Retiro pasa directo a En preparación. Resend conectado. Alerta de las 9:00 solo por push. Registro de avisos por pedido. Ventas y Utilidades filtrables al tocar. Correos con el escudo TWH.
+- **Venta manual** (transferencia/efectivo). Resumen de inventario a costo.
+- **Logo oficial nuevo: Race Dept. con TWH en Black Ops One** (se eligió la tipografía D entre 20 opciones). Favicon: TWH rojo Black Ops (tras probar franjas y bandera a cuadros).
+- Filtros de talla y color en el listado; prendas en blanco repartidas; sin salto ni banner al filtrar; círculo de carga en tienda y panel. Poleras: Work Gear + medidas del modelo. Pie sin nombre ni RUT.
+
+**2026-11-23 — Imprenta, análisis y celular**
+- Archivos del proveedor **en contornos** (textos y bordes a figuras; bordes redondeados).
+- Pestaña **Cliente** (visitas anónimas, embudo, recomendaciones). Costo real del envío privado por pedido. **Me gusta** en productos Próximamente (+ interruptor para contar el navegador del admin).
+- Publicación más robusta (acciones v5 + reintento; versión en .js/.css). Venta manual con **Muestra** (a precio costo).
+- **Panel como app en el iPhone** (barra inferior, botón +, hoja Más, venta manual a pantalla completa).
+
+**2026-11-24 — Logos TWH, configurador nuevo y neumáticos**
+- Tandas de logos: de 10 propuestas quedaron Stay Dirty y Winch Crew (sin gancho); 15 logos TWH nuevos (Monograma, Varsity, Franjas, Caja militar, Eco, Split, Spec, Pill, Vertical, 3D, Calado, entre otros).
+- **Configurador rehecho**: parte vacío, elegir tipo, guardar en la sesión y exportar **solo lo nuevo**; `aplicar.js` agrega como Próximamente y no toca lo existente; logos con número y buscador.
+- Contornos: borde de texto solo hacia afuera (pedido del proveedor) + script de logo suelto.
+- **Neumáticos AT, RT y MT** publicados a cotizar por WhatsApp (fotos reales con etiqueta TWH; precios desde; incluye instalación y balanceo en RM; al final del inicio).
+
+**2026-11-25 — Más logos, limpieza y stickers**
+- Logos minimalistas con paletas nuevas, variaciones de los favoritos (5, 17, 18, 22) e insignias de carrera con paletas nuevas.
+- El dueño eliminó 22 logos que no le gustaron (incluidos Rear Diff Lock, Off Road Recovery, Placa Rally 01, Cruz Chopper y Plano 35", que salieron también del sticker). Quedan **54**, renumerados.
+- Configurador con los 54 logos en el orden de la hoja. **Sticker con los 54 logos y stock por diseño.** Panel: filtro por categoría en Productos y stock.
+- Se declinó recrear el diseño "Loose & Lost" de Nick Sawyers con la Hilux (es obra de otro artista); se propuso un prompt de IA de estilo original o un ilustrador.
+
+**Pendientes / ideas**
+- Backups automáticos de Firestore (diario 7 días + semanal 14 semanas): quedó pendiente de aprobación del dueño.
+- Revisar que los presupuestos de Firebase no desactiven la facturación (spend cap) y la moneda (CLP vs USD).
+- Sticker: activar stock por diseño y pasarlo a Disponible cuando estén impresos.
+- Neumáticos: aclarar si "desde $X" es por unidad o juego de 4.
