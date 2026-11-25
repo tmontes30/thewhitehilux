@@ -84,6 +84,12 @@ function pt(file, text, size, x, y, fill, o = {}) {
   return `<g transform="${G.tr}"><path d="${G.d}" fill="${fill}"${st}/></g>`;
 }
 
+// Piezas de los favoritos (6, 22, 23, 27) para combinarlas en 57-66
+const ESCUDO = 'M150 36 L250 62 L250 168 Q250 236 150 268 Q50 236 50 168 L50 62 Z';
+const ESCUDO_IN = 'M150 50 L238 73 L238 166 Q238 225 150 254 Q62 225 62 166 L62 73 Z';
+function cuadros(x, y, cols, rows, sz) { let h = ''; for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) if ((r + k) % 2 === 0) h += '<rect x="' + r2(x + k * sz) + '" y="' + r2(y + r * sz) + '" width="' + sz + '" height="' + sz + '" fill="' + INK + '"/>'; return h; }
+function franjas3(x, y, w, h, gap) { return [ORANGE, RED, DRED].map((c, k) => '<path d="M' + x + ' ' + (y + k * gap) + ' H' + (x + w - k * 8) + ' L' + (x + w - k * 8 - 5) + ' ' + (y + k * gap + h) + ' H' + x + ' Z" fill="' + c + '"/>').join(''); }
+
 const LOGOS = {
   // 1. El que te gustó: TWH + franjas de rally
   'rally-stripes': () =>
@@ -730,7 +736,108 @@ const LOGOS = {
     `<path d="M96 186 L150 120 L204 186 Z" fill="${SAND}"/>` +
     `<rect x="56" y="186" width="188" height="4" fill="${INK}"/>` +
     pt('BebasNeue-Regular', 'TWH 4X4', 38, 150, 236, INK, { ls: 8 }) +
-    t(150, 258, 'HIGH COUNTRY · EST. 2001', 10, SKY, COND, mid + ' ' + cond('letter-spacing="5"'))
+    t(150, 258, 'HIGH COUNTRY · EST. 2001', 10, SKY, COND, mid + ' ' + cond('letter-spacing="5"')),
+  // ---------- 57-66: variaciones de los favoritos 6, 22, 23 y 27 (2026-11-25) ----------
+  // 57. Escudo (6) con TWH Black Ops y franjas (27)
+  'shield-ops': () =>
+    `<path d="${ESCUDO}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>` +
+    `<path d="${ESCUDO_IN}" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>` +
+    cuadros(80, 84, 14, 2, 10) +
+    pt('BlackOpsOne-Regular', 'TWH', 60, 150, 162, RED, { fit: 140 }) +
+    franjas3(84, 170, 132, 5, 7) +
+    ital(150, 207, t(0, 0, '4WD RACE DEPT.', 13, INK, BLACK, mid)) +
+    t(150, 226, 'EST. 2001', 10, INK, COND, mid + ' ' + cond('letter-spacing="5"')),
+
+  // 58. Placa de esquinas cortadas (22) con banda a cuadros
+  'stamp-checker': () =>
+    `<path d="M48 82 H252 L270 100 V200 L252 218 H48 L30 200 V100 Z" fill="none" stroke="${INK}" stroke-width="5"/>` +
+    `<path d="M54 92 H246 L260 106 V194 L246 208 H54 L40 194 V106 Z" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
+    cuadros(62, 100, 16, 2, 11) +
+    ital(150, 172, t(0, 0, 'TWH', 52, INK, BLACK, mid + ' letter-spacing="2"')) +
+    `<rect x="100" y="180" width="100" height="5" fill="${RED}"/>` +
+    t(150, 200, 'RACE SUPPLY · 4X4', 12, INK, COND, mid + ' ' + cond('letter-spacing="5"')) +
+    t(58, 160, '★', 12, INK, 'Arial', mid) + t(242, 160, '★', 12, INK, 'Arial', mid),
+
+  // 59. Sello redondo Speed Shop con bandera inclinada (23)
+  'speed-round': () =>
+    `<circle cx="150" cy="150" r="128" fill="none" stroke="${INK}" stroke-width="5"/>` +
+    `<circle cx="150" cy="150" r="96" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
+    ring('spr', 106, 115, 'TWH SPEED SHOP', 'OFF ROAD · EST. 2001', 18, 13) +
+    t(48, 156, '★', 12, MUST, 'Arial', mid) + t(252, 156, '★', 12, MUST, 'Arial', mid) +
+    `<g transform="translate(116 92) skewX(-14)">${cuadros(0, 0, 8, 3, 9)}</g>` +
+    ital(150, 172, t(0, 0, 'TWH', 54, INK, BLACK, mid)) +
+    franjas3(92, 182, 116, 5, 7),
+
+  // 60. Placa horizontal de carrera: TWH Black Ops + franjas en diagonal
+  'race-plate-ops': () =>
+    `<rect x="24" y="92" width="252" height="116" rx="16" fill="none" stroke="${INK}" stroke-width="5"/>` +
+    `<rect x="33" y="101" width="234" height="98" rx="10" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
+    t(46, 124, 'EST. 2001', 10, MUST, COND, cond('letter-spacing="5"')) +
+    pt('BlackOpsOne-Regular', 'TWH', 60, 46, 170, INK, { anchor: 'start', fit: 140 }) +
+    [[ORANGE, 0], [RED, 15], [DRED, 30]].map(([c, d]) => `<path d="M${206 + d} 190 L${230 + d} 110 L${241 + d} 110 L${217 + d} 190 Z" fill="${c}"/>`).join('') +
+    t(46, 190, '4X4 RACE DEPT.', 10, INK, COND, cond('letter-spacing="3"')),
+
+  // 61. Banderas a cuadros cruzadas + TWH Racing Team
+  'crossed-flags': () => {
+    // dos astas cruzadas en X, cada bandera hacia afuera
+    const bandera = (ang, izq) => `<g transform="rotate(${ang} 150 118)"><rect x="148" y="44" width="4" height="136" rx="2" fill="${INK}"/>` +
+      `<g transform="translate(${izq ? 90 : 152} 46)">${cuadros(0, 0, 6, 4, 9.6)}<rect width="57.6" height="38.4" fill="none" stroke="${INK}" stroke-width="1.5"/></g></g>`;
+    return bandera(-30, true) + bandera(30, false) +
+      ital(150, 228, t(0, 0, 'TWH', 48, RED, BLACK, mid)) +
+      t(150, 250, 'RACING TEAM · 4X4', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      franjas3(98, 260, 104, 4, 6);
+  },
+
+  // 62. Escudo con franjas diagonales por dentro + Speed Shop
+  'shield-speed': () =>
+    `<defs><clipPath id="shs"><path d="${ESCUDO_IN}"/></clipPath></defs>` +
+    `<g clip-path="url(#shs)">` +
+    [[ORANGE, 0], [RED, 18], [DRED, 36]].map(([c, d]) => `<path d="M40 ${150 + d} L260 ${96 + d} L260 ${110 + d} L40 ${164 + d} Z" fill="${c}"/>`).join('') +
+    cuadros(110, 214, 8, 2, 10) + `</g>` +
+    `<path d="${ESCUDO}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>` +
+    `<path d="${ESCUDO_IN}" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>` +
+    t(150, 92, 'EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+    ital(150, 162, t(0, 0, 'TWH', 58, INK, BLACK, mid + ` stroke="${BG}" stroke-width="6" paint-order="stroke" stroke-linejoin="round"`)) +
+    ital(150, 204, t(0, 0, 'SPEED SHOP', 20, MUST, IMPACT, mid + ' letter-spacing="3"')),
+
+  // 63. Placa ancha de esquinas cortadas: TWH Black Ops, Race Dept. · Supply Co.
+  'stamp-ops': () =>
+    `<path d="M40 90 H260 L278 108 V192 L260 210 H40 L22 192 V108 Z" fill="none" stroke="${INK}" stroke-width="5"/>` +
+    `<path d="M45 99 H255 L269 113 V187 L255 201 H45 L31 187 V113 Z" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
+    t(150, 122, 'THE WHITE HILUX', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+    pt('BlackOpsOne-Regular', 'TWH', 60, 150, 170, INK, { fit: 140 }) +
+    `<rect x="104" y="177" width="92" height="5" fill="${RED}"/>` +
+    t(150, 195, '4WD RACE DEPT. · SUPPLY CO.', 10, INK, COND, mid + ' ' + cond('letter-spacing="3"')) +
+    t(48, 155, '★', 12, INK, 'Arial', mid) + t(252, 155, '★', 12, INK, 'Arial', mid),
+
+  // 64. Credencial Pit Pass
+  'pit-pass': () =>
+    `<rect x="72" y="38" width="156" height="226" rx="14" fill="none" stroke="${INK}" stroke-width="4"/>` +
+    `<rect x="128" y="52" width="44" height="10" rx="5" fill="none" stroke="${INK}" stroke-width="3"/>` +
+    `<rect x="72" y="76" width="156" height="36" fill="${RED}"/>` +
+    t(150, 102, 'PIT PASS', 22, BG, BLACK, mid + ' letter-spacing="2"') +
+    cuadros(72, 112, 16, 2, 9.75) +
+    pt('BlackOpsOne-Regular', 'TWH', 50, 150, 190, INK, { fit: 116 }) +
+    franjas3(92, 200, 116, 5, 7) +
+    t(150, 238, 'ALL ACCESS', 14, MUST, COND, mid + ' ' + cond('letter-spacing="6"')) +
+    t(150, 254, '4X4 RACE DEPT.', 10, INK, COND, mid + ' ' + cond('letter-spacing="4"')),
+
+  // 65. Banda inclinada con TWH, cola a cuadros y estela de franjas
+  'speed-banner': () =>
+    `<g transform="translate(22 118) skewX(-14)">${cuadros(0, 0, 4, 6, 9)}</g>` +
+    `<path d="M66 112 H262 L250 174 H54 Z" fill="${RED}"/>` +
+    pt('BlackOpsOne-Regular', 'TWH', 52, 156, 162, INK, { fit: 150 }) +
+    [[ORANGE, 186, 0], [RED, 196, 12], [DRED, 206, 24]].map(([c, y, d]) => `<path d="M${54 + d} ${y} H${250 - d} L${247 - d} ${y + 5} H${53 + d} Z" fill="${c}"/>`).join('') +
+    t(150, 90, 'THE WHITE HILUX', 12, INK, COND, mid + ' ' + cond('letter-spacing="7"')) +
+    t(150, 236, 'SPEED &amp; 4X4 · EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="5"')),
+
+  // 66. Roundel: círculos concéntricos con TWH Black Ops y franjas
+  'roundel-ops': () =>
+    `<circle cx="150" cy="150" r="112" fill="${RED}"/><circle cx="150" cy="150" r="88" fill="${BG}"/>` +
+    `<circle cx="150" cy="150" r="82" fill="none" stroke="${ORANGE}" stroke-width="3"/>` +
+    pt('BlackOpsOne-Regular', 'TWH', 50, 150, 158, INK, { fit: 116 }) +
+    franjas3(98, 168, 104, 5, 7) +
+    ital(150, 208, t(0, 0, '4WD RACE DEPT.', 12, ORANGE, BLACK, mid))
 };
 
 // ---------- salida ----------
