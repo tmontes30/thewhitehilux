@@ -39,6 +39,7 @@ let coupons = [];
 let compras = [];
 let orderFilter = 'abiertos';
 let prodFilter = 'todos';
+let prodCat = 'todas';
 const dirty = new Set(); // productos con cambios sin guardar
 const unsubs = [];
 
@@ -396,7 +397,7 @@ async function moveStock(o, sign) {
   (o.lines || []).forEach((l) => {
     const p = data.products.find((x) => x.id === l.id);
     if (!p || !p.stock) return;
-    args.push(new FieldPath('products', l.id, 'stock', C.stockKey(l.color), l.size), increment(sign * l.qty));
+    args.push(new FieldPath('products', l.id, 'stock', C.stockKey(l.design || l.color), l.size), increment(sign * l.qty));
   });
   if (args.length) await updateDoc(CATALOG, ...args);
   return args.length / 2;
@@ -512,22 +513,22 @@ function thumbFor(p) {
   const back = imgs.find((src) => /-espalda/.test(src));
   return back ? '../' + back : imgs.length ? '../' + imgs[0] : '../assets/logos/cl-shop.svg';
 }
-const colorName = (c) => (c === 'unico' ? 'Stock' : CFG.colors[c] || c);
+const colorName = (c, p) => (c === 'unico' ? 'Stock' : CFG.colors[c] || (p && p.designs ? (p.designs.find((d) => d.id === c) || {}).name || c : c));
 
 function stockTable(p) {
   const colors = C.stockColors(p);
   return `<div class="stock-table-wrap"><table class="stock-table">
     <thead><tr><th></th>${p.sizes.map((s) => `<th>${esc(s)}</th>`).join('')}<th></th></tr></thead>
-    <tbody>${colors.map((c) => `<tr><th>${esc(colorName(c))}</th>${p.sizes
+    <tbody>${colors.map((c) => `<tr><th>${p.designs ? `<img class="dz" src="../assets/logos/${esc(c)}.svg" alt=""> ` : ''}${esc(colorName(c, p))}</th>${p.sizes
       .map((s) => {
         const n = C.stockOf(p, c === 'unico' ? '' : c, s);
-        return `<td><input type="number" min="0" max="9999" inputmode="numeric" data-c="${c}" data-s="${esc(s)}" value="${n}" class="${n === 0 ? 'zero' : ''}" aria-label="${esc(colorName(c))} ${esc(s)}"></td>`;
+        return `<td><input type="number" min="0" max="9999" inputmode="numeric" data-c="${c}" data-s="${esc(s)}" value="${n}" class="${n === 0 ? 'zero' : ''}" aria-label="${esc(colorName(c, p))} ${esc(s)}"></td>`;
       })
       .join('')}<td class="total">${plural(C.totalStock(p, c === 'unico' ? undefined : c), 'unidad', 'unidades')}</td></tr>`).join('')}
     <tr><td colspan="${p.sizes.length + 2}" class="hint" style="padding-top:6px">Escribe cuántas unidades tienes de cada talla: se guarda sola al salir de la casilla.</td></tr>
     <tr class="arrivals" hidden><td colspan="${p.sizes.length + 2}" class="hint" style="padding-top:10px">Llegó mercadería: escribe cuántas unidades <b>llegaron</b> y aprieta "Sumar al stock" (se suman a lo que ya tienes).</td></tr>
-    ${colors.map((c) => `<tr class="arrivals" hidden><th>+ ${esc(colorName(c))}</th>${p.sizes
-      .map((s) => `<td><input type="number" min="0" max="9999" inputmode="numeric" class="add" data-add-c="${c}" data-add-s="${esc(s)}" placeholder="0" aria-label="Llegaron ${esc(colorName(c))} ${esc(s)}"></td>`)
+    ${colors.map((c) => `<tr class="arrivals" hidden><th>+ ${esc(colorName(c, p))}</th>${p.sizes
+      .map((s) => `<td><input type="number" min="0" max="9999" inputmode="numeric" class="add" data-add-c="${c}" data-add-s="${esc(s)}" placeholder="0" aria-label="Llegaron ${esc(colorName(c, p))} ${esc(s)}"></td>`)
       .join('')}<td></td></tr>`).join('')}
     </tbody></table></div>`;
 }
@@ -556,7 +557,7 @@ function productCard(p) {
       ${p.cotizar ? `<p class="hint">💬 Se cotiza por WhatsApp (sin carrito ni stock). Precio en 0 = "A cotizar"; con precio = "Desde $X".</p>` : ''}
       <div class="stock-box"${p.cotizar ? ' hidden' : ''}>
         <div class="head">
-          <label><input type="checkbox" data-act="stock-on" ${p.stock ? 'checked' : ''}> Controlar stock por talla</label>
+          <label><input type="checkbox" data-act="stock-on" ${p.stock ? 'checked' : ''}> Controlar stock por ${p.designs ? 'diseño' : 'talla'}</label>
           ${p.stock ? `<span class="hint"><b>${plural(total, 'unidad', 'unidades')}</b> en total</span><button type="button" class="btn small" data-act="arrivals">+ Registrar llegada</button>` : '<span class="hint">Sin control: siempre se puede comprar.</span>'}
         </div>
         ${p.stock ? stockTable(p) : ''}
@@ -584,10 +585,11 @@ function invSummary(ci) {
   const byType = {};
   data.products.forEach((p) => {
     if (!p.stock) return;
-    (p.colors.length ? p.colors : ['']).forEach((c) => p.sizes.forEach((s) => {
+    C.stockColors(p).map((c) => (c === 'unico' ? '' : c)).forEach((c) => p.sizes.forEach((s) => {
       const q = C.stockOf(p, c, s) || 0;
       if (!q) return;
-      const u = ci.unit({ id: p.id, color: c, size: s, sku: C.variantSku(p, c, s) });
+      const dz = p.designs ? c : '', col = p.designs ? '' : c;
+      const u = ci.unit({ id: p.id, color: col, size: s, design: dz, sku: C.variantSku(p, col, s, dz) });
       units += q; cost += q * u.v; retail += q * p.price;
       if (u.src === 'sin') noCost += q;
       byType[p.type] = (byType[p.type] || 0) + q;
@@ -609,8 +611,13 @@ function renderInvKpis() {
 function renderProducts() {
   renderInvKpis();
   const list = data.products;
+  // Filtros: categoría (Poleras, Stickers, Neumáticos...) y estado; se combinan
+  const enCat = (p) => prodCat === 'todas' || p.type === prodCat;
+  $('prod-cats').innerHTML = ['todas', ...Object.keys(CFG.categories)].filter((k) => k === 'todas' || list.some((p) => p.type === k))
+    .map((k) => `<button type="button" class="chip" data-cat="${k}" aria-pressed="${k === prodCat}">${k === 'todas' ? 'Todas' : esc(CFG.categories[k])}<span>${list.filter((p) => (k === 'todas' || p.type === k) && prodMatch(p, prodFilter)).length}</span></button>`)
+    .join('');
   $('prod-filters').innerHTML = Object.keys(PROD_FILTERS)
-    .map((k) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === prodFilter}">${PROD_FILTERS[k]}<span>${list.filter((p) => prodMatch(p, k)).length}</span></button>`)
+    .map((k) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === prodFilter}">${PROD_FILTERS[k]}<span>${list.filter((p) => enCat(p) && prodMatch(p, k)).length}</span></button>`)
     .join('');
   const box = $('products');
   const cats = CFG.categories;
@@ -638,7 +645,7 @@ function renderProducts() {
   });
   box.innerHTML = Object.keys(cats)
     .map((t) => {
-      const ps = list.filter((p) => p.type === t && prodMatch(p, prodFilter));
+      const ps = list.filter((p) => p.type === t && enCat(p) && prodMatch(p, prodFilter));
       return ps.length ? `<h2 class="cat-title">${esc(cats[t])}</h2>` + ps.map(productCard).join('') : '';
     })
     .join('') || '<p class="empty">No hay productos en esta lista.</p>';
@@ -651,6 +658,12 @@ $('prod-filters').addEventListener('click', (e) => {
   const b = e.target.closest('[data-f]');
   if (!b) return;
   prodFilter = b.dataset.f;
+  renderProducts();
+});
+$('prod-cats').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cat]');
+  if (!b) return;
+  prodCat = b.dataset.cat;
   renderProducts();
 });
 
@@ -931,11 +944,12 @@ $('export-stock').addEventListener('click', () => {
   }));
   const rows = [];
   data.products.forEach((p) => {
-    const colors = p.colors.length ? p.colors : [''];
-    colors.forEach((c) => p.sizes.forEach((s) => {
-      const sku = C.variantSku(p, c, s);
+    // una fila por variante: color (ropa) o diseño (sticker)
+    C.stockColors(p).map((c) => (c === 'unico' ? '' : c)).forEach((c) => p.sizes.forEach((s) => {
+      const dz = p.designs ? c : '', col = p.designs ? '' : c;
+      const sku = C.variantSku(p, col, s, dz);
       const st = C.stockOf(p, c, s);
-      rows.push([sku, p.name, CFG.categories[p.type] || p.type, c ? CFG.colors[c] : '', s, st == null ? 'sin control' : st,
+      rows.push([sku, p.name, CFG.categories[p.type] || p.type, dz ? colorName(dz, p) : col ? CFG.colors[col] : '', s, st == null ? 'sin control' : st,
         p.listPrice, p.price, st == null ? '' : st * p.price, C.STATUS[p.status], sold30[sku] || 0]);
     }));
   });
@@ -1044,14 +1058,14 @@ function renderSales() {
   const bySku = {};
   list.forEach((o) => (o.lines || []).forEach((l) => {
     const k = skuOfLine(l);
-    const r = bySku[k] || (bySku[k] = { sku: k, id: l.id, name: l.name, variant: lineText(l), type: l.type || (productById(l.id) || {}).type, color: l.color, size: l.size, units: 0, revenue: 0, orders: new Set() });
+    const r = bySku[k] || (bySku[k] = { sku: k, id: l.id, name: l.name, variant: lineText(l), type: l.type || (productById(l.id) || {}).type, color: l.color, design: l.design || '', size: l.size, units: 0, revenue: 0, orders: new Set() });
     r.units += l.qty;
     r.revenue += lineNet(l);
     r.orders.add(o.id);
   }));
   const skus = Object.values(bySku).sort((a, b) => b.revenue - a.revenue);
   const lineRevenue = sum(skus, (r) => r.revenue);
-  const stockFor = (r) => { const p = productById(r.id); return p ? C.stockOf(p, r.color, r.size) : null; };
+  const stockFor = (r) => { const p = productById(r.id); return p ? C.stockOf(p, r.design || r.color, r.size) : null; };
 
   // Más vendidos (por producto)
   const byProduct = {};
@@ -1659,7 +1673,7 @@ async function addBuyToStock(b) {
   const fresh = {};
   (b.lines || []).forEach((l) => {
     if (!productById(l.id)) return;
-    const key = C.stockKey(l.color);
+    const key = C.stockKey(l.design || l.color);
     const st = rawProducts[l.id] && rawProducts[l.id].stock;
     if (st && typeof st === 'object') args.push(new FieldPath('products', l.id, 'stock', key, l.size), increment(l.qty));
     else {
@@ -1974,7 +1988,7 @@ function mLineHtml(l, i) {
     .map((x) => `<option value="${esc(x.id)}"${x.id === l.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
   const colors = p && p.colors.length ? p.colors : [];
   const designs = p && p.designs ? p.designs : [];
-  const st = p && p.stock ? C.stockOf(p, l.color, l.size) : null;
+  const st = p && p.stock ? C.stockOf(p, l.design || l.color, l.size) : null;
   return `<tr data-i="${i}">
     <td class="mv-prod" data-l="Producto"><select data-f="id" aria-label="Producto"><option value="">Producto…</option>${prodOpts}</select></td>
     <td data-l="Diseño" class="${designs.length ? '' : 'mv-na'}">${designs.length ? `<select data-f="design" aria-label="Diseño">${designs.map((d) => `<option value="${esc(d.id)}"${d.id === l.design ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : '—'}</td>
@@ -1995,7 +2009,7 @@ function mDefaults(l) {
   const p = productById(l.id);
   if (!p) return l;
   l.color = p.colors.length ? (p.colors.includes(l.color) ? l.color : p.colors[0]) : '';
-  const conStock = p.stock ? p.sizes.filter((z) => C.stockOf(p, l.color, z) > 0) : p.sizes;
+  const conStock = p.stock ? p.sizes.filter((z) => C.stockOf(p, l.design || l.color, z) > 0) : p.sizes;
   l.size = p.sizes.includes(l.size) ? l.size : conStock[0] || p.sizes[0];
   l.design = p.designs && p.designs.length ? (p.designs.some((d) => d.id === l.design) ? l.design : p.designs[0].id) : '';
   l.price = manual && manual.muestra ? Math.round(costoLinea(l).v) : p.price;

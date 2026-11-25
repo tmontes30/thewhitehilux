@@ -53,6 +53,8 @@
     if (cq && p.colors.indexOf(cq) >= 0) st.color = cq;
     if (tq && p.sizes.indexOf(tq) >= 0) st.size = tq;
     if (p.designs && dq && p.designs.some(function (x) { return x.id === dq; })) st.design = dq;
+    // sin diseño pedido: el primero que tenga stock
+    else if (p.designs && p.stock) { var conSt = p.designs.filter(function (x) { return !TWH.core.isSoldOut(p, x.id); })[0]; if (conSt) st.design = conSt.id; }
     if (p.designs) p.views = [{ shape: 'sticker', logo: st.design }];
     var n = 0;
     var guide = p.sizeGuide && SIZE_GUIDES[p.sizeGuide];
@@ -60,7 +62,8 @@
     var soon = p.status === 'proximamente';
     // Productos a cotizar (neumáticos): sin carrito ni pago; se cotiza por WhatsApp con la medida del cliente
     var coti = !!p.cotizar;
-    function left(size) { var n = C.stockOf(p, st.color, size); return n == null ? Infinity : n; }
+    // sticker: stock por diseño; ropa: por color
+    function left(size) { var n = C.stockOf(p, st.design || st.color, size); return n == null ? Infinity : n; }
     function inCart(size) {
       return TWH.Cart.items().filter(function (x) { return x.id === p.id && x.size === size && (x.color || '') === (st.color || ''); })
         .reduce(function (s2, x) { return s2 + x.qty; }, 0);
@@ -156,7 +159,10 @@
             ds.appendChild(b);
           });
         }
-        Array.prototype.forEach.call(ds.children, function (b) { b.setAttribute('aria-pressed', b.dataset.d === st.design ? 'true' : 'false'); });
+        Array.prototype.forEach.call(ds.children, function (b) {
+          b.setAttribute('aria-pressed', b.dataset.d === st.design ? 'true' : 'false');
+          b.classList.toggle('out', C.isSoldOut(p, b.dataset.d)); // diseño sin stock: en gris
+        });
         document.getElementById('design-name').textContent = p.designs.filter(function (dd) { return dd.id === st.design; })[0].name;
       }
       // Galería: solo se redibuja si cambió el color o el diseño (redibujarla siempre hacía parpadear en el celular)
@@ -212,10 +218,10 @@
         document.getElementById('size-name').textContent = st.size || 'Elige una talla';
       }
       // Stock, cantidad y botones
-      var colorOut = C.isSoldOut(p, st.color ? st.color : undefined);
+      var colorOut = C.isSoldOut(p, st.design || st.color || undefined);
       var stockEl = document.getElementById('stock');
       stockEl.className = 'stock' + (soon || colorOut ? ' none' : '');
-      stockEl.textContent = soon ? 'Próximamente · todavía no está a la venta' : (colorOut ? 'Agotado' + (p.colors.length > 1 ? ' en ' + cfg.colors[st.color].toLowerCase() : '') : 'Stock disponible');
+      stockEl.textContent = soon ? 'Próximamente · todavía no está a la venta' : (colorOut ? 'Agotado' + (p.designs ? ' en este diseño' : p.colors.length > 1 ? ' en ' + cfg.colors[st.color].toLowerCase() : '') : 'Stock disponible');
       var max = Math.min(6, st.size ? left(st.size) - inCart(st.size) : 6);
       var qs = document.getElementById('qty'), prev = Number(qs.value) || 1;
       qs.innerHTML = '';

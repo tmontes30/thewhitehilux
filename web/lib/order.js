@@ -121,7 +121,8 @@ function priceCart(items, products, config, opts = {}) {
   // Stock: suma las líneas iguales (mismo producto, color y talla) antes de comparar
   const wanted = {};
   lines.forEach((l) => {
-    const k = l.id + '|' + (l.color || 'unico') + '|' + l.size;
+    // el sticker lleva stock por diseño; la ropa por color
+    const k = l.id + '|' + (l.design || l.color || 'unico') + '|' + l.size;
     wanted[k] = (wanted[k] || 0) + l.qty;
   });
   Object.keys(wanted).forEach((k) => {
@@ -130,7 +131,8 @@ function priceCart(items, products, config, opts = {}) {
     if (!p.stock) return;
     const have = Math.max(0, Math.floor(Number((p.stock[color] || {})[size]) || 0));
     if (wanted[k] > have) {
-      const what = [p.name, size !== 'Única' ? 'talla ' + size : '', color !== 'unico' ? (config.colors[color] || color).toLowerCase() : ''].filter(Boolean).join(' ');
+      const dz = p.designs ? p.designs.find((d) => d.id === color) : null;
+      const what = [p.name, size !== 'Única' ? 'talla ' + size : '', dz ? dz.name : color !== 'unico' ? (config.colors[color] || color).toLowerCase() : ''].filter(Boolean).join(' ');
       throw new OrderError(have === 0 ? `Se agotó ${what}. Quítalo del carrito para seguir.` : `Solo quedan ${have} de ${what}. Ajusta la cantidad en el carrito.`);
     }
   });

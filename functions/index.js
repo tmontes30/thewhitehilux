@@ -241,7 +241,7 @@ async function confirmPaid(orderId, payment) {
     order.lines.forEach((l) => {
       const st = raw[l.id] && raw[l.id].stock;
       if (!st) return;
-      const key = core.stockKey(l.color);
+      const key = core.stockKey(l.design || l.color); // sticker: stock por diseño
       const k = `${l.id}|${key}|${l.size}`;
       const cur = k in pending ? pending[k] : Math.max(0, Math.floor(Number((st[key] || {})[l.size]) || 0));
       if (cur < l.qty) shortages.push(`${l.name} ${l.size}${l.color ? ' ' + l.color : ''}`);

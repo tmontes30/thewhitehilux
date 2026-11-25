@@ -113,7 +113,7 @@
     var C = TWH.core;
     $('lines').innerHTML = rows.map(function (r, i) {
       var t = r.p.price * r.item.qty; subtotal += t;
-      var have = C.stockOf(r.p, r.item.color, r.item.size);
+      var have = C.stockOf(r.p, r.item.design || r.item.color, r.item.size);
       var warn = r.p.status !== 'disponible' ? 'Todavía no está a la venta: quítalo para seguir.' :
         (have === 0 ? 'Se agotó: quítalo para seguir.' : (have != null && have < r.item.qty ? 'Solo quedan ' + have + ': baja la cantidad.' : ''));
       if (warn) problems++;
@@ -161,7 +161,7 @@
     if (act === 'minus') { if (it.qty <= 1) TWH.Cart.remove(i); else TWH.Cart.setQty(i, it.qty - 1); }
     if (act === 'plus') {
       var p = data.products.filter(function (x) { return x.id === it.id; })[0];
-      var have = p ? TWH.core.stockOf(p, it.color, it.size) : null;
+      var have = p ? TWH.core.stockOf(p, it.design || it.color, it.size) : null;
       if (have == null || it.qty < have) TWH.Cart.setQty(i, it.qty + 1);
     }
     if (act === 'remove') TWH.Cart.remove(i);

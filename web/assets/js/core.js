@@ -47,7 +47,7 @@
   function cleanSku(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 24); }
   function variantSku(p, color, size, design) {
     return [p.sku, color ? (COLOR_CODE[color] || color.slice(0, 3).toUpperCase()) : '', size === 'Única' || !size ? 'U' : size,
-      design ? design.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) : ''].filter(Boolean).join('-');
+      design ? design.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) : ''].filter(Boolean).join('-');
   }
 
   // ---------- Ofertas automáticas (precio tachado en la tienda) ----------
@@ -74,7 +74,8 @@
 
   // Clave de stock: el color, o "unico" si el producto no tiene colores
   function stockKey(color) { return color || 'unico'; }
-  function stockColors(p) { return p.colors && p.colors.length ? p.colors : ['unico']; }
+  // Variantes de stock: colores (ropa), diseños (sticker: un stock por diseño) o 'unico'
+  function stockColors(p) { return p.designs && p.designs.length ? p.designs.map(function (d) { return d.id; }) : p.colors && p.colors.length ? p.colors : ['unico']; }
 
   // remote = { products: { id: { name, price, desc, status, stock } }, settings: {...} }
   function mergeCatalog(base, remote, today) {

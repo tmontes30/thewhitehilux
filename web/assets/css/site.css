@@ -148,6 +148,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .toolbar .count { font-size: 14px; color: var(--muted); margin-top: 2px; }
 .toolbar label { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .toolbar select { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 8px 10px; font-size: 14px; color: var(--text); }
+/* Diseño de sticker sin stock */
+.color-choice.out { opacity: .35; filter: grayscale(1); }
+
 /* Productos a cotizar (neumáticos) */
 .price.cotizar { color: var(--text); font-weight: 700; }
 .price small.desde { font-size: .55em; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }

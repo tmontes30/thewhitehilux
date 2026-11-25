@@ -73,7 +73,8 @@ TWH.loadData().then(function (d) {
   var ESTADOS = { disponible: 'Disponibles', proximamente: 'Próximamente' };
   function tagFor(p) {
     if (p.status === 'proximamente') return '<span class="tag-pre">PRÓXIMAMENTE</span>';
-    if (C.isSoldOut(p)) return '<span class="tag-pre tag-out">AGOTADO</span>';
+    // tarjeta de un diseño de sticker: agotado si ese diseño no tiene stock
+    if (p._design ? C.isSoldOut(p, p._design) : C.isSoldOut(p)) return '<span class="tag-pre tag-out">AGOTADO</span>';
     if (p.compareAt) return '<span class="tag-pre tag-sale">' + p.offerPct + '% OFF</span>';
     return '';
   }

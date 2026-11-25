@@ -425,3 +425,7 @@ label.check input { width: auto; }
 /* Las columnas no se estiran por tablas anchas (en el celular se desplazan dentro de su tarjeta) */
 .two-col > *, .stats > * { min-width: 0; }
 .chip { white-space: nowrap; }
+
+/* Stock del sticker por diseño: miniatura del logo en la fila */
+.stock-table th img.dz { width: 28px; height: 28px; vertical-align: middle; background: #1B1C1A; border-radius: 4px; margin-right: 6px; }
+#prod-cats .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--ink); }
