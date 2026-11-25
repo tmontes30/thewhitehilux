@@ -272,29 +272,9 @@ window.TWH_CFG = {
    "b": 0.84
   },
   {
-   "id": "topo-explorers",
-   "name": "Off Road Explorers",
-   "num": 28,
-   "aspect": 1,
-   "l": 0.1067,
-   "r": 0.8933,
-   "t": 0.1267,
-   "b": 0.9333
-  },
-  {
-   "id": "rally-raid",
-   "name": "Rally Raid 4X4",
-   "num": 29,
-   "aspect": 1,
-   "l": 0.0683,
-   "r": 0.91,
-   "t": 0.16,
-   "b": 0.9267
-  },
-  {
    "id": "stay-dirty",
    "name": "Stay Dirty",
-   "num": 30,
+   "num": 28,
    "aspect": 1,
    "l": 0.1283,
    "r": 0.9067,
@@ -304,7 +284,7 @@ window.TWH_CFG = {
   {
    "id": "winch-crew",
    "name": "Winch Crew",
-   "num": 31,
+   "num": 29,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.8567,
@@ -314,7 +294,7 @@ window.TWH_CFG = {
   {
    "id": "twh-monogram",
    "name": "TWH Monograma",
-   "num": 32,
+   "num": 30,
    "aspect": 1,
    "l": 0.0667,
    "r": 0.9333,
@@ -324,7 +304,7 @@ window.TWH_CFG = {
   {
    "id": "twh-varsity",
    "name": "TWH Varsity",
-   "num": 33,
+   "num": 31,
    "aspect": 1,
    "l": 0.1017,
    "r": 0.9217,
@@ -334,7 +314,7 @@ window.TWH_CFG = {
   {
    "id": "twh-stripe-fill",
    "name": "TWH Franjas",
-   "num": 34,
+   "num": 32,
    "aspect": 1,
    "l": 0.0317,
    "r": 0.9517,
@@ -344,7 +324,7 @@ window.TWH_CFG = {
   {
    "id": "twh-crate",
    "name": "TWH Caja militar",
-   "num": 35,
+   "num": 33,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -354,7 +334,7 @@ window.TWH_CFG = {
   {
    "id": "twh-echo",
    "name": "TWH Eco",
-   "num": 36,
+   "num": 34,
    "aspect": 1,
    "l": 0.0567,
    "r": 0.9233,
@@ -364,7 +344,7 @@ window.TWH_CFG = {
   {
    "id": "twh-split",
    "name": "TWH Split",
-   "num": 37,
+   "num": 35,
    "aspect": 1,
    "l": 0.1133,
    "r": 0.8683,
@@ -374,7 +354,7 @@ window.TWH_CFG = {
   {
    "id": "twh-spec",
    "name": "TWH Spec",
-   "num": 38,
+   "num": 36,
    "aspect": 1,
    "l": 0.0933,
    "r": 0.9383,
@@ -384,7 +364,7 @@ window.TWH_CFG = {
   {
    "id": "twh-pill",
    "name": "TWH Pill",
-   "num": 39,
+   "num": 37,
    "aspect": 1,
    "l": 0.12,
    "r": 0.88,
@@ -394,7 +374,7 @@ window.TWH_CFG = {
   {
    "id": "twh-vertical",
    "name": "TWH Vertical",
-   "num": 40,
+   "num": 38,
    "aspect": 1,
    "l": 0.2,
    "r": 0.8017,
@@ -402,49 +382,9 @@ window.TWH_CFG = {
    "b": 0.8783
   },
   {
-   "id": "twh-tread",
-   "name": "TWH Tread",
-   "num": 41,
-   "aspect": 1,
-   "l": 0.1083,
-   "r": 0.8717,
-   "t": 0.2183,
-   "b": 0.7933
-  },
-  {
-   "id": "twh-halftone",
-   "name": "TWH Halftone",
-   "num": 42,
-   "aspect": 1,
-   "l": 0.0983,
-   "r": 0.8783,
-   "t": 0.195,
-   "b": 0.7667
-  },
-  {
-   "id": "twh-circle-type",
-   "name": "TWH Circle",
-   "num": 43,
-   "aspect": 1,
-   "l": 0.1067,
-   "r": 0.8933,
-   "t": 0.1067,
-   "b": 0.8933
-  },
-  {
-   "id": "twh-triple-line",
-   "name": "TWH Triple línea",
-   "num": 44,
-   "aspect": 1,
-   "l": 0.0883,
-   "r": 0.895,
-   "t": 0.19,
-   "b": 0.82
-  },
-  {
    "id": "twh-extrude",
    "name": "TWH 3D",
-   "num": 45,
+   "num": 39,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.8933,
@@ -454,7 +394,7 @@ window.TWH_CFG = {
   {
    "id": "twh-knockout",
    "name": "TWH Calado",
-   "num": 46,
+   "num": 40,
    "aspect": 1,
    "l": 0.1117,
    "r": 0.8867,

@@ -430,39 +430,6 @@ const LOGOS = {
       t(150, 252, 'CHILE · SINCE 2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   },
   // ---------- 28-31: tanda 2026-11-24 (de 10 propuestas quedaron estas 4) (4x4 / off road, en la línea de los elegidos para las poleras) ----------
-  // 28. Curvas de nivel (mapa topográfico) + TWH
-  'topo-explorers': () => {
-    let lines = '';
-    for (let k = 0; k < 7; k++) {
-      let d = '';
-      for (let i = 0; i <= 72; i++) {
-        const a = (i / 72) * Math.PI * 2;
-        const r = 26 + k * 13 + 5 * Math.sin(3 * a + k * 0.7) + 3.5 * Math.cos(5 * a - k * 1.3) + 2 * Math.sin(2 * a + k);
-        d += (i ? 'L' : 'M') + r2(150 + r * Math.cos(a) * 1.18) + ' ' + r2(132 + r * Math.sin(a) * 0.9) + ' ';
-      }
-      lines += `<path d="${d}Z" fill="none" stroke="${k === 3 ? MUST : INK}" stroke-width="${k === 3 ? 2.5 : 1.6}" stroke-opacity="${k === 3 ? 1 : 0.55}"/>`;
-    }
-    return `<defs><clipPath id="topo"><rect x="34" y="40" width="232" height="184" rx="10"/></clipPath></defs>` +
-      `<g clip-path="url(#topo)">${lines}</g>` +
-      `<rect x="34" y="40" width="232" height="184" rx="10" fill="none" stroke="${INK}" stroke-width="4"/>` +
-      `<rect x="88" y="104" width="124" height="58" rx="4" fill="${BG}"/>` +
-      pt('BebasNeue-Regular', 'TWH', 66, 150, 156, INK, { ls: 4 }) +
-      pt('BebasNeue-Regular', 'OFF ROAD EXPLORERS', 26, 150, 258, INK, { ls: 3 }) +
-      t(150, 280, '33°S · 70°W · CHILE', 12, MUST, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
-  // 29. Placa ovalada de competición (4X4)
-  'rally-raid': () => {
-    let ch = '';
-    for (let r = 0; r < 2; r++) for (let k = 0; k < 18; k++) if ((r + k) % 2 === 0) ch += `<rect x="${51 + k * 11}" y="${232 + r * 9}" width="11" height="9" fill="${INK}"/>`;
-    return t(150, 58, 'TWH · RALLY RAID · 4X4', 14, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
-      `<ellipse cx="150" cy="146" rx="112" ry="72" fill="${INK}"/>` +
-      `<ellipse cx="150" cy="146" rx="102" ry="62" fill="none" stroke="${BG}" stroke-width="2.5"/>` +
-      pt('RacingSansOne-Regular', '4X4', 92, 150, 182, RED, { w: 170 }) +
-      pt('BlackOpsOne-Regular', 'TWH', 22, 150, 112, BG, { ls: 4 }) +
-      ch + t(150, 278, 'OFF ROAD · CHILE · 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
   // 30. Stay Dirty: manuscrita con salpicaduras de barro
   'stay-dirty': () => {
     const dots = [[64, 92, 7], [78, 78, 3.5], [232, 96, 6], [248, 116, 3], [92, 206, 4], [216, 200, 8], [236, 214, 3.5], [56, 176, 3], [120, 72, 2.5], [196, 70, 4]];
@@ -589,54 +556,6 @@ const LOGOS = {
       `<rect x="60" y="40" width="2" height="216" fill="${INK}" fill-opacity=".35"/>`;
   },
 
-  // 41. Tread: TWH con el dibujo de un neumático calado en las letras
-  'twh-tread': () => {
-    const G = ptGeo('Anton-Regular', 'TWH', 100, 150, 190, { fit: 214, ls: 10 });
-    // tacos inclinados en filas alternadas (como el dibujo de un neumático de barro)
-    let tread = '';
-    for (let r = 0, y = 70; y < 210; y += 17, r++) for (let x = (r % 2 ? 22 : 8); x < 300; x += 28) tread += `<path d="M${x} ${y} l12 0 l-6 11 l-12 0 Z" fill="${BG}"/>`;
-    return `<defs><clipPath id="trd"><path d="${G.abs}"/></clipPath></defs>` +
-      `<path d="${G.abs}" fill="${INK}"/><g clip-path="url(#trd)">${tread}</g>` +
-      `<path d="M40 214 H260" stroke="${MUST}" stroke-width="3"/>` +
-      t(150, 238, 'GRIP · TRACTION · 4X4', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
-      t(150, r2(G.bb.y1 - 14), 'THE WHITE HILUX', 12, MUST, COND, mid + ' ' + cond('letter-spacing="8"'));
-  },
-
-  // 42. Halftone: TWH relleno de puntos que crecen hacia abajo
-  'twh-halftone': () => {
-    const G = ptGeo('Anton-Regular', 'TWH', 100, 150, 200, { fit: 214 });
-    const { y1, y2 } = G.bb;
-    let dots = '';
-    for (let y = Math.floor(y1); y <= y2 + 4; y += 6.5) {
-      const f = (y - y1) / (y2 - y1);
-      const rr = r2(0.7 + Math.max(0, Math.min(1, f)) * 2.9);
-      const off = Math.round((y - y1) / 6.5) % 2 ? 3.25 : 0;
-      for (let x = 34 + off; x < 270; x += 6.5) dots += `<circle cx="${r2(x)}" cy="${r2(y)}" r="${rr}"/>`;
-    }
-    return `<defs><clipPath id="htn"><path d="${G.abs}"/></clipPath></defs>` +
-      `<g clip-path="url(#htn)" fill="${INK}">${dots}</g>` +
-      `<path d="${G.abs}" fill="none" stroke="${RED}" stroke-width="1.4"/>` +
-      t(150, r2(y1 - 18), 'OFF ROAD · 4X4', 13, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
-      t(150, r2(y2 + 30), 'THE WHITE HILUX · 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
-  // 43. Circle: "TWH ·" en anillo completo + TWH grande al centro
-  'twh-circle-type': () =>
-    `<path id="ctp" d="M150 46 A104 104 0 1 1 149.9 46" fill="none"/>` +
-    `<text font-family="${BLACK}" font-size="19" fill="${INK}"><textPath href="#ctp" textLength="648" lengthAdjust="spacing">TWH • TWH • TWH • TWH • TWH • TWH • TWH • TWH •</textPath></text>` +
-    `<circle cx="150" cy="150" r="80" fill="${RED}"/>` +
-    pt('BebasNeue-Regular', 'TWH', 70, 150, 162, INK, { fit: 106, ls: 2 }) +
-    t(150, 186, 'OFF ROAD · 4X4', 10, BG, COND, mid + ' ' + cond('letter-spacing="4"')),
-
-  // 44. Triple línea: TWH de trazo continuo con líneas paralelas setenteras
-  'twh-triple-line': () => {
-    const d = 'M46 104 H110 M78 104 V198 M124 104 L142 198 L160 142 L178 198 L196 104 M212 104 V198 M254 104 V198 M212 151 H254';
-    const s = (c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    return s(ORANGE, 26) + s(BG, 19) + s(RED, 13) + s(BG, 6) +
-      t(150, 66, 'THE WHITE HILUX', 13, INK, COND, mid + ' ' + cond('letter-spacing="8"')) +
-      t(150, 246, 'RETRO RACING · 4X4 · 2001', 12, MUST, COND, mid + ' ' + cond('letter-spacing="5"'));
-  },
-
   // 45. 3D: TWH con volumen extruido
   'twh-extrude': () => {
     const G = ptGeo('RussoOne-Regular', 'TWH', 90, 144, 172, { fit: 198 });
@@ -668,14 +587,6 @@ const LOGOS = {
     pt('BebasNeue-Regular', 'TWH', 40, 150, 248, INK, { ls: 14 }) +
     t(150, 270, 'OUTDOOR · 4X4 · 2001', 10, TEAL, COND, mid + ' ' + cond('letter-spacing="6"')),
 
-  // 48. Bloques suizos 2x2: T · W · H · 4x4
-  'mini-blocks': () => {
-    const c = (x, y, fill, txt, col, size) => `<rect x="${x}" y="${y}" width="92" height="92" rx="6" fill="${fill}"/>` + pt('Anton-Regular', txt, size, x + 46, y + 46 + size * 0.36, col, {});
-    return c(56, 56, SAND, 'T', BG, 64) + c(152, 56, TEAL, 'W', BG, 64) + c(56, 152, OLIVE, 'H', INK, 64) +
-      `<rect x="152" y="152" width="92" height="92" rx="6" fill="none" stroke="${INK}" stroke-width="3"/>` + pt('BebasNeue-Regular', '4X4', 34, 198, 210, INK, { ls: 2 }) +
-      t(150, 272, 'THE WHITE HILUX', 11, SAND, COND, mid + ' ' + cond('letter-spacing="7"'));
-  },
-
   // 49. Horizonte: sol y tres líneas de camino (cielo + terracota)
   'mini-horizon': () =>
     `<path d="M112 150 A38 38 0 0 1 188 150 Z" fill="${CLAY}"/>` +
@@ -683,25 +594,6 @@ const LOGOS = {
     t(60, 238, 'TWH', 22, INK, BLACK, 'letter-spacing="4"') +
     t(240, 238, 'EST. 2001', 12, SKY, COND, 'text-anchor="end" ' + cond('letter-spacing="4"')) +
     `<rect x="60" y="248" width="180" height="1.5" fill="${INK}" fill-opacity=".5"/>`,
-
-  // 50. Neumático geométrico + TWH en línea (menta + bosque)
-  'mini-tire': () => {
-    // neumático visto de lado: goma gruesa con cortes de la banda, flanco y llanta
-    let cortes = '';
-    for (let n = 0; n < 16; n++) cortes += `<rect x="-3" y="-54" width="6" height="11" fill="${BG}" transform="translate(92 150) rotate(${n * 22.5})"/>`;
-    return `<circle cx="92" cy="150" r="52" fill="${MINT}"/>` + cortes +
-      `<circle cx="92" cy="150" r="32" fill="${BG}"/><circle cx="92" cy="150" r="24" fill="none" stroke="${MINT}" stroke-width="3"/><circle cx="92" cy="150" r="9" fill="${FOREST}"/>` +
-      pt('RussoOne-Regular', 'TWH', 52, 160, 168, INK, { anchor: 'start' }) +
-      t(154, 192, 'TRACTION DEPT.', 12, MINT, COND, cond('letter-spacing="4"'));
-  },
-
-  // 51. Brújula mínima: flecha norte en anillo (cobalto + arena)
-  'mini-compass': () =>
-    `<circle cx="150" cy="130" r="70" fill="none" stroke="${INK}" stroke-width="2"/>` +
-    [0, 90, 180, 270].map((g) => `<rect x="148.5" y="54" width="3" height="10" fill="${INK}" transform="rotate(${g} 150 130)"/>`).join('') +
-    `<path d="M150 74 L170 140 L150 128 L130 140 Z" fill="${COBALT}"/><path d="M150 186 L170 140 L150 152 L130 140 Z" fill="${SAND}"/>` +
-    t(150, 50, 'N', 14, COBALT, BLACK, mid) +
-    pt('BebasNeue-Regular', 'TWH ADVENTURE', 30, 150, 248, INK, { ls: 6 }),
 
   // 52. TWH en contorno dentro de un rectángulo redondeado (tipo ícono de app)
   'mini-outline': () =>
@@ -731,14 +623,6 @@ const LOGOS = {
     `<rect x="56" y="198" width="188" height="3" rx="1.5" fill="${FOREST}"/>` +
     t(150, 224, 'the white hilux · 4x4 · 2001', 13, MINT, COND, mid + ' ' + cond('letter-spacing="3"')),
 
-  // 56. Cumbres superpuestas (cielo, cobalto y arena)
-  'mini-peaks': () =>
-    `<path d="M60 186 L118 96 L176 186 Z" fill="${COBALT}"/>` +
-    `<path d="M120 186 L180 82 L240 186 Z" fill="${SKY}"/>` +
-    `<path d="M96 186 L150 120 L204 186 Z" fill="${SAND}"/>` +
-    `<rect x="56" y="186" width="188" height="4" fill="${INK}"/>` +
-    pt('BebasNeue-Regular', 'TWH 4X4', 38, 150, 236, INK, { ls: 8 }) +
-    t(150, 258, 'HIGH COUNTRY · EST. 2001', 10, SKY, COND, mid + ' ' + cond('letter-spacing="5"')),
   // ---------- 57-66: variaciones de los favoritos 6, 22, 23 y 27 (2026-11-25) ----------
   // 57. Escudo (6) con TWH Black Ops y franjas (27)
   'shield-ops': () =>
@@ -833,13 +717,6 @@ const LOGOS = {
     t(150, 90, 'THE WHITE HILUX', 12, INK, COND, mid + ' ' + cond('letter-spacing="7"')) +
     t(150, 236, 'SPEED &amp; 4X4 · EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="5"')),
 
-  // 66. Roundel: círculos concéntricos con TWH Black Ops y franjas
-  'roundel-ops': () =>
-    `<circle cx="150" cy="150" r="112" fill="${RED}"/><circle cx="150" cy="150" r="88" fill="${BG}"/>` +
-    `<circle cx="150" cy="150" r="82" fill="none" stroke="${ORANGE}" stroke-width="3"/>` +
-    pt('BlackOpsOne-Regular', 'TWH', 50, 150, 158, INK, { fit: 116 }) +
-    franjas3(98, 168, 104, 5, 7) +
-    ital(150, 208, t(0, 0, '4WD RACE DEPT.', 12, ORANGE, BLACK, mid)),
   // ---------- 67-76: insignias de carrera con paletas nuevas (2026-11-25) ----------
   // 67. Hexágono Off Road Div. (petróleo + naranjo)
   'hex-badge': () => {
@@ -861,15 +738,6 @@ const LOGOS = {
     `<path d="M80 176 H220" stroke="${GOLD}" stroke-width="2"/>` +
     t(150, 192, 'RACING · 4X4 · 2001', 9, INK, COND, mid + ' ' + cond('letter-spacing="3"')),
 
-  // 69. Círculo de número de puerta de rally (cielo + marino)
-  'door-number': () =>
-    `<circle cx="150" cy="142" r="96" fill="${INK}"/>` +
-    `<circle cx="150" cy="142" r="86" fill="none" stroke="${NAVY}" stroke-width="3"/>` +
-    pt('RacingSansOne-Regular', '01', 110, 150, 178, NAVY, { fit: 120 }) +
-    t(150, 92, 'TWH', 18, SKY, BLACK, mid + ' letter-spacing="5"') +
-    `<rect x="104" y="192" width="92" height="5" fill="${SKY}"/>` +
-    t(150, 270, 'RALLY 4X4 · SINCE 2001', 12, SKY, COND, mid + ' ' + cond('letter-spacing="6"')),
-
   // 70. Alas de franjas con TWH al centro (mostaza + crema)
   'stripe-wings': () => {
     const ala = (lado) => [0, 1, 2].map((k) => {
@@ -883,16 +751,6 @@ const LOGOS = {
       t(150, 252, '4X4 · OFF ROAD · 2001', 10, GOLD, COND, mid + ' ' + cond('letter-spacing="5"'));
   },
 
-  // 71. Escudo partido en dos colores (cobalto + amarillo)
-  'shield-split': () =>
-    `<defs><clipPath id="shp"><path d="${ESCUDO}"/></clipPath></defs>` +
-    `<g clip-path="url(#shp)"><rect x="40" y="30" width="110" height="250" fill="${COBALT}"/><rect x="150" y="30" width="110" height="250" fill="${YELLOW}"/>` +
-    `<g transform="translate(40 238) skewY(-12)">${cuadros(0, 0, 24, 2, 10, BG)}</g></g>` +
-    `<path d="${ESCUDO_IN}" fill="none" stroke="${BG}" stroke-width="2" stroke-linejoin="round"/>` +
-    pt('BlackOpsOne-Regular', 'TWH', 60, 150, 164, BG, { fit: 140 }) +
-    t(150, 98, 'EST. 2001', 12, BG, COND, mid + ' ' + cond('letter-spacing="6"')) +
-    ital(150, 190, t(0, 0, 'RACE DEPT.', 16, BG, BLACK, mid)),
-
   // 72. Placa vertical de esquinas cortadas (arena, oliva y óxido)
   'stamp-tall': () =>
     `<path d="M92 34 H208 L230 56 V244 L208 266 H92 L70 244 V56 Z" fill="none" stroke="${SAND}" stroke-width="5"/>` +
@@ -903,51 +761,8 @@ const LOGOS = {
     pt('BebasNeue-Regular', '4X4', 30, 150, 169, INK, { ls: 8 }) +
     t(150, 200, 'SUPPLY', 18, SAND, COND, mid + ' ' + cond('letter-spacing="8"')) +
     franjas3(100, 214, 100, 4, 7, [SAND, OLIVE, RUST]) +
-    t(150, 248, '★', 12, SAND, 'Arial', mid),
+    t(150, 248, '★', 12, SAND, 'Arial', mid)
 
-  // 73. Sol de velocidad: círculo cortado por líneas + TWH (lima + morado)
-  'speed-sun': () => {
-    let cortes = '';
-    for (let k = 0; k < 6; k++) cortes += `<rect x="40" y="${150 + k * 13}" width="220" height="${2 + k * 1.4}" fill="${BG}"/>`;
-    return `<circle cx="150" cy="150" r="96" fill="${PURPLE}"/>` + cortes +
-      ital(150, 140, t(0, 0, 'TWH', 64, LIME, BLACK, mid)) +
-      t(150, 274, 'NIGHT RUN · 4X4 · CHILE', 12, LIME, COND, mid + ' ' + cond('letter-spacing="5"'));
-  },
-
-  // 74. Placa militar (dog tag) con TWH esténcil (crema + oliva)
-  'dog-tag': () =>
-    `<rect x="76" y="56" width="148" height="190" rx="34" fill="none" stroke="${INK}" stroke-width="5"/>` +
-    `<circle cx="150" cy="84" r="9" fill="none" stroke="${INK}" stroke-width="3"/>` +
-    `<path d="M150 75 C150 50 120 40 100 30" fill="none" stroke="${OLIVE}" stroke-width="2.5" stroke-dasharray="3 3"/>` +
-    pt('SairaStencilOne-Regular', 'TWH', 50, 150, 152, INK, { fit: 112 }) +
-    `<rect x="98" y="164" width="104" height="3" fill="${OLIVE}"/>` +
-    t(150, 188, 'Nº 4X4-2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="3"')) +
-    t(150, 206, 'OFF ROAD UNIT', 11, OLIVE, COND, mid + ' ' + cond('letter-spacing="4"')) +
-    t(150, 224, 'CHILE', 10, INK, COND, mid + ' ' + cond('letter-spacing="6"')),
-
-  // 75. Marco a cuadros con TWH dorado (dorado + negro)
-  'checker-frame': () => {
-    let borde = '';
-    for (let k = 0; k < 20; k++) {
-      const c = k % 2 ? GOLD : INK;
-      borde += `<rect x="${50 + k * 10}" y="50" width="10" height="10" fill="${c}"/><rect x="${50 + k * 10}" y="240" width="10" height="10" fill="${k % 2 ? INK : GOLD}"/>`;
-      if (k > 0 && k < 19) borde += `<rect x="50" y="${50 + k * 10}" width="10" height="10" fill="${c}"/><rect x="240" y="${50 + k * 10}" width="10" height="10" fill="${k % 2 ? INK : GOLD}"/>`;
-    }
-    return borde +
-      t(150, 104, 'THE WHITE HILUX', 11, INK, COND, mid + ' ' + cond('letter-spacing="5"')) +
-      pt('BlackOpsOne-Regular', 'TWH', 56, 150, 168, GOLD, { fit: 136 }) +
-      ital(150, 200, t(0, 0, 'RACE DEPT.', 18, INK, BLACK, mid)) +
-      t(150, 222, '4X4 · 2001', 10, GOLD, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
-  // 76. Banderín de carrera (óxido + petróleo)
-  'pennant': () =>
-    `<rect x="44" y="70" width="6" height="190" rx="3" fill="${INK}"/>` +
-    `<path d="M50 76 L262 136 L50 196 Z" fill="${RUST}"/>` +
-    `<path d="M50 160 L188 160 L135 175 L50 175 Z" fill="${PETROL}"/><path d="M50 180 L118 180 L88 189 L50 189 Z" fill="${INK}"/>` +
-    pt('BlackOpsOne-Regular', 'TWH', 48, 62, 140, INK, { anchor: 'start', fit: 108 }) +
-    t(64, 236, 'TEAM 4X4 · 2001', 13, INK, COND, cond('letter-spacing="5"')) +
-    `<rect x="64" y="246" width="120" height="3" fill="${PETROL}"/>`
 };
 
 // ---------- salida ----------
