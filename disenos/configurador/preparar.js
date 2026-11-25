@@ -41,7 +41,11 @@ const NAMES = {
   'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew',
   'twh-monogram': 'TWH Monograma', 'twh-varsity': 'TWH Varsity', 'twh-stripe-fill': 'TWH Franjas', 'twh-crate': 'TWH Caja militar', 'twh-echo': 'TWH Eco',
   'twh-split': 'TWH Split', 'twh-spec': 'TWH Spec', 'twh-pill': 'TWH Pill', 'twh-vertical': 'TWH Vertical', 'twh-tread': 'TWH Tread',
-  'twh-halftone': 'TWH Halftone', 'twh-circle-type': 'TWH Circle', 'twh-triple-line': 'TWH Triple línea', 'twh-extrude': 'TWH 3D', 'twh-knockout': 'TWH Calado'
+  'twh-halftone': 'TWH Halftone', 'twh-circle-type': 'TWH Circle', 'twh-triple-line': 'TWH Triple línea', 'twh-extrude': 'TWH 3D', 'twh-knockout': 'TWH Calado',
+  'mini-mountain': 'Montaña en círculo', 'mini-horizon': 'Horizonte', 'mini-outline': 'TWH Contorno', 'mini-topo': 'Altitude Topo', 'mini-trail': 'TWH Trails', 'mini-wordmark': 'twh.',
+  'shield-ops': 'Escudo Race Dept.', 'stamp-checker': 'Placa Race Supply', 'speed-round': 'Sello Speed Shop', 'race-plate-ops': 'Placa de carrera', 'crossed-flags': 'Banderas cruzadas',
+  'shield-speed': 'Escudo Speed Shop', 'stamp-ops': 'Placa Race Dept. Supply', 'pit-pass': 'Pit Pass', 'speed-banner': 'Banda Speed & 4X4', 'hex-badge': 'Hexágono Off Road Div.',
+  'oval-gold': 'Óvalo Racing', 'stripe-wings': 'TWH Motor Club', 'stamp-tall': 'Placa Supply 4X4'
 };
 const ids = fs.readdirSync(LOGOS).filter((f) => f.endsWith('.svg') && !f.endsWith('-claro.svg') && f !== 'logo-oficial.svg' && !f.startsWith('favicon')).map((f) => f.replace('.svg', ''));
 const srcs = ids.map((id) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, id + '.svg'), 'utf8')));

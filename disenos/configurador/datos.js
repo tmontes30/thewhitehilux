@@ -352,6 +352,196 @@ window.TWH_CFG = {
    "b": 0.7933
   },
   {
+   "id": "mini-mountain",
+   "name": "Montaña en círculo",
+   "num": 36,
+   "aspect": 1,
+   "l": 0.165,
+   "r": 0.815,
+   "t": 0.1617,
+   "b": 0.9
+  },
+  {
+   "id": "mini-horizon",
+   "name": "Horizonte",
+   "num": 37,
+   "aspect": 1,
+   "l": 0.2,
+   "r": 0.8,
+   "t": 0.3733,
+   "b": 0.8317
+  },
+  {
+   "id": "mini-outline",
+   "name": "TWH Contorno",
+   "num": 38,
+   "aspect": 1,
+   "l": 0.1167,
+   "r": 0.8633,
+   "t": 0.3117,
+   "b": 0.7733
+  },
+  {
+   "id": "mini-topo",
+   "name": "Altitude Topo",
+   "num": 39,
+   "aspect": 1,
+   "l": 0.2283,
+   "r": 0.7717,
+   "t": 0.1617,
+   "b": 0.92
+  },
+  {
+   "id": "mini-trail",
+   "name": "TWH Trails",
+   "num": 40,
+   "aspect": 1,
+   "l": 0.1633,
+   "r": 0.835,
+   "t": 0.1433,
+   "b": 0.86
+  },
+  {
+   "id": "mini-wordmark",
+   "name": "twh.",
+   "num": 41,
+   "aspect": 1,
+   "l": 0.1383,
+   "r": 0.85,
+   "t": 0.3767,
+   "b": 0.7467
+  },
+  {
+   "id": "shield-ops",
+   "name": "Escudo Race Dept.",
+   "num": 42,
+   "aspect": 1,
+   "l": 0.155,
+   "r": 0.845,
+   "t": 0.1083,
+   "b": 0.905
+  },
+  {
+   "id": "stamp-checker",
+   "name": "Placa Race Supply",
+   "num": 43,
+   "aspect": 1,
+   "l": 0.0917,
+   "r": 0.9083,
+   "t": 0.265,
+   "b": 0.735
+  },
+  {
+   "id": "speed-round",
+   "name": "Sello Speed Shop",
+   "num": 44,
+   "aspect": 1,
+   "l": 0.065,
+   "r": 0.935,
+   "t": 0.065,
+   "b": 0.935
+  },
+  {
+   "id": "race-plate-ops",
+   "name": "Placa de carrera",
+   "num": 45,
+   "aspect": 1,
+   "l": 0.0717,
+   "r": 0.9283,
+   "t": 0.2983,
+   "b": 0.7017
+  },
+  {
+   "id": "crossed-flags",
+   "name": "Banderas cruzadas",
+   "num": 46,
+   "aspect": 1,
+   "l": 0.1833,
+   "r": 0.7983,
+   "t": 0.1783,
+   "b": 0.92
+  },
+  {
+   "id": "shield-speed",
+   "name": "Escudo Speed Shop",
+   "num": 47,
+   "aspect": 1,
+   "l": 0.155,
+   "r": 0.845,
+   "t": 0.1083,
+   "b": 0.905
+  },
+  {
+   "id": "stamp-ops",
+   "name": "Placa Race Dept. Supply",
+   "num": 48,
+   "aspect": 1,
+   "l": 0.065,
+   "r": 0.935,
+   "t": 0.2917,
+   "b": 0.7083
+  },
+  {
+   "id": "pit-pass",
+   "name": "Pit Pass",
+   "num": 49,
+   "aspect": 1,
+   "l": 0.2333,
+   "r": 0.7667,
+   "t": 0.12,
+   "b": 0.8867
+  },
+  {
+   "id": "speed-banner",
+   "name": "Banda Speed & 4X4",
+   "num": 50,
+   "aspect": 1,
+   "l": 0.035,
+   "r": 0.8733,
+   "t": 0.2717,
+   "b": 0.7867
+  },
+  {
+   "id": "hex-badge",
+   "name": "Hexágono Off Road Div.",
+   "num": 51,
+   "aspect": 1,
+   "l": 0.1417,
+   "r": 0.8583,
+   "t": 0.0867,
+   "b": 0.9133
+  },
+  {
+   "id": "oval-gold",
+   "name": "Óvalo Racing",
+   "num": 52,
+   "aspect": 1,
+   "l": 0.0733,
+   "r": 0.9267,
+   "t": 0.2267,
+   "b": 0.7733
+  },
+  {
+   "id": "stripe-wings",
+   "name": "TWH Motor Club",
+   "num": 53,
+   "aspect": 1,
+   "l": 0.0067,
+   "r": 0.9933,
+   "t": 0.2867,
+   "b": 0.84
+  },
+  {
+   "id": "stamp-tall",
+   "name": "Placa Supply 4X4",
+   "num": 54,
+   "aspect": 1,
+   "l": 0.225,
+   "r": 0.775,
+   "t": 0.105,
+   "b": 0.895
+  },
+  {
    "id": "logo-shop",
    "name": "The White Hilux (horizontal)",
    "num": null,
