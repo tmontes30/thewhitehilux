@@ -9,6 +9,8 @@ const { execFileSync } = require('child_process');
 const BG = '#1B1C1A', INK = '#F2F0E8', ORANGE = '#F2A541', RED = '#E4572E', DRED = '#B3202A', MUST = '#E39B2D', OLIVE = '#7A8450';
 // Paletas nuevas (minimalistas 47-56)
 const TEAL = '#2BB3A3', SAND = '#D9C7A3', SKY = '#7FB3E0', COBALT = '#3A5BD9', FOREST = '#3E6B4B', MINT = '#9ED9B5', CLAY = '#C2683F';
+// Paletas de carrera nuevas (67-76)
+const NAVY = '#1F3A5F', GOLD = '#D4A72C', LIME = '#B5E61D', PURPLE = '#7B5CC4', RUST = '#A8482B', BRG = '#2E6B4A', YELLOW = '#F2C230', PETROL = '#1F7A7A';
 // Tipografías incluidas en Windows (no necesitan internet)
 const IMPACT = "Impact, Haettenschweiler, 'Arial Narrow', sans-serif";
 const BLACK = "'Arial Black', 'Segoe UI Black', Arial, sans-serif";
@@ -87,8 +89,8 @@ function pt(file, text, size, x, y, fill, o = {}) {
 // Piezas de los favoritos (6, 22, 23, 27) para combinarlas en 57-66
 const ESCUDO = 'M150 36 L250 62 L250 168 Q250 236 150 268 Q50 236 50 168 L50 62 Z';
 const ESCUDO_IN = 'M150 50 L238 73 L238 166 Q238 225 150 254 Q62 225 62 166 L62 73 Z';
-function cuadros(x, y, cols, rows, sz) { let h = ''; for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) if ((r + k) % 2 === 0) h += '<rect x="' + r2(x + k * sz) + '" y="' + r2(y + r * sz) + '" width="' + sz + '" height="' + sz + '" fill="' + INK + '"/>'; return h; }
-function franjas3(x, y, w, h, gap) { return [ORANGE, RED, DRED].map((c, k) => '<path d="M' + x + ' ' + (y + k * gap) + ' H' + (x + w - k * 8) + ' L' + (x + w - k * 8 - 5) + ' ' + (y + k * gap + h) + ' H' + x + ' Z" fill="' + c + '"/>').join(''); }
+function cuadros(x, y, cols, rows, sz, col = INK) { let h = ''; for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) if ((r + k) % 2 === 0) h += '<rect x="' + r2(x + k * sz) + '" y="' + r2(y + r * sz) + '" width="' + sz + '" height="' + sz + '" fill="' + col + '"/>'; return h; }
+function franjas3(x, y, w, h, gap, cols = [ORANGE, RED, DRED]) { return cols.map((c, k) => '<path d="M' + x + ' ' + (y + k * gap) + ' H' + (x + w - k * 8) + ' L' + (x + w - k * 8 - 5) + ' ' + (y + k * gap + h) + ' H' + x + ' Z" fill="' + c + '"/>').join(''); }
 
 const LOGOS = {
   // 1. El que te gustó: TWH + franjas de rally
@@ -837,7 +839,115 @@ const LOGOS = {
     `<circle cx="150" cy="150" r="82" fill="none" stroke="${ORANGE}" stroke-width="3"/>` +
     pt('BlackOpsOne-Regular', 'TWH', 50, 150, 158, INK, { fit: 116 }) +
     franjas3(98, 168, 104, 5, 7) +
-    ital(150, 208, t(0, 0, '4WD RACE DEPT.', 12, ORANGE, BLACK, mid))
+    ital(150, 208, t(0, 0, '4WD RACE DEPT.', 12, ORANGE, BLACK, mid)),
+  // ---------- 67-76: insignias de carrera con paletas nuevas (2026-11-25) ----------
+  // 67. Hexágono Off Road Div. (petróleo + naranjo)
+  'hex-badge': () => {
+    const hex = (r) => [0, 1, 2, 3, 4, 5].map((k) => { const a = Math.PI / 6 + k * Math.PI / 3; return r2(150 + r * Math.cos(a)) + ' ' + r2(150 + r * Math.sin(a)); }).join(' L');
+    return `<path d="M${hex(124)} Z" fill="${PETROL}"/><path d="M${hex(112)} Z" fill="none" stroke="${INK}" stroke-width="2.5"/>` +
+      cuadros(96, 92, 12, 2, 9) +
+      pt('BlackOpsOne-Regular', 'TWH', 60, 150, 172, INK, { fit: 136 }) +
+      franjas3(92, 180, 116, 5, 7, [ORANGE, INK, ORANGE]) +
+      t(150, 212, 'OFF ROAD DIV.', 11, INK, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 68. Óvalo verde inglés con dorado
+  'oval-gold': () =>
+    `<ellipse cx="150" cy="150" rx="128" ry="82" fill="${BRG}"/>` +
+    `<ellipse cx="150" cy="150" rx="118" ry="72" fill="none" stroke="${GOLD}" stroke-width="3"/>` +
+    `<ellipse cx="150" cy="150" rx="111" ry="65" fill="none" stroke="${GOLD}" stroke-width="1"/>` +
+    t(150, 116, 'THE WHITE HILUX', 10, GOLD, COND, mid + ' ' + cond('letter-spacing="4"')) +
+    ital(150, 166, t(0, 0, 'TWH', 52, INK, BLACK, mid)) +
+    `<path d="M80 176 H220" stroke="${GOLD}" stroke-width="2"/>` +
+    t(150, 192, 'RACING · 4X4 · 2001', 9, INK, COND, mid + ' ' + cond('letter-spacing="3"')),
+
+  // 69. Círculo de número de puerta de rally (cielo + marino)
+  'door-number': () =>
+    `<circle cx="150" cy="142" r="96" fill="${INK}"/>` +
+    `<circle cx="150" cy="142" r="86" fill="none" stroke="${NAVY}" stroke-width="3"/>` +
+    pt('RacingSansOne-Regular', '01', 110, 150, 178, NAVY, { fit: 120 }) +
+    t(150, 92, 'TWH', 18, SKY, BLACK, mid + ' letter-spacing="5"') +
+    `<rect x="104" y="192" width="92" height="5" fill="${SKY}"/>` +
+    t(150, 270, 'RALLY 4X4 · SINCE 2001', 12, SKY, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 70. Alas de franjas con TWH al centro (mostaza + crema)
+  'stripe-wings': () => {
+    const ala = (lado) => [0, 1, 2].map((k) => {
+      const y = 132 + k * 14, x0 = 150 + lado * 66, x1 = 150 + lado * (148 - k * 22);
+      return `<path d="M${x0} ${y} L${x1} ${y - 8} L${x1 - lado * 6} ${y - 1} L${x0} ${y + 7} Z" fill="${k === 1 ? INK : GOLD}"/>`;
+    }).join('');
+    return ala(-1) + ala(1) +
+      `<circle cx="150" cy="144" r="56" fill="${BG}" stroke="${GOLD}" stroke-width="4"/>` +
+      pt('BlackOpsOne-Regular', 'TWH', 40, 150, 158, INK, { fit: 84 }) +
+      t(150, 232, 'TWH MOTOR CLUB', 16, INK, BLACK, mid + ' letter-spacing="3"') +
+      t(150, 252, '4X4 · OFF ROAD · 2001', 10, GOLD, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 71. Escudo partido en dos colores (cobalto + amarillo)
+  'shield-split': () =>
+    `<defs><clipPath id="shp"><path d="${ESCUDO}"/></clipPath></defs>` +
+    `<g clip-path="url(#shp)"><rect x="40" y="30" width="110" height="250" fill="${COBALT}"/><rect x="150" y="30" width="110" height="250" fill="${YELLOW}"/>` +
+    `<g transform="translate(40 238) skewY(-12)">${cuadros(0, 0, 24, 2, 10, BG)}</g></g>` +
+    `<path d="${ESCUDO_IN}" fill="none" stroke="${BG}" stroke-width="2" stroke-linejoin="round"/>` +
+    pt('BlackOpsOne-Regular', 'TWH', 60, 150, 164, BG, { fit: 140 }) +
+    t(150, 98, 'EST. 2001', 12, BG, COND, mid + ' ' + cond('letter-spacing="6"')) +
+    ital(150, 190, t(0, 0, 'RACE DEPT.', 16, BG, BLACK, mid)),
+
+  // 72. Placa vertical de esquinas cortadas (arena, oliva y óxido)
+  'stamp-tall': () =>
+    `<path d="M92 34 H208 L230 56 V244 L208 266 H92 L70 244 V56 Z" fill="none" stroke="${SAND}" stroke-width="5"/>` +
+    `<path d="M97 44 H203 L220 61 V239 L203 256 H97 L80 239 V61 Z" fill="none" stroke="${SAND}" stroke-width="1.5"/>` +
+    t(150, 80, 'EST. 2001', 11, OLIVE, COND, mid + ' ' + cond('letter-spacing="6"')) +
+    pt('BlackOpsOne-Regular', 'TWH', 50, 150, 132, INK, { fit: 116 }) +
+    `<rect x="98" y="144" width="104" height="30" fill="${RUST}"/>` +
+    pt('BebasNeue-Regular', '4X4', 30, 150, 169, INK, { ls: 8 }) +
+    t(150, 200, 'SUPPLY', 18, SAND, COND, mid + ' ' + cond('letter-spacing="8"')) +
+    franjas3(100, 214, 100, 4, 7, [SAND, OLIVE, RUST]) +
+    t(150, 248, '★', 12, SAND, 'Arial', mid),
+
+  // 73. Sol de velocidad: círculo cortado por líneas + TWH (lima + morado)
+  'speed-sun': () => {
+    let cortes = '';
+    for (let k = 0; k < 6; k++) cortes += `<rect x="40" y="${150 + k * 13}" width="220" height="${2 + k * 1.4}" fill="${BG}"/>`;
+    return `<circle cx="150" cy="150" r="96" fill="${PURPLE}"/>` + cortes +
+      ital(150, 140, t(0, 0, 'TWH', 64, LIME, BLACK, mid)) +
+      t(150, 274, 'NIGHT RUN · 4X4 · CHILE', 12, LIME, COND, mid + ' ' + cond('letter-spacing="5"'));
+  },
+
+  // 74. Placa militar (dog tag) con TWH esténcil (crema + oliva)
+  'dog-tag': () =>
+    `<rect x="76" y="56" width="148" height="190" rx="34" fill="none" stroke="${INK}" stroke-width="5"/>` +
+    `<circle cx="150" cy="84" r="9" fill="none" stroke="${INK}" stroke-width="3"/>` +
+    `<path d="M150 75 C150 50 120 40 100 30" fill="none" stroke="${OLIVE}" stroke-width="2.5" stroke-dasharray="3 3"/>` +
+    pt('SairaStencilOne-Regular', 'TWH', 50, 150, 152, INK, { fit: 112 }) +
+    `<rect x="98" y="164" width="104" height="3" fill="${OLIVE}"/>` +
+    t(150, 188, 'Nº 4X4-2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="3"')) +
+    t(150, 206, 'OFF ROAD UNIT', 11, OLIVE, COND, mid + ' ' + cond('letter-spacing="4"')) +
+    t(150, 224, 'CHILE', 10, INK, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 75. Marco a cuadros con TWH dorado (dorado + negro)
+  'checker-frame': () => {
+    let borde = '';
+    for (let k = 0; k < 20; k++) {
+      const c = k % 2 ? GOLD : INK;
+      borde += `<rect x="${50 + k * 10}" y="50" width="10" height="10" fill="${c}"/><rect x="${50 + k * 10}" y="240" width="10" height="10" fill="${k % 2 ? INK : GOLD}"/>`;
+      if (k > 0 && k < 19) borde += `<rect x="50" y="${50 + k * 10}" width="10" height="10" fill="${c}"/><rect x="240" y="${50 + k * 10}" width="10" height="10" fill="${k % 2 ? INK : GOLD}"/>`;
+    }
+    return borde +
+      t(150, 104, 'THE WHITE HILUX', 11, INK, COND, mid + ' ' + cond('letter-spacing="5"')) +
+      pt('BlackOpsOne-Regular', 'TWH', 56, 150, 168, GOLD, { fit: 136 }) +
+      ital(150, 200, t(0, 0, 'RACE DEPT.', 18, INK, BLACK, mid)) +
+      t(150, 222, '4X4 · 2001', 10, GOLD, COND, mid + ' ' + cond('letter-spacing="6"'));
+  },
+
+  // 76. Banderín de carrera (óxido + petróleo)
+  'pennant': () =>
+    `<rect x="44" y="70" width="6" height="190" rx="3" fill="${INK}"/>` +
+    `<path d="M50 76 L262 136 L50 196 Z" fill="${RUST}"/>` +
+    `<path d="M50 160 L188 160 L135 175 L50 175 Z" fill="${PETROL}"/><path d="M50 180 L118 180 L88 189 L50 189 Z" fill="${INK}"/>` +
+    pt('BlackOpsOne-Regular', 'TWH', 48, 62, 140, INK, { anchor: 'start', fit: 108 }) +
+    t(64, 236, 'TEAM 4X4 · 2001', 13, INK, COND, cond('letter-spacing="5"')) +
+    `<rect x="64" y="246" width="120" height="3" fill="${PETROL}"/>`
 };
 
 // ---------- salida ----------
