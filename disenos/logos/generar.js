@@ -7,6 +7,8 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const BG = '#1B1C1A', INK = '#F2F0E8', ORANGE = '#F2A541', RED = '#E4572E', DRED = '#B3202A', MUST = '#E39B2D', OLIVE = '#7A8450';
+// Paletas nuevas (minimalistas 47-56)
+const TEAL = '#2BB3A3', SAND = '#D9C7A3', SKY = '#7FB3E0', COBALT = '#3A5BD9', FOREST = '#3E6B4B', MINT = '#9ED9B5', CLAY = '#C2683F';
 // Tipografías incluidas en Windows (no necesitan internet)
 const IMPACT = "Impact, Haettenschweiler, 'Arial Narrow', sans-serif";
 const BLACK = "'Arial Black', 'Segoe UI Black', Arial, sans-serif";
@@ -648,7 +650,87 @@ const LOGOS = {
       `<path d="M34 220 H266" stroke="${INK}" stroke-width="1.5"/>` +
       t(34, 238, 'OFF ROAD', 12, INK, COND, cond('letter-spacing="4"')) +
       t(266, 238, 'EST. 2001 · CHILE', 12, INK, COND, 'text-anchor="end" ' + cond('letter-spacing="4"'));
-  }
+  },
+  // ---------- 47-56: minimalistas con paletas nuevas (2026-11-25) ----------
+  // 47. Montaña de una línea en círculo (verde azulado + arena)
+  'mini-mountain': () =>
+    `<circle cx="150" cy="128" r="78" fill="none" stroke="${SAND}" stroke-width="3"/>` +
+    `<path d="M88 160 L124 112 L142 134 L166 98 L212 160" fill="none" stroke="${TEAL}" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="186" cy="92" r="7" fill="${SAND}"/>` +
+    pt('BebasNeue-Regular', 'TWH', 40, 150, 248, INK, { ls: 14 }) +
+    t(150, 270, 'OUTDOOR · 4X4 · 2001', 10, TEAL, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 48. Bloques suizos 2x2: T · W · H · 4x4
+  'mini-blocks': () => {
+    const c = (x, y, fill, txt, col, size) => `<rect x="${x}" y="${y}" width="92" height="92" rx="6" fill="${fill}"/>` + pt('Anton-Regular', txt, size, x + 46, y + 46 + size * 0.36, col, {});
+    return c(56, 56, SAND, 'T', BG, 64) + c(152, 56, TEAL, 'W', BG, 64) + c(56, 152, OLIVE, 'H', INK, 64) +
+      `<rect x="152" y="152" width="92" height="92" rx="6" fill="none" stroke="${INK}" stroke-width="3"/>` + pt('BebasNeue-Regular', '4X4', 34, 198, 210, INK, { ls: 2 }) +
+      t(150, 272, 'THE WHITE HILUX', 11, SAND, COND, mid + ' ' + cond('letter-spacing="7"'));
+  },
+
+  // 49. Horizonte: sol y tres líneas de camino (cielo + terracota)
+  'mini-horizon': () =>
+    `<path d="M112 150 A38 38 0 0 1 188 150 Z" fill="${CLAY}"/>` +
+    `<rect x="60" y="150" width="180" height="6" rx="3" fill="${SKY}"/><rect x="84" y="168" width="132" height="6" rx="3" fill="${SKY}"/><rect x="110" y="186" width="80" height="6" rx="3" fill="${SKY}"/>` +
+    t(60, 238, 'TWH', 22, INK, BLACK, 'letter-spacing="4"') +
+    t(240, 238, 'EST. 2001', 12, SKY, COND, 'text-anchor="end" ' + cond('letter-spacing="4"')) +
+    `<rect x="60" y="248" width="180" height="1.5" fill="${INK}" fill-opacity=".5"/>`,
+
+  // 50. Neumático geométrico + TWH en línea (menta + bosque)
+  'mini-tire': () => {
+    // neumático visto de lado: goma gruesa con cortes de la banda, flanco y llanta
+    let cortes = '';
+    for (let n = 0; n < 16; n++) cortes += `<rect x="-3" y="-54" width="6" height="11" fill="${BG}" transform="translate(92 150) rotate(${n * 22.5})"/>`;
+    return `<circle cx="92" cy="150" r="52" fill="${MINT}"/>` + cortes +
+      `<circle cx="92" cy="150" r="32" fill="${BG}"/><circle cx="92" cy="150" r="24" fill="none" stroke="${MINT}" stroke-width="3"/><circle cx="92" cy="150" r="9" fill="${FOREST}"/>` +
+      pt('RussoOne-Regular', 'TWH', 52, 160, 168, INK, { anchor: 'start' }) +
+      t(154, 192, 'TRACTION DEPT.', 12, MINT, COND, cond('letter-spacing="4"'));
+  },
+
+  // 51. Brújula mínima: flecha norte en anillo (cobalto + arena)
+  'mini-compass': () =>
+    `<circle cx="150" cy="130" r="70" fill="none" stroke="${INK}" stroke-width="2"/>` +
+    [0, 90, 180, 270].map((g) => `<rect x="148.5" y="54" width="3" height="10" fill="${INK}" transform="rotate(${g} 150 130)"/>`).join('') +
+    `<path d="M150 74 L170 140 L150 128 L130 140 Z" fill="${COBALT}"/><path d="M150 186 L170 140 L150 152 L130 140 Z" fill="${SAND}"/>` +
+    t(150, 50, 'N', 14, COBALT, BLACK, mid) +
+    pt('BebasNeue-Regular', 'TWH ADVENTURE', 30, 150, 248, INK, { ls: 6 }),
+
+  // 52. TWH en contorno dentro de un rectángulo redondeado (tipo ícono de app)
+  'mini-outline': () =>
+    `<rect x="44" y="96" width="212" height="108" rx="54" fill="none" stroke="${MINT}" stroke-width="5"/>` +
+    pt('RubikMonoOne-Regular', 'TWH', 44, 150, 166, 'none', { fit: 140, stroke: INK, sw: 2.5 }) +
+    t(150, 232, '4X4 · OFF ROAD · CHILE', 11, MINT, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 53. Curvas de nivel cuadradas (terracota + arena)
+  'mini-topo': () =>
+    [0, 1, 2, 3].map((k) => `<rect x="${70 + k * 16}" y="${50 + k * 16}" width="${160 - k * 32}" height="${160 - k * 32}" rx="${36 - k * 6}" fill="none" stroke="${k === 3 ? CLAY : SAND}" stroke-width="${k === 3 ? 5 : 2.5}"/>`).join('') +
+    `<circle cx="150" cy="130" r="5" fill="${CLAY}"/>` +
+    pt('Staatliches-Regular', 'TWH', 34, 150, 256, INK, { ls: 10 }) +
+    t(150, 276, 'ALTITUDE 4X4', 10, SAND, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 54. Marca de sendero (rombo con flecha) (verde azulado)
+  'mini-trail': () =>
+    `<rect x="104" y="58" width="92" height="92" rx="10" fill="${TEAL}" transform="rotate(45 150 104)"/>` +
+    `<path d="M128 104 H164 M152 90 L166 104 L152 118" fill="none" stroke="${BG}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>` +
+    pt('BebasNeue-Regular', 'TWH TRAILS', 44, 150, 222, INK, { ls: 5 }) +
+    `<rect x="110" y="236" width="80" height="3" rx="1.5" fill="${TEAL}"/>` +
+    t(150, 258, 'FIND YOUR WAY', 11, SAND, COND, mid + ' ' + cond('letter-spacing="6"')),
+
+  // 55. Wordmark en minúscula con punto (bosque + menta)
+  'mini-wordmark': () =>
+    pt('Kanit-BlackItalic', 'twh', 110, 140, 176, INK, { fit: 170 }) +
+    `<circle cx="236" cy="168" r="11" fill="${MINT}"/>` +
+    `<rect x="56" y="198" width="188" height="3" rx="1.5" fill="${FOREST}"/>` +
+    t(150, 224, 'the white hilux · 4x4 · 2001', 13, MINT, COND, mid + ' ' + cond('letter-spacing="3"')),
+
+  // 56. Cumbres superpuestas (cielo, cobalto y arena)
+  'mini-peaks': () =>
+    `<path d="M60 186 L118 96 L176 186 Z" fill="${COBALT}"/>` +
+    `<path d="M120 186 L180 82 L240 186 Z" fill="${SKY}"/>` +
+    `<path d="M96 186 L150 120 L204 186 Z" fill="${SAND}"/>` +
+    `<rect x="56" y="186" width="188" height="4" fill="${INK}"/>` +
+    pt('BebasNeue-Regular', 'TWH 4X4', 38, 150, 236, INK, { ls: 8 }) +
+    t(150, 258, 'HIGH COUNTRY · EST. 2001', 10, SKY, COND, mid + ' ' + cond('letter-spacing="5"'))
 };
 
 // ---------- salida ----------
