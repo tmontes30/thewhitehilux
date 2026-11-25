@@ -107,20 +107,6 @@ const LOGOS = {
     `<rect x="40" y="226" width="220" height="5" fill="${ORANGE}"/><rect x="40" y="235" width="220" height="5" fill="${RED}"/><rect x="40" y="244" width="220" height="5" fill="${DRED}"/>` +
     t(150, 274, 'OFF ROAD · CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="7"')),
 
-  // 3. Diff Lock: insignia con el símbolo real del tablero (ejes vistos desde arriba, diferencial trasero bloqueado)
-  'diff-lock': () => {
-    const axle = (y, big) =>
-      `<rect x="92" y="${y - 17}" width="18" height="34" rx="4" fill="${MUST}"/><rect x="190" y="${y - 17}" width="18" height="34" rx="4" fill="${MUST}"/>` +
-      `<rect x="110" y="${y - 3.5}" width="80" height="7" fill="${MUST}"/>` +
-      (big
-        ? `<circle cx="150" cy="${y}" r="15" fill="${BG}" stroke="${MUST}" stroke-width="6"/><path d="M143 ${y - 7} L157 ${y + 7} M157 ${y - 7} L143 ${y + 7}" stroke="${INK}" stroke-width="4.5" stroke-linecap="round"/>`
-        : `<circle cx="150" cy="${y}" r="8" fill="${MUST}"/>`);
-    return `<circle cx="150" cy="150" r="138" fill="none" stroke="${INK}" stroke-width="6"/><circle cx="150" cy="150" r="126" fill="none" stroke="${INK}" stroke-width="2"/>` +
-      ring('dl', 102, 114, 'REAR DIFF LOCK', 'TWH · 4X4 · CHILE', 21, 16) +
-      t(37, 157, '★', 16, INK, 'Arial', mid) + t(263, 157, '★', 16, INK, 'Arial', mid) +
-      `<rect x="146.5" y="112" width="7" height="62" fill="${MUST}"/>` + axle(110, false) + axle(188, true);
-  },
-
   // 4. Mud Terrain: neumático de frente: goma continua con surcos de hombro alternados, canal central en zigzag y curvatura
   'mud-terrain': () => {
     const cy = 112, R = 92, x0 = 100, x1 = 200, rows = 11;
@@ -203,21 +189,6 @@ const LOGOS = {
       t(150, 290, 'CHILE · EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="7"'));
   },
 
-  // 9. Off Road Recovery: dos planchas de rescate cruzadas (id road-sign se mantiene)
-  'road-sign': () => {
-    const board = (rot, col) => {
-      let studs = '';
-      for (let k = 0; k < 7; k++) studs += `<rect x="-15" y="${-74 + k * 21}" width="30" height="7" rx="2" fill="${BG}" opacity=".55"/>`;
-      return `<g transform="translate(150 118) rotate(${rot})"><rect x="-24" y="-86" width="48" height="172" rx="12" fill="${col}"/>` +
-        `<rect x="-12" y="-80" width="24" height="10" rx="5" fill="${BG}"/>` + studs + '</g>';
-    };
-    return t(150, 34, 'TWH', 18, INK, BLACK, mid + ' letter-spacing="6"') +
-      board(-38, ORANGE) + board(38, RED) +
-      `<rect x="40" y="214" width="220" height="6" fill="${INK}"/>` +
-      t(150, 252, 'OFF ROAD', 30, INK, BLACK, mid + ' letter-spacing="2"') +
-      t(150, 282, 'RECOVERY TEAM · CHILE', 13, MUST, COND, mid + ' ' + cond('letter-spacing="5"'));
-  },
-
   // 10. Sol retro de los 70 con franjas
   'sunset': () =>
     `<defs><clipPath id="sun"><circle cx="150" cy="128" r="92"/></clipPath></defs>` +
@@ -236,18 +207,6 @@ const LOGOS = {
     `<rect x="28" y="190" width="244" height="20" fill="${MUST}"/>` +
     t(150, 205, 'OFF ROAD · 2001', 12, BG, COND, mid + ' ' + cond('letter-spacing="6"')) +
     `<circle cx="44" cy="101" r="3.5" fill="${INK}"/><circle cx="256" cy="101" r="3.5" fill="${INK}"/>`,
-
-  // 12. Placa de puerta de rally (estilo Dakar)
-  'rally-plate': () => {
-    let ch = '';
-    for (let r = 0; r < 2; r++) for (let k = 0; k < 22; k++) if ((r + k) % 2 === 0) ch += `<rect x="${40 + k * 10}" y="${246 + r * 7}" width="10" height="7" fill="${INK}"/>`;
-    return `<rect x="40" y="40" width="220" height="196" rx="14" fill="${INK}"/>` +
-      `<path d="M40 54 Q40 40 54 40 H246 Q260 40 260 54 V92 H40 Z" fill="${RED}"/>` +
-      `<rect x="40" y="92" width="220" height="6" fill="${ORANGE}"/>` +
-      ital(150, 76, t(0, 0, 'TWH RALLY', 24, INK, BLACK, mid + ' letter-spacing="2"')) +
-      t(150, 222, '01', 150, BG, IMPACT, mid) + ch +
-      t(150, 290, '4X4 · SINCE 2001 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
 
   // 13. Race Dept.
   'race-dept': () => {
@@ -294,21 +253,6 @@ const LOGOS = {
     t(66, 146, '★', 14, INK, 'Arial', mid) + t(234, 146, '★', 14, INK, 'Arial', mid),
 
   // ---------- Nuevos (inspirados en la carpeta ideas) ----------
-  // 17. Cruz chopper (estilo West Coast Choppers): hojas claras recortadas por el marco, brazos oscuros, palabras verticales y palabra gótica al centro
-  'iron-cross': () => {
-    const c = 150, H = 122, I = H - 8, T = H + 6;
-    const leaf = (sx, sy) => {
-      const X = (v) => r2(c + sx * v), Y = (v) => r2(c + sy * v);
-      return `M${X(13)} ${Y(13)} C${X(0.55 * H)} ${Y(4)} ${X(H - 2)} ${Y(0.42 * H)} ${X(T)} ${Y(T)} C${X(0.42 * H)} ${Y(H - 2)} ${X(4)} ${Y(0.55 * H)} ${X(13)} ${Y(13)} Z`;
-    };
-    const vert = (w, y0, len) => `<text transform="translate(${c - 13} ${y0}) rotate(90)" font-family="${BLACK}" font-size="34" fill="${INK}" textLength="${len}" lengthAdjust="spacingAndGlyphs">${w}</text>`;
-    return `<defs><clipPath id="wcc"><rect x="${c - I}" y="${c - I}" width="${2 * I}" height="${2 * I}" rx="12"/></clipPath></defs>` +
-      `<rect x="${c - H + 2}" y="${c - H + 2}" width="${2 * H - 4}" height="${2 * H - 4}" rx="16" fill="none" stroke="${INK}" stroke-width="4"/>` +
-      `<g clip-path="url(#wcc)"><path d="${leaf(-1, -1)} ${leaf(1, -1)} ${leaf(-1, 1)} ${leaf(1, 1)}" fill="${INK}"/></g>` +
-      vert('WHITE', c - I + 2, 80) + vert('HILUX', c + 34, 80) +
-      `<g transform="translate(${c} ${c + 21}) scale(1 1.45)"><text x="0" y="0" text-anchor="middle" font-family="'Old English Text MT', 'Times New Roman', serif" font-weight="700" font-size="54" fill="${INK}" stroke="${BG}" stroke-width="7" paint-order="stroke" stroke-linejoin="round" textLength="252" lengthAdjust="spacingAndGlyphs">Off Road</text></g>`;
-  },
-
   // 19. Texto ondulado repetido
   'warp-text': () => {
     let g = '';
@@ -338,30 +282,6 @@ const LOGOS = {
       `<g transform="rotate(-6 150 140)">` +
       `<text x="150" y="150" text-anchor="middle" font-family="'Segoe Script', cursive" font-weight="700" font-size="40" fill="${INK}" stroke="${BG}" stroke-width="10" paint-order="stroke" stroke-linejoin="round">White Hilux</text></g>` +
       ch + t(150, 228, 'OFF ROAD · CHILE · 2001', 13, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
-  // 22. Plano técnico del neumático (estilo dibujo de ingeniería)
-  'tire-blueprint': () => {
-    let grid = '';
-    for (let v = 30; v <= 270; v += 20) grid += `<path d="M${v} 24 V236 M30 ${v - 6} H270" stroke="${INK}" stroke-opacity=".12" stroke-width="1"/>`;
-    let lugs = '';
-    for (let k = 0; k < 28; k++) {
-      const a = k * Math.PI * 2 / 28, x1 = 130 + 86 * Math.cos(a), y1 = 128 + 86 * Math.sin(a), x2 = 130 + 96 * Math.cos(a), y2 = 128 + 96 * Math.sin(a);
-      lugs += `<path d="M${r2(x1)} ${r2(y1)} L${r2(x2)} ${r2(y2)}" stroke="${INK}" stroke-width="5"/>`;
-    }
-    let nuts = '';
-    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; nuts += `<circle cx="${r2(130 + 22 * Math.cos(a))}" cy="${r2(128 + 22 * Math.sin(a))}" r="3.5" fill="none" stroke="${INK}" stroke-width="1.5"/>`; }
-    const arrow = (x, y, dir) => `<path d="M${x} ${y} l-4 ${dir * 8} h8 Z" fill="${MUST}"/>`;
-    return grid +
-      `<circle cx="130" cy="128" r="92" fill="none" stroke="${INK}" stroke-width="2.5"/>` + lugs +
-      `<circle cx="130" cy="128" r="74" fill="none" stroke="${INK}" stroke-width="1.5" stroke-dasharray="4 3"/>` +
-      `<circle cx="130" cy="128" r="48" fill="none" stroke="${INK}" stroke-width="2.5"/><circle cx="130" cy="128" r="12" fill="none" stroke="${INK}" stroke-width="2"/>` + nuts +
-      `<path d="M252 30 V226 M244 30 H260 M244 226 H260" stroke="${MUST}" stroke-width="1.5"/>` + arrow(252, 30, 1) + arrow(252, 226, -1) +
-      `<text transform="translate(266 128) rotate(90)" text-anchor="middle" font-family="${COND}" font-weight="700" style="font-stretch:condensed" font-size="16" fill="${MUST}">35"</text>` +
-      `<path d="M82 196 H178 M82 190 V202 M178 190 V202" stroke="${MUST}" stroke-width="1.5"/>` + t(130, 214, '15" RIM', 12, MUST, COND, mid + ' ' + cond('letter-spacing="2"')) +
-      `<rect x="30" y="242" width="240" height="40" fill="none" stroke="${INK}" stroke-width="1.5"/><path d="M190 242 V282" stroke="${INK}" stroke-width="1.5"/>` +
-      t(40, 260, 'TWH ENGINEERING', 14, INK, COND, cond('letter-spacing="3"')) + t(40, 275, 'MUD TERRAIN · 35X12.50', 9, INK, COND, cond('letter-spacing="2"')) +
-      t(230, 260, 'DWG', 9, INK, COND, mid + ' ' + cond('letter-spacing="2"')) + t(230, 276, '4X4-01', 12, MUST, COND, mid + ' ' + cond());
   },
 
   // 22. Sello Off Road Supply: placa de esquinas cortadas (id round-stamp se mantiene)

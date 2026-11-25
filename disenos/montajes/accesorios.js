@@ -87,8 +87,7 @@ const JOCKEYS = {
   'jockey-twh': { parche: { x0: 36, y0: 43.5, x1: 46, y1: 54, src: svg('logo-header-claro') } },
   'jockey-cl-shop': { parche: { x0: 36, y0: 42.5, x1: 46, y1: 55, src: svg('cl-shop-claro') } },
   'jockey-sello': { logo: { src: svg('round-stamp'), x: 41, y: 48.5, w: 10 } },
-  'jockey-speed-shop': { logo: { src: svg('speed-shop'), x: 41, y: 48.5, w: 10.5 } },
-  'jockey-diff-lock': { logo: { src: svg('diff-lock'), x: 41, y: 48.5, w: 10 } }
+  'jockey-speed-shop': { logo: { src: svg('speed-shop'), x: 41, y: 48.5, w: 10.5 } }
 };
 for (const [id, op] of Object.entries(JOCKEYS)) render(CAP, CS, { oscurecer: true, tapar: [[33.5, 40.5, 48.2, 57.2]], ...op }, id + '.png');
 }

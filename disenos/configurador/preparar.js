@@ -31,11 +31,11 @@ if (!skipBases) {
 // ---------- 2. Medida real de cada logo (caja de lo dibujado) ----------
 const NAMES = {
   'race-dept': '4WD Race Dept.', 'logo-header': 'TWH franjas', 'logo-shop': 'The White Hilux (horizontal)', 'cl-shop': 'The White Hilux CL Shop',
-  'rally-stripes': 'Rally Team', 'twh-4x4': 'TWH 4X4', 'diff-lock': 'Rear Diff Lock', 'mud-terrain': 'Mud Terrain', 'aired-down': 'Aired Down',
-  'checkered-shield': 'Escudo 4x4 Team', 'low-range': 'Low Range Club', 'recovery-crew': 'Recovery Crew', 'road-sign': 'Off Road Recovery',
-  'sunset': 'Sunset', 'patente': 'Patente TWH·4X4', 'rally-plate': 'Placa Rally 01', 'off-road-script': 'Off Road (manuscrita)',
-  'coordenadas': 'Off Road Team', 'supply-co': 'TWH Supply Co.', 'iron-cross': 'Cruz Chopper', 'warp-text': 'Warp',
-  'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'tire-blueprint': 'Plano 35"', 'round-stamp': 'Sello Off Road Supply',
+  'rally-stripes': 'Rally Team', 'twh-4x4': 'TWH 4X4', 'mud-terrain': 'Mud Terrain', 'aired-down': 'Aired Down',
+  'checkered-shield': 'Escudo 4x4 Team', 'low-range': 'Low Range Club', 'recovery-crew': 'Recovery Crew', 
+  'sunset': 'Sunset', 'patente': 'Patente TWH·4X4', 'off-road-script': 'Off Road (manuscrita)',
+  'coordenadas': 'Off Road Team', 'supply-co': 'TWH Supply Co.', 'warp-text': 'Warp',
+  'mountain-patch': 'Race Shop', 'script-checker': 'White Hilux Script', 'round-stamp': 'Sello Off Road Supply',
   'speed-shop': 'Speed Shop', 'tall-stack': 'Off Road Dept.', 'sunburst': 'Sunburst',
   'race-dept-ops': '4WD Race Dept. (oficial)', 'topo-explorers': 'Off Road Explorers', 'rally-raid': 'Rally Raid 4X4',
   'stay-dirty': 'Stay Dirty', 'winch-crew': 'Winch Crew',

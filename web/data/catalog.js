@@ -198,19 +198,19 @@
         sizes: ['Única'], colors: [],
         designs: [
           { id: 'cl-shop', name: 'The White Hilux CL Shop' }, { id: 'race-dept', name: '4WD Race Dept.' }, { id: 'rally-stripes', name: 'Rally Team' },
-          { id: 'twh-4x4', name: 'TWH 4X4' }, { id: 'diff-lock', name: 'Rear Diff Lock' }, { id: 'mud-terrain', name: 'Mud Terrain' },
+          { id: 'twh-4x4', name: 'TWH 4X4' }, { id: 'mud-terrain', name: 'Mud Terrain' },
           { id: 'aired-down', name: 'Aired Down' }, { id: 'checkered-shield', name: 'Escudo 4x4 Team' }, { id: 'low-range', name: 'Low Range Club' },
-          { id: 'recovery-crew', name: 'Recovery Crew' }, { id: 'road-sign', name: 'Off Road Recovery' }, { id: 'sunset', name: 'Sunset' },
-          { id: 'patente', name: 'Patente TWH·4X4' }, { id: 'rally-plate', name: 'Placa Rally 01' }, { id: 'off-road-script', name: 'Off Road' },
+          { id: 'recovery-crew', name: 'Recovery Crew' }, { id: 'sunset', name: 'Sunset' },
+          { id: 'patente', name: 'Patente TWH·4X4' }, { id: 'off-road-script', name: 'Off Road' },
           { id: 'coordenadas', name: 'Off Road Team' }, { id: 'supply-co', name: 'TWH Supply Co.' },
-          { id: 'iron-cross', name: 'Cruz Chopper' }, { id: 'warp-text', name: 'Warp' }, { id: 'mountain-patch', name: 'Race Shop' },
-          { id: 'script-checker', name: 'White Hilux Script' }, { id: 'tire-blueprint', name: 'Plano 35"' }, { id: 'round-stamp', name: 'Sello Off Road Supply' },
+          { id: 'warp-text', name: 'Warp' }, { id: 'mountain-patch', name: 'Race Shop' },
+          { id: 'script-checker', name: 'White Hilux Script' }, { id: 'round-stamp', name: 'Sello Off Road Supply' },
           { id: 'speed-shop', name: 'Speed Shop' }, { id: 'tall-stack', name: 'Off Road Dept.' }, { id: 'sunburst', name: 'Sunburst' }
         ],
         views: [{ shape: 'sticker', logo: 'cl-shop' }],
         images: [], sizeGuide: null, active: true,
         desc: 'Elige tu diseño entre todos los logos TWH. Vinilo troquelado de 10 cm, resistente al agua y al sol. Ideal para la camioneta, el notebook o la nevera.',
-        features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '26 a elección'], ['Uso', 'Exterior e interior']]
+        features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '21 a elección'], ['Uso', 'Exterior e interior']]
       },
       {
         id: 'neumaticos-at', name: 'Neumáticos AT All Terrain', type: 'neumaticos', price: 490000, cotizar: true,

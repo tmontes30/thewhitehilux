@@ -22,19 +22,9 @@ window.TWH_CFG = {
    "b": 0.9133
   },
   {
-   "id": "diff-lock",
-   "name": "Rear Diff Lock",
-   "num": 3,
-   "aspect": 1,
-   "l": 0.03,
-   "r": 0.97,
-   "t": 0.03,
-   "b": 0.97
-  },
-  {
    "id": "mud-terrain",
    "name": "Mud Terrain",
-   "num": 4,
+   "num": 3,
    "aspect": 1,
    "l": 0.105,
    "r": 0.895,
@@ -44,7 +34,7 @@ window.TWH_CFG = {
   {
    "id": "aired-down",
    "name": "Aired Down",
-   "num": 5,
+   "num": 4,
    "aspect": 1,
    "l": 0.08,
    "r": 0.9017,
@@ -54,7 +44,7 @@ window.TWH_CFG = {
   {
    "id": "checkered-shield",
    "name": "Escudo 4x4 Team",
-   "num": 6,
+   "num": 5,
    "aspect": 1,
    "l": 0.155,
    "r": 0.845,
@@ -64,7 +54,7 @@ window.TWH_CFG = {
   {
    "id": "low-range",
    "name": "Low Range Club",
-   "num": 7,
+   "num": 6,
    "aspect": 1,
    "l": 0.11,
    "r": 0.8883,
@@ -74,7 +64,7 @@ window.TWH_CFG = {
   {
    "id": "recovery-crew",
    "name": "Recovery Crew",
-   "num": 8,
+   "num": 7,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.9117,
@@ -82,19 +72,9 @@ window.TWH_CFG = {
    "b": 0.9667
   },
   {
-   "id": "road-sign",
-   "name": "Off Road Recovery",
-   "num": 9,
-   "aspect": 1,
-   "l": 0.125,
-   "r": 0.8667,
-   "t": 0.07,
-   "b": 0.94
-  },
-  {
    "id": "sunset",
    "name": "Sunset",
-   "num": 10,
+   "num": 8,
    "aspect": 1,
    "l": 0.1817,
    "r": 0.8067,
@@ -104,7 +84,7 @@ window.TWH_CFG = {
   {
    "id": "patente",
    "name": "Patente TWH·4X4",
-   "num": 11,
+   "num": 9,
    "aspect": 1,
    "l": 0.05,
    "r": 0.95,
@@ -112,19 +92,9 @@ window.TWH_CFG = {
    "b": 0.7433
   },
   {
-   "id": "rally-plate",
-   "name": "Placa Rally 01",
-   "num": 12,
-   "aspect": 1,
-   "l": 0.075,
-   "r": 0.9067,
-   "t": 0.1333,
-   "b": 0.9667
-  },
-  {
    "id": "race-dept",
    "name": "4WD Race Dept.",
-   "num": 13,
+   "num": 10,
    "aspect": 1,
    "l": 0.1,
    "r": 0.9533,
@@ -134,7 +104,7 @@ window.TWH_CFG = {
   {
    "id": "off-road-script",
    "name": "Off Road (manuscrita)",
-   "num": 14,
+   "num": 11,
    "aspect": 1,
    "l": 0.08,
    "r": 0.9483,
@@ -144,7 +114,7 @@ window.TWH_CFG = {
   {
    "id": "coordenadas",
    "name": "Off Road Team",
-   "num": 15,
+   "num": 12,
    "aspect": 1,
    "l": 0.0583,
    "r": 0.9633,
@@ -154,7 +124,7 @@ window.TWH_CFG = {
   {
    "id": "supply-co",
    "name": "TWH Supply Co.",
-   "num": 16,
+   "num": 13,
    "aspect": 1,
    "l": 0.105,
    "r": 0.895,
@@ -162,19 +132,9 @@ window.TWH_CFG = {
    "b": 0.8017
   },
   {
-   "id": "iron-cross",
-   "name": "Cruz Chopper",
-   "num": 17,
-   "aspect": 1,
-   "l": 0.0683,
-   "r": 0.9283,
-   "t": 0.0933,
-   "b": 0.9067
-  },
-  {
    "id": "warp-text",
    "name": "Warp",
-   "num": 18,
+   "num": 14,
    "aspect": 1,
    "l": 0.0417,
    "r": 0.9383,
@@ -184,7 +144,7 @@ window.TWH_CFG = {
   {
    "id": "mountain-patch",
    "name": "Race Shop",
-   "num": 19,
+   "num": 15,
    "aspect": 1,
    "l": 0.095,
    "r": 0.8833,
@@ -194,7 +154,7 @@ window.TWH_CFG = {
   {
    "id": "script-checker",
    "name": "White Hilux Script",
-   "num": 20,
+   "num": 16,
    "aspect": 1,
    "l": 0.0367,
    "r": 0.9683,
@@ -202,19 +162,9 @@ window.TWH_CFG = {
    "b": 0.76
   },
   {
-   "id": "tire-blueprint",
-   "name": "Plano 35\"",
-   "num": 21,
-   "aspect": 1,
-   "l": 0.0967,
-   "r": 0.9267,
-   "t": 0.0783,
-   "b": 0.9433
-  },
-  {
    "id": "round-stamp",
    "name": "Sello Off Road Supply",
-   "num": 22,
+   "num": 17,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -224,7 +174,7 @@ window.TWH_CFG = {
   {
    "id": "speed-shop",
    "name": "Speed Shop",
-   "num": 23,
+   "num": 18,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.8917,
@@ -234,7 +184,7 @@ window.TWH_CFG = {
   {
    "id": "tall-stack",
    "name": "Off Road Dept.",
-   "num": 24,
+   "num": 19,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9133,
@@ -244,7 +194,7 @@ window.TWH_CFG = {
   {
    "id": "sunburst",
    "name": "Sunburst",
-   "num": 25,
+   "num": 20,
    "aspect": 1,
    "l": 0.1183,
    "r": 0.8817,
@@ -254,7 +204,7 @@ window.TWH_CFG = {
   {
    "id": "cl-shop",
    "name": "The White Hilux CL Shop",
-   "num": 26,
+   "num": 21,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.905,
@@ -264,7 +214,7 @@ window.TWH_CFG = {
   {
    "id": "race-dept-ops",
    "name": "4WD Race Dept. (oficial)",
-   "num": 27,
+   "num": 22,
    "aspect": 1,
    "l": 0.1,
    "r": 0.9,
@@ -274,7 +224,7 @@ window.TWH_CFG = {
   {
    "id": "stay-dirty",
    "name": "Stay Dirty",
-   "num": 28,
+   "num": 23,
    "aspect": 1,
    "l": 0.1283,
    "r": 0.9067,
@@ -284,7 +234,7 @@ window.TWH_CFG = {
   {
    "id": "winch-crew",
    "name": "Winch Crew",
-   "num": 29,
+   "num": 24,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.8567,
@@ -294,7 +244,7 @@ window.TWH_CFG = {
   {
    "id": "twh-monogram",
    "name": "TWH Monograma",
-   "num": 30,
+   "num": 25,
    "aspect": 1,
    "l": 0.0667,
    "r": 0.9333,
@@ -304,7 +254,7 @@ window.TWH_CFG = {
   {
    "id": "twh-varsity",
    "name": "TWH Varsity",
-   "num": 31,
+   "num": 26,
    "aspect": 1,
    "l": 0.1017,
    "r": 0.9217,
@@ -314,7 +264,7 @@ window.TWH_CFG = {
   {
    "id": "twh-stripe-fill",
    "name": "TWH Franjas",
-   "num": 32,
+   "num": 27,
    "aspect": 1,
    "l": 0.0317,
    "r": 0.9517,
@@ -324,7 +274,7 @@ window.TWH_CFG = {
   {
    "id": "twh-crate",
    "name": "TWH Caja militar",
-   "num": 33,
+   "num": 28,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -334,7 +284,7 @@ window.TWH_CFG = {
   {
    "id": "twh-echo",
    "name": "TWH Eco",
-   "num": 34,
+   "num": 29,
    "aspect": 1,
    "l": 0.0567,
    "r": 0.9233,
@@ -344,7 +294,7 @@ window.TWH_CFG = {
   {
    "id": "twh-split",
    "name": "TWH Split",
-   "num": 35,
+   "num": 30,
    "aspect": 1,
    "l": 0.1133,
    "r": 0.8683,
@@ -354,7 +304,7 @@ window.TWH_CFG = {
   {
    "id": "twh-spec",
    "name": "TWH Spec",
-   "num": 36,
+   "num": 31,
    "aspect": 1,
    "l": 0.0933,
    "r": 0.9383,
@@ -364,7 +314,7 @@ window.TWH_CFG = {
   {
    "id": "twh-pill",
    "name": "TWH Pill",
-   "num": 37,
+   "num": 32,
    "aspect": 1,
    "l": 0.12,
    "r": 0.88,
@@ -374,7 +324,7 @@ window.TWH_CFG = {
   {
    "id": "twh-vertical",
    "name": "TWH Vertical",
-   "num": 38,
+   "num": 33,
    "aspect": 1,
    "l": 0.2,
    "r": 0.8017,
@@ -384,7 +334,7 @@ window.TWH_CFG = {
   {
    "id": "twh-extrude",
    "name": "TWH 3D",
-   "num": 39,
+   "num": 34,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.8933,
@@ -394,7 +344,7 @@ window.TWH_CFG = {
   {
    "id": "twh-knockout",
    "name": "TWH Calado",
-   "num": 40,
+   "num": 35,
    "aspect": 1,
    "l": 0.1117,
    "r": 0.8867,
