@@ -138,14 +138,17 @@ function cartReminderEmail(cart, link, code) {
     `<tr><td style="padding:6px 8px;border-bottom:1px solid #ddd">${esc(l.name)}<br><small>${esc(
       [l.design_name, l.size && l.size !== 'Única' ? 'Talla ' + l.size : '', l.color_name].filter(Boolean).join(' · ')
     )}</small></td><td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:center">${esc(l.qty)}</td><td style="padding:6px 8px;border-bottom:1px solid #ddd;text-align:right">${clp(l.total)}</td></tr>`).join('');
-  const subject = 'Continúa tu compra con 10% de descuento 🛻';
+  const subject = code ? 'Continúa tu compra con 10% de descuento 🛻' : 'Tu carrito te espera: continúa tu compra 🛻';
+  const offer = code
+    ? `<p style="margin:0">Te lo guardamos. <b>Continúa tu compra con 10% de descuento</b> con el código:</p>
+    <p style="margin:14px 0;text-align:center"><span style="display:inline-block;border:2px dashed #B3202A;border-radius:8px;padding:10px 18px;font-size:22px;font-weight:bold;letter-spacing:2px;color:#B3202A">${esc(code)}</span></p>`
+    : `<p style="margin:0 0 14px">Te lo guardamos para que retomes tu compra cuando quieras. Es solo un clic: tu carrito queda listo para pagar.</p>`;
   const html = frame(`
     <h2 style="margin:0 0 8px">${first ? '¡Hola ' + esc(first) + '!' : '¡Hola!'} Dejaste algo en tu carrito</h2>
-    <p style="margin:0">Te lo guardamos. <b>Continúa tu compra con 10% de descuento</b> con el código:</p>
-    <p style="margin:14px 0;text-align:center"><span style="display:inline-block;border:2px dashed #B3202A;border-radius:8px;padding:10px 18px;font-size:22px;font-weight:bold;letter-spacing:2px;color:#B3202A">${esc(code)}</span></p>
+    ${offer}
     <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}</tbody></table>
     <p style="margin:20px 0 0;text-align:center"><a href="${esc(link)}" style="background:#B3202A;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">Continuar mi compra</a></p>
-    <p style="margin:16px 0 0;color:#555;font-size:13px">El botón deja tu carrito listo y el código aplicado. Válido para una compra con este correo, sujeto a stock. ¿Dudas? Responde este correo o escríbenos por Instagram @the.whitehilux.</p>`);
+    <p style="margin:16px 0 0;color:#555;font-size:13px">${code ? 'El botón deja tu carrito listo y el código aplicado. Válido para una compra con este correo, sujeto a stock.' : 'Los productos están sujetos a stock.'} ¿Dudas? Responde este correo o escríbenos por Instagram @the.whitehilux.</p>`);
   return { subject, html };
 }
 

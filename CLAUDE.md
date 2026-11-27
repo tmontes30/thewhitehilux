@@ -107,7 +107,7 @@ Login con Google (correo admin). Al entrar muestra un círculo de carga (no el l
 | `probarPush` | Push de prueba (requiere sesión admin). |
 | `evento` | Visitas de la tienda (§5). |
 | `guardarCarrito` | Guarda el carrito cuando el cliente escribe su correo (§12). |
-| `recordatorioCarritos` | Cada hora: correo con TWHCV10 a los carritos sin pagar de hace 12 h (§12). |
+| `recordatorioCarritos` | Cada hora: correo para retomar la compra a los carritos sin pagar de hace 12 h (§12). |
 | `simularPago` | Solo para pruebas en emulador. |
 
 Firestore: `tienda/catalogo` (lectura pública, escritura admin), `pedidos/*`, `cupones/*`, `privado/*`, `compras/*`, `pushSubs/*`, `estadisticas/<YYYY-MM-DD>` (lectura admin; las escribe `evento`), `carritos/*` (lectura admin; los escribe `guardarCarrito`). Reglas en `firestore.rules`.
@@ -231,7 +231,7 @@ Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
 
 **2026-11-27 — Carrito abandonado y Contactos**
 - Se eliminan los logos Sunburst, TWH Varsity y TWH Franjas relleno (quedan 51; sticker y configurador renumerados).
-- Carrito guarda el correo; recordatorio a las 12 h con TWHCV10 (10%, solo para quien recibió el recordatorio, 1 vez por correo); pestaña **Contactos** en el panel.
+- Carrito guarda el correo; recordatorio a las 12 h para retomar la compra; pestaña **Contactos** en el panel. Se probó con código TWHCV10 (10%) y el dueño lo **desactivó**: el correo va sin descuento.
 
 **Pendientes / ideas**
 - Backups automáticos de Firestore (diario 7 días + semanal 14 semanas): quedó pendiente de aprobación del dueño.
@@ -245,7 +245,7 @@ Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
 
 - **Tienda** (`carrito.html`): con carrito no vacío y correo válido llama a `guardarCarrito` (al salir del campo correo/nombre/teléfono, al cambiar cantidades y al ocultar la página). Id del carrito en localStorage `twh-cart-id` (se borra en `gracias.html`). Bajo el correo: aviso de que se puede recordar el carrito; `privacidad.html` lo explica.
 - **Firestore `carritos/{cartId}`**: email, nombre, teléfono, líneas (SKU, talla, color, diseño, precio), subtotal, `status` `abierto` (no fue a pagar) · `en_pago` (fue a Mercado Pago; lo marca `crearPreferencia`, que también guarda `cartId` en el pedido) · `comprado` (lo marca `notifyPaid` en todos los carritos de ese correo; `recuperado: true` si ya había recibido el recordatorio). Campos del recordatorio: `recordatorio`, `recordatorioOk`, `recordatorioMs`, `recordatorioNota`.
-- **`recordatorioCarritos`** (cada hora): carritos sin recordatorio, `abierto`/`en_pago`, con ≥ 12 h desde lo último que hizo el cliente (no si tienen > 7 días, si el correo ya pagó otro pedido o si ya recibió un recordatorio en los últimos 30 días). Correo `cartReminderEmail` (`web/lib/email.js`) con el código y el botón **Continuar mi compra** → `carrito.html?recuperar=<líneas base64url>&cupon=TWHCV10&correo=…` (deja el carrito, el correo y el código listos y limpia la URL).
-- **Cupón `TWHCV10`**: 10% en todo; lo crea solo la función (`ensureCuponCarrito`) con `soloRecordatorio: true`. Solo vale con un correo que recibió el recordatorio y una vez por correo (`checkCuponCarrito`, en `validarCupon` —el carrito manda el correo— y en `crearPreferencia`). Se puede desactivar o cambiar en Descuentos (el panel guarda con merge y conserva la marca).
+- **`recordatorioCarritos`** (cada hora): carritos sin recordatorio, `abierto`/`en_pago`, con ≥ 12 h desde lo último que hizo el cliente (no si tienen > 7 días, si el correo ya pagó otro pedido o si ya recibió un recordatorio en los últimos 30 días). Correo `cartReminderEmail` (`web/lib/email.js`) con lo que dejó y el botón **Continuar mi compra** → `carrito.html?recuperar=<líneas base64url>&correo=…` (+ `&cupon=` si hay código; deja el carrito y el correo listos y limpia la URL).
+- **Código de descuento**: hoy **sin código** (`CUPON_CARRITO = ''` en `functions/index.js`; TWHCV10 quedó desactivado, `apagadoAuto`). Si se vuelve a querer: `CUPON_CARRITO = 'TWHCV10'`, activarlo en Descuentos y redeploy. Con código, solo vale para el correo que recibió el recordatorio y una vez (`checkCuponCarrito`, en `validarCupon` y `crearPreferencia`; los cupones con `soloRecordatorio`).
 - **Panel → Contactos**: un contacto por correo (pedidos pagados + carritos); estado Compró / Carrito abandonado, ↺ Recuperado; detalle de cada transacción con SKU ("Pago no realizado · fue a Mercado Pago", "✓ Pagado"), estado del recordatorio y botón "No enviar"; KPIs, filtros, búsqueda, CSV. Contador rojo en la pestaña con los carritos abandonados.
 - **Pruebas en emuladores**: `probarRecordatorios` (solo existe en el emulador) corre el recordatorio a pedido y devuelve los correos; ahí un correo "desactivado" cuenta como enviado. Para el panel con `?emu-login` el usuario admin del emulador debe tener `emailVerified` (lo crea `functions/test/e2e.js`).

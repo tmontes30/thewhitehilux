@@ -248,7 +248,7 @@
   $('email').addEventListener('change', function () { saveCart(true); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveCart(true); });
 
-  // Link del correo de recordatorio: carrito.html?recuperar=<líneas>&cupon=TWHCV10&correo=<correo>
+  // Link del correo de recordatorio: carrito.html?recuperar=<líneas>&correo=<correo> (y &cupon= si el recordatorio lleva código)
   function recover() {
     var q = new URLSearchParams(location.search), r = q.get('recuperar');
     if (!r && !q.get('correo') && !q.get('cupon')) return '';

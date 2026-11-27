@@ -106,7 +106,10 @@ exports._mpOrderBody = mpOrderBody;
 // con el código CUPON_CARRITO (10%) a los que no compraron. El código solo vale para quienes recibieron el recordatorio
 // y una vez por correo (checkCuponCarrito). Colección carritos/{cartId}: solo el admin la lee (panel → Contactos).
 const CARTS = db.collection('carritos');
-const CUPON_CARRITO = 'TWHCV10';
+// Código de descuento del recordatorio. Vacío = el correo solo invita a retomar la compra (2026-11-27: el dueño desactivó TWHCV10).
+// Para volver a usarlo: CUPON_CARRITO = 'TWHCV10', activarlo en Descuentos y redeploy.
+const CUPON_CARRITO = '';
+const CUPON_ANTERIOR = 'TWHCV10';
 const HORAS_RECORDATORIO = 12;
 const okCartId = (s) => /^[a-z0-9]{12,40}$/.test(String(s || ''));
 const okEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || ''));
@@ -202,8 +205,15 @@ async function checkCuponCarrito(code, coupon, email) {
   }
 }
 
-// El cupón TWHCV10 existe siempre (si lo borran en el panel se vuelve a crear; si lo desactivan, queda desactivado)
+// Con código: el cupón existe siempre (si lo borran en el panel se vuelve a crear; si lo desactivan, queda desactivado).
+// Sin código: TWHCV10 se desactiva una sola vez (apagadoAuto); si el dueño lo reactiva en Descuentos, se respeta.
 async function ensureCuponCarrito() {
+  if (!CUPON_CARRITO) {
+    const old = COUPONS.doc(CUPON_ANTERIOR);
+    const o = await old.get();
+    if (o.exists && o.data().active !== false && !o.data().apagadoAuto) await old.set({ active: false, apagadoAuto: true }, { merge: true });
+    return;
+  }
   const ref = COUPONS.doc(CUPON_CARRITO);
   const s = await ref.get();
   if (s.exists) {
@@ -221,7 +231,7 @@ function linkRecuperar(cart) {
   const items = (cart.items || []).map((l) => [l.id, l.size, l.color || '', l.design || '', l.qty]);
   const r = Buffer.from(JSON.stringify(items)).toString('base64url');
   const site = SITE_URL.value().replace(/\/$/, '');
-  return `${site}/carrito.html?recuperar=${r}&cupon=${CUPON_CARRITO}&correo=${encodeURIComponent(cart.email)}`;
+  return `${site}/carrito.html?recuperar=${r}${CUPON_CARRITO ? '&cupon=' + CUPON_CARRITO : ''}&correo=${encodeURIComponent(cart.email)}`;
 }
 
 async function enviarRecordatorios() {

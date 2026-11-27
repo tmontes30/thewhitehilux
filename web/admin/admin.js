@@ -2432,7 +2432,8 @@ function renderContacts() {
   if (!$('tab-contactos')) return;
   const list = contactList();
   const abiertos = list.filter((c) => c.state === 'abandonado');
-  const conCodigo = orders.filter((o) => PAID.includes(o.status) && o.discount && o.discount.code === 'TWHCV10');
+  const recIds = new Set(carts.filter((k) => k.recuperado && k.paidOrderId).map((k) => k.paidOrderId));
+  const recVentas = orders.filter((o) => PAID.includes(o.status) && recIds.has(o.id));
   $('count-carts').hidden = !abiertos.length;
   $('count-carts').textContent = abiertos.length;
   $('ct-kpis').innerHTML = [
@@ -2440,7 +2441,7 @@ function renderContacts() {
     [list.filter((c) => c.buys).length, 'Compraron'],
     [abiertos.length, 'Con carrito abandonado'],
     [list.filter((c) => c.reminded).length, 'Recordatorios enviados'],
-    [`${list.filter((c) => c.recuperado).length} · ${money(conCodigo.reduce((s, o) => s + orderAmount(o), 0))}`, 'Recuperados · vendido con TWHCV10'],
+    [`${list.filter((c) => c.recuperado).length} · ${money(recVentas.reduce((s, o) => s + orderAmount(o), 0))}`, 'Recuperados · vendido tras el recordatorio'],
   ].map(([b, t]) => `<div class="stat"><b>${b}</b><span>${t}</span></div>`).join('');
   $('ct-filters').innerHTML = Object.keys(CT_FILTERS)
     .map((k) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === ctFilter}">${CT_FILTERS[k][0]}<span>${list.filter(CT_FILTERS[k][1]).length}</span></button>`).join('');
