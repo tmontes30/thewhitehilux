@@ -373,6 +373,7 @@ html.filtered #hero, html.filtered #home-extras { display: none; }
 .coupon-ok { color: var(--green); font-size: 13.5px; font-weight: 600; margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
 .coupon-ok button { background: none; border: 0; color: var(--blue); cursor: pointer; padding: 0; font-size: 13px; }
 .coupon-err { color: var(--red); font-size: 13px; margin-top: 6px; }
+.hint-mail { display: block; color: var(--muted, #777); font-size: 12px; margin-top: 4px; line-height: 1.35; }
 .totals .disc { color: var(--green); }
 .line .was { color: var(--muted); text-decoration: line-through; font-size: 12.5px; display: block; }
 

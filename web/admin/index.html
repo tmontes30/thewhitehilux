@@ -25,6 +25,7 @@
       <button type="button" data-tab="ventas" aria-pressed="false">Ventas</button>
       <button type="button" data-tab="utilidades" aria-pressed="false">Utilidades</button>
       <button type="button" data-tab="cliente" aria-pressed="false">Cliente</button>
+      <button type="button" data-tab="contactos" aria-pressed="false">Contactos <span class="count" id="count-carts" hidden></span></button>
       <button type="button" data-tab="productos" aria-pressed="false">Productos y stock</button>
       <button type="button" data-tab="compras" aria-pressed="false">Compras</button>
       <button type="button" data-tab="descuentos" aria-pressed="false">Descuentos</button>
@@ -109,6 +110,18 @@
       <div class="card"><h2 class="card-title">De dónde llegan</h2><div class="table-wrap"><table class="data" id="cl-source"></table></div></div>
       <div class="card"><h2 class="card-title">Desde qué equipo</h2><div class="table-wrap"><table class="data" id="cl-device"></table></div></div>
     </div>
+  </section>
+
+  <!-- CONTACTOS: correos de compradores y carritos abandonados (recordatorio a las 12 h con TWHCV10) -->
+  <section id="tab-contactos" hidden>
+    <div class="stats" id="ct-kpis"></div>
+    <div class="toolbar">
+      <div class="filters" id="ct-filters"></div>
+      <input type="search" id="ct-search" placeholder="Buscar correo, nombre, SKU…" aria-label="Buscar contactos">
+      <button type="button" class="btn ghost" id="ct-export">Exportar CSV</button>
+    </div>
+    <p class="hint" style="margin:-4px 0 8px">Se guarda el correo cuando el cliente lo escribe en el carrito. Si no paga, 12 horas después le llega un correo con <b>10% de descuento (código TWHCV10)</b>, una vez por correo. "Recuperado" = compró después del recordatorio.</p>
+    <div class="card" style="padding:0"><div class="table-wrap"><table class="data ct-table" id="ct-table"></table></div></div>
   </section>
 
   <!-- PRODUCTOS -->
@@ -259,6 +272,7 @@
     <div class="msheet-grid">
       <button type="button" data-tab="utilidades"><b>💰</b>Utilidades</button>
       <button type="button" data-tab="cliente"><b>👀</b>Cliente</button>
+      <button type="button" data-tab="contactos"><b>📇</b>Contactos</button>
       <button type="button" data-tab="compras"><b>📦</b>Compras</button>
       <button type="button" data-tab="descuentos"><b>🏷️</b>Descuentos</button>
       <button type="button" data-tab="ajustes"><b>⚙️</b>Ajustes</button>

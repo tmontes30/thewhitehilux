@@ -6,7 +6,7 @@ Marca de ropa lifestyle 4x4 / off road **The White Hilux (TWH)** (Instagram @the
 - **Backend:** **Firebase** proyecto `the-white-hilux` (Firestore nam5, login Google para el panel, Cloud Functions gen2 en `southamerica-east1`; el trigger `correoEstado` en `us-central1` porque Firestore está en nam5). Plan Blaze con presupuestos de alerta.
 - **Pagos:** Mercado Pago **Checkout Pro vía API de Orders** (producción, cuenta del dueño). **Correos:** Resend. **Notificaciones:** Web Push al panel (PWA en el iPhone).
 - **Panel de admin:** `/admin/` (solo el correo admin de `firestore.rules` y `firebase-config.js`).
-- Estado al 2026-11-25: tienda en producción (ventas reales), 22 productos (10 poleras, 3 polerones, 5 jockeys, 1 sticker con 54 diseños, 3 neumáticos a cotizar), 54 logos.
+- Estado al 2026-11-27: tienda en producción (ventas reales), 22 productos (10 poleras, 3 polerones, 5 jockeys, 1 sticker con 51 diseños, 3 neumáticos a cotizar), 51 logos. Carrito abandonado + pestaña Contactos (§12).
 
 > El dueño habla español: responder siempre en español, simple y claro. Quiere iterar rápido: entregar archivos locales (PNG/SVG/HTML con doble clic), **no** páginas publicadas en claude.ai.
 
@@ -49,7 +49,7 @@ Secretos: solo en `.env` (raíz, privado) y en `functions/.env` / secretos de Fi
   - En el inicio los **neumáticos van al final** (la ropa es protagonista).
   - Con filtros, el banner no aparece (clase `filtered` en `<html>` antes de cargar) y hay un círculo de carga; los links de filtros no llevan `#productos` (en el celular saltaba hacia abajo).
 - `producto.html`: ficha estilo Mercado Libre (galería, color, talla, cantidad, Comprar / Agregar). Promesa de entrega y retiro. Productos Próximamente: botón discreto **Me gusta**. Productos a cotizar: ver §7.
-- `carrito.html` (envío/retiro, punto de retiro, cupón), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`, `seguimiento.html` (Sigue tu pedido), `nosotros.html` (galería de las Hilux), `terminos.html`, `cambios.html`, `privacidad.html` (incluye que se miden visitas de forma anónima).
+- `carrito.html` (envío/retiro, punto de retiro, cupón; guarda el carrito con correo para el recordatorio, §12), `gracias.html`, `pago-pendiente.html`, `pago-fallido.html`, `seguimiento.html` (Sigue tu pedido), `nosotros.html` (galería de las Hilux), `terminos.html`, `cambios.html`, `privacidad.html` (incluye que se miden visitas de forma anónima).
 - `assets/js/store.js`: encabezado/pie (menú con categorías, "Sigue tu pedido"; pie con "© The White Hilux", sin nombre ni RUT; WhatsApp sin mostrar el número), carrito en localStorage, `priceHtml`, botón flotante de WhatsApp y el **contador de visitas** (§5).
 - En computador la tienda usa `zoom` según el ancho (`site.css`: ≥1100 .72 … ≥2500 1.15; `.wrap` máx. 1560).
 - Las páginas funcionan con doble clic (rutas relativas, catálogo base); el pago solo funciona publicado.
@@ -67,7 +67,7 @@ Secretos: solo en `.env` (raíz, privado) y en `functions/.env` / secretos de Fi
 - Etiqueta de cuello ("TWH" + franjas + "RACE SHOP" + talla; 60×40 mm): `disenos/configurador/etiqueta.js` (lo usan el configurador y `node disenos/etiquetas/generar.js`). Dos versiones: clara (prenda negra) y oscura (prenda blanca). En el configurador cada polera/polerón tiene "Etiqueta en el cuello" (sí por defecto).
 
 ### Sticker (`sticker-twh`)
-- Un **diseño por cada logo numerado** de la hoja (`disenos/logos/_todos.png`), en ese orden (54). $2.990, vinilo 10 cm.
+- Un **diseño por cada logo numerado** de la hoja (`disenos/logos/_todos.png`), en ese orden (51). $2.990, vinilo 10 cm.
 - **Stock por diseño**: `core.js` `stockColors(p)` devuelve los ids de diseño cuando el producto tiene `designs`; en todos lados la variante de stock es `l.design || l.color` (servidor `lib/order.js` y webhook, panel `moveStock`/Compras/venta manual, carrito, ficha). Panel: "Controlar stock por diseño" (una fila por logo con miniatura). Tienda: diseños sin stock en gris y AGOTADO; la ficha abre en el primero con stock. Variante SKU del diseño = 10 caracteres del id.
 - Sin control de stock + Disponible = todos los diseños se pueden comprar sin límite.
 
@@ -82,6 +82,7 @@ Login con Google (correo admin). Al entrar muestra un círculo de carga (no el l
   - **+ Venta manual** (transferencia/efectivo): crea `pedidos/*` con `source: "manual"`, `paymentMethod`, `mpFee: 0`, precio editable, entrega en mano / retiro / despacho, descuenta stock (opcional) y `noEmails`. Casilla **Muestra** (prendas que se queda el dueño a precio costo: precio = costo promedio de Compras, `muestra: true`, utilidad ≈ $0, fuera del OTD).
 - **Ventas**: KPIs, ventas por día, más vendidos, stock bajo, ventas por SKU/categoría/región, descuentos usados, OTD por RM/regiones/retiro. **Tocar** una fila/barra filtra todo el tablero (pedido, producto, SKU, categoría, región, día o mes).
 - **Utilidades**: ingresos − costo de lo vendido (promedio por SKU desde Compras; si no hay, promedio de su categoría; si no, $0 con aviso) − envío real − comisión MP (real `mpFee` que guarda el webhook; si no, % estimado) − empaque − otros gastos mensuales. Supuestos en `privado/utilidades`. Comisión MP "al instante": crédito 2,69% + IVA, débito 2,19% + IVA, dinero en cuenta 3,19% + IVA = **3,81%** (supuesto por defecto, editable en el panel). Pagos se buscan con `/v1/payments/search?external_reference=`. Recuperación de la inversión, por mes, por producto y por pedido (tocar para filtrar).
+- **Contactos** (§12): correos de compradores y carritos abandonados con el detalle por SKU, estado del recordatorio, filtros, búsqueda y CSV.
 - **Cliente** (visitas anónimas, §5): KPIs, embudo, productos vistas vs. carro vs. ventas, ❤ Me gusta, lo más tocado, páginas, búsquedas, lo no encontrado, origen, equipo y recomendaciones automáticas. Interruptor "Contar mis visitas desde este navegador" (para probar).
 - **Productos y stock**: resumen de inventario arriba (unidades, valor a costo, a precio de venta, margen); filtros por **categoría** y por **estado** (combinables); por producto: nombre, SKU, precio, estado, descripción, stock por talla/color (o por diseño en el sticker), "+ Registrar llegada"; ❤ me gusta en Próximamente; CSV de inventario por SKU. Neumáticos: "Precio desde (opcional)" y sin stock.
 - **Compras** (`compras/*`): compras a proveedores con costo total IVA incl., ETA y líneas por SKU/talla; costo unitario = total repartido parejo (o costo propio por línea). "Llegó: sumar al stock" o "Cargar al stock antes de que llegue" (marca `stockAdded`, así "Llegó" no vuelve a sumar). Importa `pedido-proveedor/<fecha>/compra.json`. Los costos reales viven solo en Firestore y en carpetas privadas: **nunca** escribirlos en este archivo ni en el repo.
@@ -105,9 +106,11 @@ Login con Google (correo admin). Al entrar muestra un círculo de carga (no el l
 | `alertaEntregas` | 9:00: push con pedidos por vencer (sin correo). |
 | `probarPush` | Push de prueba (requiere sesión admin). |
 | `evento` | Visitas de la tienda (§5). |
+| `guardarCarrito` | Guarda el carrito cuando el cliente escribe su correo (§12). |
+| `recordatorioCarritos` | Cada hora: correo con TWHCV10 a los carritos sin pagar de hace 12 h (§12). |
 | `simularPago` | Solo para pruebas en emulador. |
 
-Firestore: `tienda/catalogo` (lectura pública, escritura admin), `pedidos/*`, `cupones/*`, `privado/*`, `compras/*`, `pushSubs/*`, `estadisticas/<YYYY-MM-DD>` (lectura admin; las escribe `evento`). Reglas en `firestore.rules`.
+Firestore: `tienda/catalogo` (lectura pública, escritura admin), `pedidos/*`, `cupones/*`, `privado/*`, `compras/*`, `pushSubs/*`, `estadisticas/<YYYY-MM-DD>` (lectura admin; las escribe `evento`), `carritos/*` (lectura admin; los escribe `guardarCarrito`). Reglas en `firestore.rules`.
 
 Correos (Resend): dominio thewhitehilux.cavedevz.com verificado (DNS GoDaddy), remitente `pedidos@thewhitehilux.cavedevz.com` (`functions/.env` RESEND_FROM), respuestas a ORDER_EMAIL. Encabezado con el escudo TWH (PNG `web/assets/img/email/logo-escudo.png`; los correos no muestran SVG).
 
@@ -126,8 +129,8 @@ Push: clave VAPID pública en `firebase-config.js` y `functions/.env`; privada e
 ## 6. Logos y configurador
 
 ### Logos (`disenos/logos/generar.js`)
-- Cada logo es una función en el objeto `LOGOS`; **el orden del objeto = el número** en `_todos.png` (y en el configurador y el sticker). Hoy hay **54**: 1–21 los originales que quedan, 22 `race-dept-ops` (oficial), 23–24 Stay Dirty y Winch Crew, 25–35 TWH (Monograma, Varsity, Franjas, Caja militar, Eco, Split, Spec, Pill, Vertical, 3D, Calado), 36–41 minimalistas (paletas nuevas), 42–54 insignias de carrera (escudos, placas, sello Speed Shop, banderas cruzadas, Pit Pass, hexágono, óvalo, Motor Club…).
-- Favoritos del dueño (estilo carrera vintage): **5** `checkered-shield` (escudo con cuadros y TWH rojo), **17** `round-stamp` (placa de esquinas cortadas), **18** `speed-shop` (bandera inclinada + Speed Shop) y **22** `race-dept-ops`. Las insignias 42–54 son variaciones de estos.
+- Cada logo es una función en el objeto `LOGOS`; **el orden del objeto = el número** en `_todos.png` (y en el configurador y el sticker). Hoy hay **51**: 1–20 los originales que quedan, 21 `race-dept-ops` (oficial), 22–23 Stay Dirty y Winch Crew, 24–32 TWH (Monograma, Caja militar, Eco, Split, Spec, Pill, Vertical, 3D, Calado), 33–38 minimalistas (paletas nuevas), 39–51 insignias de carrera (escudos, placas, sello Speed Shop, banderas cruzadas, Pit Pass, hexágono, óvalo, Motor Club…).
+- Favoritos del dueño (estilo carrera vintage): **5** `checkered-shield` (escudo con cuadros y TWH rojo), **17** `round-stamp` (placa de esquinas cortadas), **18** `speed-shop` (bandera inclinada + Speed Shop) y **21** `race-dept-ops`. Las insignias 39–51 son variaciones de estos.
 - Helpers: `t()` texto, `ital()`, `cond()`, `ring()` (texto en anillo), `opsTWH()`, `pt()`/`ptGeo()` (texto de `disenos/fuentes/` convertido a trazo con opentype.js; opciones `fit`, `w`, `ls`, `skew`, `stroke`, `behind`, y `abs`/`bb` para calar o cortar), `cuadros()`, `franjas3()`, `ESCUDO`/`ESCUDO_IN`. Paletas: INK/BG/ORANGE/RED/DRED/MUST/OLIVE + TEAL, SAND, SKY, COBALT, FOREST, MINT, CLAY + NAVY, GOLD, LIME, PURPLE, RUST, BRG, YELLOW, PETROL.
 - Generar: `node disenos/logos/generar.js [ids…]` → `svg/`, `png/`, `_todos.png/svg` y copias sin fondo en `web/assets/logos/` (`<id>.svg` para prenda oscura y `<id>-claro.svg` para prenda clara: INK→oscuro, BG→claro).
 - **Logo oficial** (desde 2026-11-19): `race-dept-ops` = TWH en Black Ops One + 3 franjas + "4WD RACE DEPT." + "CHILE · SINCE 2001"; recorte `web/assets/logos/logo-oficial.svg` (encabezado, portada, pie, panel, configurador). El jockey "TWH Franjas" usa `logo-header.svg`.
@@ -167,7 +170,7 @@ Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
 
 ## 9. Reglas de negocio
 
-- Poleras **$19.990** (negro y blanco). Polerones **$34.990** (negro). Jockeys 5 paneles **$15.990** (negro; parche tejido o bordado). Sticker **$2.990** (54 diseños). Neumáticos desde $490.000 / $690.000 a cotizar.
+- Poleras **$19.990** (negro y blanco). Polerones **$34.990** (negro). Jockeys 5 paneles **$15.990** (negro; parche tejido o bordado). Sticker **$2.990** (51 diseños). Neumáticos desde $490.000 / $690.000 a cotizar.
 - Envío gratis **solo en la RM** sobre $40.000; regiones paga envío. Retiro gratis en los dos puntos.
 - Fotos lifestyle con estampado reemplazado (`fotos-originales/`) están **fuera de la tienda** (los logos no quedaban bien); no volver a usarlas sin fotos nuevas con la prenda real.
 - No usar textos de "preventa" ni "hecho en Chile", ni eslóganes tipo "Pa' la cordillera" o "Fierro viejo".
@@ -226,8 +229,23 @@ Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
 - Configurador con los 54 logos en el orden de la hoja. **Sticker con los 54 logos y stock por diseño.** Panel: filtro por categoría en Productos y stock.
 - Se declinó recrear el diseño "Loose & Lost" de Nick Sawyers con la Hilux (es obra de otro artista); se propuso un prompt de IA de estilo original o un ilustrador.
 
+**2026-11-27 — Carrito abandonado y Contactos**
+- Se eliminan los logos Sunburst, TWH Varsity y TWH Franjas relleno (quedan 51; sticker y configurador renumerados).
+- Carrito guarda el correo; recordatorio a las 12 h con TWHCV10 (10%, solo para quien recibió el recordatorio, 1 vez por correo); pestaña **Contactos** en el panel.
+
 **Pendientes / ideas**
 - Backups automáticos de Firestore (diario 7 días + semanal 14 semanas): quedó pendiente de aprobación del dueño.
 - Revisar que los presupuestos de Firebase no desactiven la facturación (spend cap) y la moneda (CLP vs USD).
 - Sticker: activar stock por diseño y pasarlo a Disponible cuando estén impresos.
 - Neumáticos: aclarar si "desde $X" es por unidad o juego de 4.
+
+---
+
+## 12. Carrito abandonado y Contactos (2026-11-27)
+
+- **Tienda** (`carrito.html`): con carrito no vacío y correo válido llama a `guardarCarrito` (al salir del campo correo/nombre/teléfono, al cambiar cantidades y al ocultar la página). Id del carrito en localStorage `twh-cart-id` (se borra en `gracias.html`). Bajo el correo: aviso de que se puede recordar el carrito; `privacidad.html` lo explica.
+- **Firestore `carritos/{cartId}`**: email, nombre, teléfono, líneas (SKU, talla, color, diseño, precio), subtotal, `status` `abierto` (no fue a pagar) · `en_pago` (fue a Mercado Pago; lo marca `crearPreferencia`, que también guarda `cartId` en el pedido) · `comprado` (lo marca `notifyPaid` en todos los carritos de ese correo; `recuperado: true` si ya había recibido el recordatorio). Campos del recordatorio: `recordatorio`, `recordatorioOk`, `recordatorioMs`, `recordatorioNota`.
+- **`recordatorioCarritos`** (cada hora): carritos sin recordatorio, `abierto`/`en_pago`, con ≥ 12 h desde lo último que hizo el cliente (no si tienen > 7 días, si el correo ya pagó otro pedido o si ya recibió un recordatorio en los últimos 30 días). Correo `cartReminderEmail` (`web/lib/email.js`) con el código y el botón **Continuar mi compra** → `carrito.html?recuperar=<líneas base64url>&cupon=TWHCV10&correo=…` (deja el carrito, el correo y el código listos y limpia la URL).
+- **Cupón `TWHCV10`**: 10% en todo; lo crea solo la función (`ensureCuponCarrito`) con `soloRecordatorio: true`. Solo vale con un correo que recibió el recordatorio y una vez por correo (`checkCuponCarrito`, en `validarCupon` —el carrito manda el correo— y en `crearPreferencia`). Se puede desactivar o cambiar en Descuentos (el panel guarda con merge y conserva la marca).
+- **Panel → Contactos**: un contacto por correo (pedidos pagados + carritos); estado Compró / Carrito abandonado, ↺ Recuperado; detalle de cada transacción con SKU ("Pago no realizado · fue a Mercado Pago", "✓ Pagado"), estado del recordatorio y botón "No enviar"; KPIs, filtros, búsqueda, CSV. Contador rojo en la pestaña con los carritos abandonados.
+- **Pruebas en emuladores**: `probarRecordatorios` (solo existe en el emulador) corre el recordatorio a pedido y devuelve los correos; ahí un correo "desactivado" cuenta como enviado. Para el panel con `?emu-login` el usuario admin del emulador debe tener `emailVerified` (lo crea `functions/test/e2e.js`).

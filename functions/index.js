@@ -23,7 +23,7 @@ const webpush = require('web-push');
 const base = require('./shared/catalog.js');
 const core = require('./shared/core.js');
 const { buildOrder, priceCart, couponCode, newOrderId, toMercadoPagoItems, OrderError } = require('./shared/order.js');
-const { orderHtml, statusEmail, sendEmail } = require('./shared/email.js');
+const { orderHtml, statusEmail, cartReminderEmail, sendEmail } = require('./shared/email.js');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -100,6 +100,179 @@ function mpOrderBody(orderId, order, siteUrl) {
 }
 exports._mpOrderBody = mpOrderBody;
 
+// ---------- Carritos: contactos y recordatorio de carrito abandonado ----------
+// La tienda guarda el carrito apenas el cliente escribe un correo válido (guardarCarrito). Al ir a pagar queda "en_pago"
+// (crearPreferencia) y al pagarse "comprado" (notifyPaid). recordatorioCarritos (cada hora) manda 12 h después un correo
+// con el código CUPON_CARRITO (10%) a los que no compraron. El código solo vale para quienes recibieron el recordatorio
+// y una vez por correo (checkCuponCarrito). Colección carritos/{cartId}: solo el admin la lee (panel → Contactos).
+const CARTS = db.collection('carritos');
+const CUPON_CARRITO = 'TWHCV10';
+const HORAS_RECORDATORIO = 12;
+const okCartId = (s) => /^[a-z0-9]{12,40}$/.test(String(s || ''));
+const okEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || ''));
+const lineaCarrito = (l) => ({
+  id: l.id, sku: l.sku || '', name: l.name || '', size: l.size || '', color: l.color || '', color_name: l.color_name || '',
+  design: l.design || '', design_name: l.design_name || '', qty: l.qty || 1, unit_price: l.unit_price || 0, total: l.net != null ? l.net : l.total || 0,
+});
+
+exports.guardarCarrito = onRequest(
+  { cors: [/thewhitehilux\.cavedevz\.com$/, /tmontes30\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/], memory: '256MiB' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).end();
+    const body = (typeof req.body === 'string' ? safeJson(req.body) : req.body) || {};
+    const cartId = String(body.cartId || '');
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    if (!okCartId(cartId) || !okEmail(email)) return res.status(400).json({ error: 'Datos inválidos' });
+    const items = (Array.isArray(body.items) ? body.items : []).slice(0, 30).map((i) => ({
+      id: String(i.id || '').slice(0, 80), size: String(i.size || '').slice(0, 12), color: String(i.color || '').slice(0, 20),
+      design: String(i.design || '').slice(0, 40), qty: Math.max(1, Math.min(10, Math.round(Number(i.qty) || 1))),
+    })).filter((i) => i.id);
+    if (!items.length) return res.status(204).end();
+    const { data } = await loadCatalog();
+    let lines, subtotal = 0;
+    try {
+      const cart = priceCart(items, data.products, data.config, { today: core.todayCL() });
+      lines = cart.lines.map(lineaCarrito);
+      subtotal = cart.subtotal;
+    } catch (err) {
+      // si algo se agotó igual se guarda lo que eligió (para el panel), con el precio de la tienda
+      lines = items.map((i) => {
+        const p = data.products.find((x) => x.id === i.id) || {};
+        return lineaCarrito({ ...i, name: p.name || i.id, unit_price: p.price || 0, total: (p.price || 0) * i.qty });
+      });
+      subtotal = lines.reduce((s, l) => s + l.total, 0);
+    }
+    const ref = CARTS.doc(cartId);
+    const snap = await ref.get();
+    const prev = snap.exists ? snap.data() : null;
+    if (prev && prev.status === 'comprado') return res.status(204).end(); // ese carrito ya se pagó
+    await ref.set({
+      id: cartId, email,
+      name: String(body.name || '').trim().slice(0, 80), phone: String(body.phone || '').trim().slice(0, 20),
+      items: lines, subtotal,
+      status: prev && prev.status === 'en_pago' ? 'en_pago' : 'abierto',
+      recordatorio: prev ? !!prev.recordatorio : false,
+      ...(prev ? {} : { createdAt: FieldValue.serverTimestamp(), createdMs: Date.now() }),
+      updatedAt: FieldValue.serverTimestamp(), updatedMs: Date.now(),
+    }, { merge: true });
+    return res.status(204).end();
+  }
+);
+
+// Al ir a pagar: el carrito queda "en_pago" y ligado al pedido
+async function carritoEnPago(cartId, orderId, order) {
+  if (!okCartId(cartId)) return;
+  const ref = CARTS.doc(cartId);
+  const snap = await ref.get();
+  if (snap.exists && snap.data().status === 'comprado') return;
+  await ref.set({
+    id: cartId, email: (order.customer.email || '').toLowerCase(), name: order.customer.name || '', phone: order.customer.phone || '',
+    items: order.lines.map(lineaCarrito), subtotal: order.subtotal, total: order.total, orderId, status: 'en_pago',
+    recordatorio: snap.exists ? !!snap.data().recordatorio : false,
+    ...(snap.exists ? {} : { createdAt: FieldValue.serverTimestamp(), createdMs: Date.now() }),
+    updatedAt: FieldValue.serverTimestamp(), updatedMs: Date.now(),
+  }, { merge: true });
+}
+
+// Al pagarse: todos los carritos abiertos de ese correo pasan a "comprado" (recuperado = había recibido el recordatorio)
+async function carritosComprados(order) {
+  const email = ((order.customer && order.customer.email) || '').toLowerCase();
+  const refs = new Map();
+  if (okCartId(order.cartId)) refs.set(order.cartId, CARTS.doc(order.cartId));
+  if (email) (await CARTS.where('email', '==', email).get()).docs.forEach((d) => refs.set(d.id, d.ref));
+  await Promise.all([...refs.values()].map(async (ref) => {
+    const s = await ref.get();
+    if (!s.exists || s.data().status === 'comprado') return;
+    await ref.set({ status: 'comprado', paidOrderId: order.id, compradoMs: Date.now(), recuperado: !!s.data().recordatorio }, { merge: true });
+  }));
+}
+
+// El código del recordatorio: solo para quienes lo recibieron, y una vez por correo
+async function checkCuponCarrito(code, coupon, email) {
+  if (!coupon || !coupon.soloRecordatorio) return;
+  const mail = String(email || '').trim().toLowerCase();
+  if (!okEmail(mail)) throw new OrderError('Escribe tu correo arriba para usar este código.');
+  const carts = await CARTS.where('email', '==', mail).get();
+  if (!carts.docs.some((d) => d.data().recordatorio === true && d.data().recordatorioOk)) {
+    throw new OrderError('Este código es para quienes recibieron el recordatorio de su carrito en ese correo.');
+  }
+  const pedidos = await ORDERS.where('customer.email', '==', mail).get();
+  if (pedidos.docs.some((d) => PAID.includes(d.data().status) && d.data().discount && d.data().discount.code === code)) {
+    throw new OrderError('Ya usaste este código en una compra anterior.');
+  }
+}
+
+// El cupón TWHCV10 existe siempre (si lo borran en el panel se vuelve a crear; si lo desactivan, queda desactivado)
+async function ensureCuponCarrito() {
+  const ref = COUPONS.doc(CUPON_CARRITO);
+  const s = await ref.get();
+  if (s.exists) {
+    if (!s.data().soloRecordatorio) await ref.set({ soloRecordatorio: true }, { merge: true });
+    return;
+  }
+  await ref.set({
+    code: CUPON_CARRITO, name: 'Recordatorio de carrito abandonado', kind: 'percent', value: 10, scope: 'all', targets: [],
+    from: '', to: '', active: true, minSubtotal: 0, maxUses: 0, soloRecordatorio: true, createdAt: new Date().toISOString(),
+  });
+}
+
+// Link para retomar la compra: lleva las líneas, el correo y el código
+function linkRecuperar(cart) {
+  const items = (cart.items || []).map((l) => [l.id, l.size, l.color || '', l.design || '', l.qty]);
+  const r = Buffer.from(JSON.stringify(items)).toString('base64url');
+  const site = SITE_URL.value().replace(/\/$/, '');
+  return `${site}/carrito.html?recuperar=${r}&cupon=${CUPON_CARRITO}&correo=${encodeURIComponent(cart.email)}`;
+}
+
+async function enviarRecordatorios() {
+  const enviados = [];
+  await ensureCuponCarrito();
+  const now = Date.now();
+  const limite = now - HORAS_RECORDATORIO * 3600 * 1000;
+  const pend = await CARTS.where('recordatorio', '==', false).get();
+  for (const d of pend.docs) {
+    const c = d.data();
+    if (!['abierto', 'en_pago'].includes(c.status) || !okEmail(c.email) || !(c.items || []).length) continue;
+    if ((c.updatedMs || 0) > limite) continue; // aún no pasan 12 h desde lo último que hizo
+    if ((c.updatedMs || 0) < now - 7 * 24 * 3600 * 1000) { // muy antiguo: no se manda
+      await d.ref.set({ recordatorio: true, recordatorioOk: false, recordatorioNota: 'antiguo, no se envió' }, { merge: true });
+      continue;
+    }
+    // ¿compró igual (otro carrito u otro equipo)?
+    const ped = await ORDERS.where('customer.email', '==', c.email).get();
+    if (ped.docs.some((o) => PAID.includes(o.data().status) && (o.data().paidAt ? o.data().paidAt.toMillis() : 0) >= (c.createdMs || 0))) {
+      await d.ref.set({ status: 'comprado', recuperado: false, compradoMs: now }, { merge: true });
+      continue;
+    }
+    // un solo recordatorio por correo cada 30 días (si retomó en otro equipo se crea otro carrito)
+    const otros = await CARTS.where('email', '==', c.email).get();
+    if (otros.docs.some((o) => o.id !== d.id && o.data().recordatorioOk && (o.data().recordatorioMs || 0) > now - 30 * 24 * 3600 * 1000)) {
+      await d.ref.set({ recordatorio: true, recordatorioOk: false, recordatorioNota: 'ya se le envió uno hace poco' }, { merge: true });
+      continue;
+    }
+    const m = cartReminderEmail(c, linkRecuperar(c), CUPON_CARRITO);
+    let ok = false, nota = '';
+    try {
+      const r = await sendEmail({ to: c.email, subject: m.subject, html: m.html, from: RESEND_FROM.value(), replyTo: ORDER_EMAIL.value(), key: secret(RESEND_API_KEY) });
+      ok = !r.skipped || EMULATOR; nota = r.skipped ? 'correos desactivados' : ''; // en los emuladores se da por enviado
+    } catch (err) {
+      nota = String((err && err.message) || err).slice(0, 200);
+      logger.error('[recordatorio carrito]', d.id, nota);
+    }
+    await d.ref.set({ recordatorio: true, recordatorioOk: ok, recordatorioMs: now, recordatorioNota: nota }, { merge: true });
+    logger.info('[recordatorio carrito]', d.id, c.email, ok ? 'enviado' : 'no enviado');
+    enviados.push({ id: d.id, email: c.email, ok, subject: m.subject, html: m.html });
+  }
+  return enviados;
+}
+
+exports.recordatorioCarritos = onSchedule(
+  { schedule: 'every 60 minutes', timeZone: 'America/Santiago', secrets: [RESEND_API_KEY] },
+  async () => { await enviarRecordatorios(); }
+);
+// Solo en los emuladores: corre el recordatorio a pedido (para probar)
+if (EMULATOR) exports.probarRecordatorios = onRequest({ cors: true, secrets: [RESEND_API_KEY] }, async (req, res) => res.json(await enviarRecordatorios()));
+
 // ---------- crearPreferencia ----------
 exports.crearPreferencia = onRequest(
   {
@@ -114,6 +287,7 @@ exports.crearPreferencia = onRequest(
     let order;
     try {
       const { code, coupon } = await findCoupon(body && body.coupon);
+      await checkCuponCarrito(code, coupon, body && body.customer && body.customer.email);
       order = buildOrder(body, data.products, data.config, { couponCode: code, coupon, today: core.todayCL() });
     } catch (err) {
       if (err instanceof OrderError) return res.status(400).json({ error: err.message });
@@ -135,7 +309,9 @@ exports.crearPreferencia = onRequest(
       subtotal: order.subtotal,
       discount: order.discount || null,
       total: order.total,
+      cartId: body && okCartId(body.cartId) ? body.cartId : null,
     });
+    await carritoEnPago(body && body.cartId, orderId, order).catch((err) => logger.warn('[carrito] en pago', err.message));
 
     // En los emuladores sin token de Mercado Pago: simula el pago para poder probar todo el flujo
     if (!token && EMULATOR) {
@@ -168,6 +344,7 @@ exports.validarCupon = onRequest(
       const { data } = await loadCatalog();
       const { code, coupon } = await findCoupon(body.coupon);
       if (!code) return res.status(400).json({ error: 'Escribe un código.' });
+      await checkCuponCarrito(code, coupon, body.email);
       const cart = priceCart(body.items, data.products, data.config, { couponCode: code, coupon, today: core.todayCL() });
       return res.json({ ok: true, code, label: cart.discount.label, amount: cart.discount.amount, subtotal: cart.subtotal });
     } catch (err) {
@@ -353,6 +530,7 @@ async function notifyPaid(order) {
     mailAndLog('pago confirmado', order.customer && order.customer.email, { subject: `Tu pedido ${order.id} en The White Hilux`, html: orderHtml(view, true) }, m),
   ]);
   await logNotif(order.id, entries);
+  await carritosComprados(order).catch((err) => logger.warn('[carrito] comprado', err.message));
 }
 
 // Comisión real que cobró Mercado Pago (para la pestaña Utilidades). Busca el pago aprobado por N° de pedido.

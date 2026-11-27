@@ -24,7 +24,7 @@ if (F.useEmulators) {
 const CATALOG = doc(db, 'tienda', 'catalogo');
 const PAID = ['pagado', 'preparando', 'despachado', 'entregado'];
 const COURIERS = ['Starken', 'Chilexpress', 'Blue Express', 'Correos de Chile', 'Despacho propio', 'Otro'];
-const TABS = ['pedidos', 'ventas', 'utilidades', 'cliente', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
+const TABS = ['pedidos', 'ventas', 'utilidades', 'cliente', 'contactos', 'productos', 'compras', 'descuentos', 'configurador', 'ajustes'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -37,6 +37,8 @@ let data = C.mergeCatalog(BASE, null); // catálogo mezclado
 let orders = [];
 let coupons = [];
 let compras = [];
+let carts = [];
+let ctFilter = 'todos';
 let orderFilter = 'abiertos';
 let prodFilter = 'todos';
 let prodCat = 'todas';
@@ -134,8 +136,13 @@ onAuthStateChanged(auth, async (user) => {
     onSnapshot(query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'), limit(2000)), (s) => {
       orders = s.docs.map((d) => ({ ...d.data(), id: d.id }));
       renderOrders();
+      renderContacts();
       renderSales();
       renderProfit();
+    }, fail),
+    onSnapshot(query(collection(db, 'carritos'), orderBy('updatedMs', 'desc'), limit(3000)), (s) => {
+      carts = s.docs.map((d) => ({ ...d.data(), id: d.id }));
+      renderContacts();
     }, fail),
     onSnapshot(collection(db, 'cupones'), (s) => {
       coupons = s.docs.map((d) => ({ ...d.data(), code: d.id }));
@@ -167,7 +174,7 @@ $('tabs').addEventListener('click', (e) => {
 });
 
 // ---------- Celular / app del iPhone: barra inferior, botón "+" (venta manual) y panel "Más" ----------
-const TAB_TITLES = { pedidos: 'Pedidos', ventas: 'Ventas', utilidades: 'Utilidades', cliente: 'Cliente', productos: 'Productos y stock', compras: 'Compras', descuentos: 'Descuentos', configurador: 'Configurador', ajustes: 'Ajustes' };
+const TAB_TITLES = { pedidos: 'Pedidos', ventas: 'Ventas', utilidades: 'Utilidades', cliente: 'Cliente', contactos: 'Contactos', productos: 'Productos y stock', compras: 'Compras', descuentos: 'Descuentos', configurador: 'Configurador', ajustes: 'Ajustes' };
 function syncMobileNav(name) {
   const inNav = ['pedidos', 'ventas', 'productos'].includes(name);
   document.querySelectorAll('#mnav button[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
@@ -1220,7 +1227,7 @@ function renderDiscounts() {
           <div class="big">${discBig(c)}</div>
           <div><span class="code">${esc(c.code)}</span> <span class="pill ${cls}">${st}</span>
             <div class="meta">${discBig(c)} ${discScope(c)}${c.minSubtotal ? ' · compra mínima ' + money(c.minSubtotal) : ''} · ${discDates(c)}</div>
-            <div class="meta">Usado <b>${plural(c.uses || 0, 'vez', 'veces')}</b>${c.maxUses ? ' de ' + c.maxUses : ''}${c.name ? ' · ' + esc(c.name) : ''}</div></div>
+            <div class="meta">Usado <b>${plural(c.uses || 0, 'vez', 'veces')}</b>${c.maxUses ? ' de ' + c.maxUses : ''}${c.name ? ' · ' + esc(c.name) : ''}${c.soloRecordatorio ? ' · <b>solo para quienes recibieron el recordatorio de carrito (1 vez por correo)</b>' : ''}</div></div>
           <div class="acts">
             <label class="switch"><input type="checkbox" data-act="toggle" ${c.active === false ? '' : 'checked'}> Activo</label>
             <button type="button" class="btn small" data-act="copy">Copiar código</button>
@@ -2358,3 +2365,119 @@ function renderClienteIn() {
   $('cl-insights').innerHTML = (tips.length ? tips : [['info', 'Todo se ve sano en este período. Mira el embudo semana a semana.']])
     .map(([t, h]) => `<li class="${t}"><span>${ICO[t]}</span><p>${h}</p></li>`).join('');
 }
+// ---------- Contactos: compradores y carritos abandonados ----------
+// carritos/{id} los guarda la función guardarCarrito cuando el cliente escribe su correo en el carrito.
+// status: abierto (no fue a pagar) · en_pago (fue a Mercado Pago y no pagó) · comprado. recordatorio/recordatorioOk/recordatorioMs: correo de las 12 h.
+const CT_HOURS = 12;
+const fmtMs = (ms) => { if (!ms) return '—'; const d = new Date(ms); return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }); };
+const tsMs = (t) => (t && t.toMillis ? t.toMillis() : t && t.seconds ? t.seconds * 1000 : 0);
+const lineVar = (l) => [l.design_name, l.size && l.size !== 'Única' ? l.size : '', l.color_name].filter(Boolean).join(', ');
+const lineTxt = (l) => `${l.qty} × ${l.name}${lineVar(l) ? ' (' + lineVar(l) + ')' : ''}`;
+const orderAmount = (o) => Number(o.paidAmount != null ? o.paidAmount : o.total) || 0;
+function contactList() {
+  const map = new Map();
+  const get = (email) => {
+    const k = String(email || '').trim().toLowerCase();
+    if (!k) return null;
+    if (!map.has(k)) map.set(k, { email: k, name: '', phone: '', tx: [], buys: 0, spent: 0, last: 0 });
+    return map.get(k);
+  };
+  orders.filter((o) => PAID.includes(o.status)).forEach((o) => {
+    const c = get(o.customer && o.customer.email); if (!c) return;
+    const ms = tsMs(o.paidAt) || tsMs(o.createdAt);
+    c.tx.push({ kind: 'compra', ms, id: o.id, lines: o.lines || [], total: orderAmount(o), code: o.discount && o.discount.code, manual: o.source === 'manual' });
+    c.buys++; c.spent += orderAmount(o);
+    if (ms >= c.last) { c.last = ms; c.name = (o.customer && o.customer.name) || c.name; c.phone = (o.customer && o.customer.phone) || c.phone; }
+  });
+  carts.forEach((k) => {
+    const c = get(k.email); if (!c) return;
+    if (k.recuperado) c.recuperado = true;
+    if (k.recordatorioOk) c.reminded = Math.max(c.reminded || 0, k.recordatorioMs || 0);
+    const ms = k.updatedMs || 0;
+    if (k.status !== 'comprado') c.tx.push({ kind: 'carrito', ms, cart: k, lines: k.items || [], total: k.total || k.subtotal || 0 });
+    if (ms >= c.last || !c.name) { c.name = k.name || c.name; c.phone = k.phone || c.phone; }
+    c.last = Math.max(c.last, ms);
+  });
+  return [...map.values()].map((c) => {
+    c.tx.sort((a, b) => b.ms - a.ms);
+    const lastBuy = c.tx.find((t) => t.kind === 'compra');
+    c.open = c.tx.filter((t) => t.kind === 'carrito' && (!lastBuy || t.ms > lastBuy.ms));
+    c.state = c.open.length ? 'abandonado' : 'compro';
+    return c;
+  }).sort((a, b) => b.last - a.last);
+}
+const CT_FILTERS = {
+  todos: ['Todos', () => true],
+  compro: ['Compraron', (c) => c.buys > 0],
+  abandonado: ['Carrito abandonado', (c) => c.state === 'abandonado'],
+  recordado: ['Recordatorio enviado', (c) => !!c.reminded],
+  recuperado: ['Recuperados', (c) => !!c.recuperado],
+};
+function reminderTxt(k) {
+  if (k.recordatorioOk) return `<span class="pill amber">✉ Recordatorio enviado ${esc(fmtMs(k.recordatorioMs))}</span>`;
+  if (k.recordatorio) return `<span class="pill gray">Sin recordatorio${k.recordatorioNota ? ' · ' + esc(k.recordatorioNota) : ''}</span>`;
+  const left = Math.max(0, Math.ceil(((k.updatedMs || 0) + CT_HOURS * 3600000 - Date.now()) / 3600000));
+  return `<span class="pill gray">Recordatorio ${left ? 'en ~' + left + ' h' : 'en la próxima hora'}</span> <button type="button" class="linkbtn" data-ct-stop="${esc(k.id)}">No enviar</button>`;
+}
+function txHtml(t) {
+  const skus = t.lines.map((l) => `<div class="ct-line"><code>${esc(skuOfLine(l) || '—')}</code> ${esc(lineTxt(l))}</div>`).join('');
+  if (t.kind === 'compra') {
+    return `<div class="ct-tx"><div><span class="pill green">✓ Pagado</span> <b>${money(t.total)}</b> · ${esc(fmtMs(t.ms))} · <a href="#pedidos" data-ct-order="${esc(t.id)}">${esc(t.id)}</a>${t.code ? ' · código ' + esc(t.code) : ''}${t.manual ? ' · venta manual' : ''}</div>${skus}</div>`;
+  }
+  const k = t.cart;
+  const why = k.status === 'en_pago' ? 'Pago no realizado · fue a Mercado Pago' : 'Pago no realizado';
+  return `<div class="ct-tx"><div><span class="pill red">✕ ${why}</span> <b>${money(t.total)}</b> · ${esc(fmtMs(t.ms))}</div>${skus}<div class="ct-rem">${reminderTxt(k)}</div></div>`;
+}
+function renderContacts() {
+  if (!$('tab-contactos')) return;
+  const list = contactList();
+  const abiertos = list.filter((c) => c.state === 'abandonado');
+  const conCodigo = orders.filter((o) => PAID.includes(o.status) && o.discount && o.discount.code === 'TWHCV10');
+  $('count-carts').hidden = !abiertos.length;
+  $('count-carts').textContent = abiertos.length;
+  $('ct-kpis').innerHTML = [
+    [list.length, 'Contactos con correo'],
+    [list.filter((c) => c.buys).length, 'Compraron'],
+    [abiertos.length, 'Con carrito abandonado'],
+    [list.filter((c) => c.reminded).length, 'Recordatorios enviados'],
+    [`${list.filter((c) => c.recuperado).length} · ${money(conCodigo.reduce((s, o) => s + orderAmount(o), 0))}`, 'Recuperados · vendido con TWHCV10'],
+  ].map(([b, t]) => `<div class="stat"><b>${b}</b><span>${t}</span></div>`).join('');
+  $('ct-filters').innerHTML = Object.keys(CT_FILTERS)
+    .map((k) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === ctFilter}">${CT_FILTERS[k][0]}<span>${list.filter(CT_FILTERS[k][1]).length}</span></button>`).join('');
+  const q = $('ct-search').value.trim().toLowerCase();
+  const rows = list.filter(CT_FILTERS[ctFilter][1]).filter((c) => !q || [c.email, c.name, c.phone, ...c.tx.flatMap((t) => t.lines.map((l) => (skuOfLine(l) || '') + ' ' + l.name))].join(' ').toLowerCase().includes(q));
+  $('ct-table').innerHTML = `<thead><tr><th>Contacto</th><th>Estado</th><th>Detalle (SKU)</th></tr></thead><tbody>${rows.map((c) => {
+    const estado = c.state === 'abandonado'
+      ? `<span class="pill red">Carrito abandonado</span>${c.buys ? `<br><small class="hint">Ya compró ${c.buys} ${c.buys === 1 ? 'vez' : 'veces'}</small>` : ''}`
+      : `<span class="pill green">Compró${c.buys > 1 ? ' ×' + c.buys : ''}</span>`;
+    const rec = c.recuperado ? '<br><span class="pill amber ct-rec">↺ Recuperado</span>' : '';
+    const tx = c.tx.slice(0, 3).map(txHtml).join('') + (c.tx.length > 3 ? `<small class="hint">+ ${c.tx.length - 3} más (en el CSV)</small>` : '');
+    const phone = c.phone ? `<br><a href="https://wa.me/${esc(c.phone.replace(/\D/g, ''))}" target="_blank" rel="noopener">${esc(c.phone)}</a>` : '';
+    return `<tr><td class="ct-who"><b>${esc(c.name || '—')}</b><br><a href="mailto:${esc(c.email)}">${esc(c.email)}</a>${phone}${c.buys ? `<br><small class="hint">Total comprado ${money(c.spent)}</small>` : ''}</td><td>${estado}${rec}</td><td>${tx}</td></tr>`;
+  }).join('') || '<tr><td colspan="3" class="hint" style="padding:16px">Todavía no hay contactos en este filtro.</td></tr>'}</tbody>`;
+}
+$('ct-filters').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-f]');
+  if (b) { ctFilter = b.dataset.f; renderContacts(); }
+});
+$('ct-search').addEventListener('input', renderContacts);
+$('ct-table').addEventListener('click', async (e) => {
+  const stop = e.target.closest('[data-ct-stop]');
+  if (stop) {
+    if (!confirm('¿No enviar el recordatorio a este carrito?')) return;
+    await updateDoc(doc(db, 'carritos', stop.dataset.ctStop), { recordatorio: true, recordatorioOk: false, recordatorioNota: 'desactivado en el panel' }).catch(fail);
+    return;
+  }
+  const o = e.target.closest('[data-ct-order]');
+  if (o) { e.preventDefault(); showTab('pedidos'); $('order-search').value = o.dataset.ctOrder; orderFilter = 'todos'; renderOrders(); }
+});
+$('ct-export').addEventListener('click', () => {
+  const rows = [];
+  contactList().forEach((c) => c.tx.forEach((t) => rows.push([
+    c.email, c.name, c.phone, t.kind === 'compra' ? 'Pagado' : (t.cart.status === 'en_pago' ? 'Pago no realizado (fue a Mercado Pago)' : 'Pago no realizado'),
+    fmtMs(t.ms), t.id || '', t.lines.map((l) => skuOfLine(l)).join(' | '), t.lines.map(lineTxt).join(' | '), Math.round(t.total),
+    t.kind === 'carrito' ? (t.cart.recordatorioOk ? 'Enviado ' + fmtMs(t.cart.recordatorioMs) : t.cart.recordatorio ? 'No' : 'Pendiente') : '',
+    c.recuperado ? 'Sí' : '',
+  ])));
+  downloadCsv(`contactos-twh-${C.todayCL()}.csv`, ['Correo', 'Nombre', 'Teléfono', 'Estado', 'Fecha', 'Pedido', 'SKU', 'Productos', 'Monto', 'Recordatorio', 'Recuperado'], rows);
+});

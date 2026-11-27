@@ -25,7 +25,7 @@
     <h2>Datos de entrega</h2>
     <div class="field"><label for="name">Nombre y apellido</label><input id="name" name="name" autocomplete="name" required></div>
     <div class="row2">
-      <div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" autocomplete="email" required><small class="hint-mail">Te enviamos ahí la confirmación. Si no terminas la compra, te podemos recordar tu carrito.</small></div>
       <div class="field"><label for="phone">Teléfono / WhatsApp</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+56 9 1234 5678" required></div>
     </div>
 
@@ -178,7 +178,7 @@
     if (location.protocol === 'file:') return couponErr('Los códigos funcionan en la tienda publicada.');
     var btn = $('coupon-apply');
     btn.disabled = true;
-    fetch(window.TWH_FIREBASE.apiBase + '/validarCupon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coupon: code, items: TWH.Cart.items() }) })
+    fetch(window.TWH_FIREBASE.apiBase + '/validarCupon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coupon: code, items: TWH.Cart.items(), email: $('email').value.trim() }) })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) throw new Error(res.j.error || 'No pudimos validar el código.');
@@ -219,9 +219,59 @@
     } catch (e) {}
   }
 
+  // ---------- Carrito con correo (contactos y recordatorio de carrito abandonado) ----------
+  var CART_ID = 'twh-cart-id';
+  var MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function cartId() {
+    var id = null; try { id = localStorage.getItem(CART_ID); } catch (e) {}
+    if (!/^[a-z0-9]{12,40}$/.test(id || '')) {
+      id = ''; while (id.length < 20) id += Math.random().toString(36).slice(2);
+      id = id.slice(0, 20);
+      try { localStorage.setItem(CART_ID, id); } catch (e) {}
+    }
+    return id;
+  }
+  var lastSaved = '', saveTimer = null;
+  function saveCart(now) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      var email = $('email').value.trim().toLowerCase(), items = TWH.Cart.items();
+      if (!MAIL_RE.test(email) || !items.length || location.protocol === 'file:') return;
+      var body = { cartId: cartId(), email: email, name: $('name').value.trim(), phone: $('phone').value.trim(), items: items };
+      var sig = JSON.stringify(body);
+      if (sig === lastSaved) return;
+      lastSaved = sig;
+      fetch(window.TWH_FIREBASE.apiBase + '/guardarCarrito', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: sig, keepalive: true }).catch(function () { lastSaved = ''; });
+    }, now ? 0 : 800);
+  }
+  ['email', 'name', 'phone'].forEach(function (f) { $(f).addEventListener('blur', function () { saveCart(true); }); });
+  $('email').addEventListener('change', function () { saveCart(true); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveCart(true); });
+
+  // Link del correo de recordatorio: carrito.html?recuperar=<líneas>&cupon=TWHCV10&correo=<correo>
+  function recover() {
+    var q = new URLSearchParams(location.search), r = q.get('recuperar');
+    if (!r && !q.get('correo') && !q.get('cupon')) return '';
+    if (r) {
+      try {
+        var raw = atob(r.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((r.length + 3) % 4));
+        var lines = JSON.parse(raw).map(function (x) { return { id: String(x[0]), size: String(x[1] || 'Única'), color: String(x[2] || ''), design: String(x[3] || ''), qty: Math.max(1, Math.min(10, Number(x[4]) || 1)) }; });
+        if (lines.length) localStorage.setItem('twh-cart', JSON.stringify(lines));
+      } catch (e) {}
+    }
+    var mail = q.get('correo');
+    if (mail && MAIL_RE.test(mail)) {
+      try { var d = JSON.parse(localStorage.getItem(DRAFT) || '{}'); d.email = mail; localStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {}
+    }
+    history.replaceState(null, '', location.pathname);
+    return q.get('cupon') || '';
+  }
+  var recoverCoupon = recover();
+
   function showErr(msg) { $('err').textContent = msg; $('err').hidden = false; }
 
   $('checkout').addEventListener('input', function () { saveDraft(); render(); });
+  $('lines').addEventListener('click', function () { if (lastSaved) saveCart(); });
   $('checkout').addEventListener('change', function () { saveDraft(); render(); });
 
   $('checkout').addEventListener('submit', function (e) {
@@ -230,7 +280,7 @@
     var method = $('m-retiro').checked ? 'retiro' : 'despacho';
     var name = $('name').value.trim(), email = $('email').value.trim(), phone = $('phone').value.trim();
     if (name.length < 3) return showErr('Escribe tu nombre completo.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return showErr('Revisa tu correo: no parece válido.');
+    if (!MAIL_RE.test(email)) return showErr('Revisa tu correo: no parece válido.');
     if (phone.replace(/\D/g, '').length < 8) return showErr('Escribe un teléfono de al menos 8 dígitos.');
     if (method === 'despacho') {
       if (!$('region').value) return showErr('Elige tu región.');
@@ -241,6 +291,7 @@
     if (!$('acepto').checked) return showErr('Para pagar debes aceptar los términos y condiciones.');
     var payload = {
       items: TWH.Cart.items(),
+      cartId: cartId(),
       coupon: coupon ? coupon.code : '',
       customer: { name: name, email: email, phone: phone },
       shipping: { method: method, region: $('region').value, comuna: $('comuna').value, address: $('address').value, notes: $('notes').value, pickupPoint: pickupVal() }
@@ -274,8 +325,9 @@
     }).join('');
     loadDraft();
     render();
-    var saved = null; try { saved = localStorage.getItem(COUPON); } catch (e) {}
-    if (saved && TWH.Cart.items().length) applyCoupon(saved, true);
+    var saved = recoverCoupon; if (!saved) try { saved = localStorage.getItem(COUPON); } catch (e) {}
+    if (saved && TWH.Cart.items().length) applyCoupon(saved, !recoverCoupon);
+    saveCart(true);
   }).catch(function () { showErr('No pudimos cargar la tienda. Recarga la página.'); });
 })();
 </script>

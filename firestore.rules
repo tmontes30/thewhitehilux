@@ -45,6 +45,11 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // Carritos con correo (contactos y carrito abandonado). Los escribe la función "guardarCarrito"; el admin los ve y edita
+    match /carritos/{id} {
+      allow read, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
