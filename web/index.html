@@ -198,17 +198,19 @@ TWH.loadData().then(function (d) {
     d.products.filter(function (p) { return match(p); }).forEach(function (p) {
       // Stickers: uno por diseño (todos en la categoría Stickers, algunos en el inicio)
       if (p.designs && (f.cat === 'stickers' || (!f.q && !f.estado))) {
-        var ds = f.cat === 'stickers' ? p.designs : p.designs.slice(0, 6);
+        // en el inicio van 6 diseños, primero los que tienen stock
+        var ds = f.cat === 'stickers' ? p.designs : p.designs.filter(function (dd) { return !C.isSoldOut(p, dd.id); })
+          .concat(p.designs.filter(function (dd) { return C.isSoldOut(p, dd.id); })).slice(0, 6);
         ds.forEach(function (dd) { list.push(Object.assign({}, p, { name: 'Sticker ' + dd.name + ' · Vinilo 10 cm', views: [{ shape: 'sticker', logo: dd.id }], _design: dd.id })); });
       }
       else list.push(p);
     });
     var sort = document.getElementById('sort').value;
-    // Lo que se puede comprar primero; próximamente y agotados al final
-    // Lo que se puede comprar primero; agotados y próximamente después. En el inicio (sin categoría ni búsqueda)
-    // los neumáticos van al final: la ropa es la protagonista
+    // Siempre primero lo que tiene stock; después lo agotado y al final lo de próximamente. En el inicio (sin categoría
+    // ni búsqueda) los neumáticos van al final: la ropa es la protagonista. Los stickers se ordenan por el stock de cada diseño.
     var tiresLast = !f.cat && !f.q;
-    var rank = function (p) { return tiresLast && p.cotizar ? 3 : p.status === 'proximamente' ? 2 : (C.isSoldOut(p) ? 1 : 0); };
+    var soldOut = function (p) { return p._design ? C.isSoldOut(p, p._design) : C.isSoldOut(p); };
+    var rank = function (p) { return tiresLast && p.cotizar ? 3 : p.status === 'proximamente' ? 2 : (soldOut(p) ? 1 : 0); };
     list.sort(function (a, b) { return rank(a) - rank(b); });
     if (sort === 'asc') list.sort(function (a, b) { return rank(a) - rank(b) || a.price - b.price; });
     if (sort === 'desc') list.sort(function (a, b) { return rank(a) - rank(b) || b.price - a.price; });
@@ -251,7 +253,7 @@ TWH.loadData().then(function (d) {
         '<div class="main' + (alt ? ' has-alt' : '') + '">' + TWH.picture(p, 0, color) + '</div></div>' +
         '<div class="body"><span class="title">' + TWH.esc(p.name) + '</span>' +
         TWH.priceHtml(p) +
-        (p.status !== 'proximamente' && !p.cotizar && !C.isSoldOut(p) ? '<span class="pickup-chip">Retiro gratis ' + pickWord + '</span>' : '') +
+        (p.status !== 'proximamente' && !p.cotizar && !soldOut(p) ? '<span class="pickup-chip">Retiro gratis ' + pickWord + '</span>' : '') +
         '<div class="meta">' + (p.status === 'proximamente' ? '<span class="ship muted">Muy pronto</span>' : '<span class="ship muted">' + (p.cotizar ? 'Todas las medidas · cotiza por WhatsApp' : 'Envío a todo Chile') + '</span>') +
         '<span class="cdots">' + dots + '</span></div></div></a>';
     }).join('');
