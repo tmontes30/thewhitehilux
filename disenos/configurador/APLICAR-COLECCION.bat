@@ -75,9 +75,20 @@ if errorlevel 1 (
   echo  ATENCION: no se pudo publicar ^(revisa tu internet^). Los cambios quedaron guardados; avisale a Claude.
   goto fin
 )
-popd
 echo  Publicado. En 1-2 minutos se ve en la pagina.
 echo  Los productos nuevos aparecen solos en el panel de admin.
+
+rem ---- El servidor de pagos tiene su propia copia del catalogo: sin esto no aceptaria pagar los productos nuevos ----
+echo.
+echo  Actualizando el servidor de pagos ^(2-4 minutos^)...
+call firebase deploy --only functions:crearPreferencia,functions:validarCupon,functions:webhook,functions:guardarCarrito --project the-white-hilux >nul 2>nul
+if errorlevel 1 (
+  echo  ATENCION: no se pudo actualizar el servidor de pagos. Los productos se ven en la tienda,
+  echo  pero NO se podran pagar hasta actualizarlo. Avisale a Claude.
+) else (
+  echo  Servidor de pagos actualizado.
+)
+popd
 
 :abrir
 echo  Abriendo la tienda...
