@@ -203,9 +203,8 @@
           { id: 'race-dept', name: '4WD Race Dept.' }, { id: 'off-road-script', name: 'Off Road' }, { id: 'coordenadas', name: 'Off Road Team' },
           { id: 'supply-co', name: 'TWH Supply Co.' }, { id: 'warp-text', name: 'Warp' }, { id: 'mountain-patch', name: 'Race Shop' },
           { id: 'script-checker', name: 'White Hilux Script' }, { id: 'round-stamp', name: 'Sello Off Road Supply' }, { id: 'speed-shop', name: 'Speed Shop' },
-          { id: 'tall-stack', name: 'Off Road Dept.' }, { id: 'sunburst', name: 'Sunburst' }, { id: 'cl-shop', name: 'The White Hilux CL Shop' },
-          { id: 'race-dept-ops', name: '4WD Race Dept. (oficial)' }, { id: 'stay-dirty', name: 'Stay Dirty' }, { id: 'winch-crew', name: 'Winch Crew' },
-          { id: 'twh-monogram', name: 'TWH Monograma' }, { id: 'twh-varsity', name: 'TWH Varsity' }, { id: 'twh-stripe-fill', name: 'TWH Franjas' },
+          { id: 'tall-stack', name: 'Off Road Dept.' }, { id: 'cl-shop', name: 'The White Hilux CL Shop' }, { id: 'race-dept-ops', name: '4WD Race Dept. (oficial)' },
+          { id: 'stay-dirty', name: 'Stay Dirty' }, { id: 'winch-crew', name: 'Winch Crew' }, { id: 'twh-monogram', name: 'TWH Monograma' },
           { id: 'twh-crate', name: 'TWH Caja militar' }, { id: 'twh-echo', name: 'TWH Eco' }, { id: 'twh-split', name: 'TWH Split' },
           { id: 'twh-spec', name: 'TWH Spec' }, { id: 'twh-pill', name: 'TWH Pill' }, { id: 'twh-vertical', name: 'TWH Vertical' },
           { id: 'twh-extrude', name: 'TWH 3D' }, { id: 'twh-knockout', name: 'TWH Calado' }, { id: 'mini-mountain', name: 'Montaña en círculo' },
@@ -219,7 +218,7 @@
         views: [{ shape: 'sticker', logo: 'rally-stripes' }],
         images: [], sizeGuide: null, active: true,
         desc: 'Elige tu diseño entre todos los logos TWH. Vinilo troquelado de 10 cm, resistente al agua y al sol. Ideal para la camioneta, el notebook o la nevera.',
-        features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '54 a elección'], ['Uso', 'Exterior e interior']]
+        features: [['Material', 'Vinilo con laminado UV'], ['Tamaño', '10 cm'], ['Diseños', '51 a elección'], ['Uso', 'Exterior e interior']]
       },
       {
         id: 'neumaticos-at', name: 'Neumáticos AT All Terrain', type: 'neumaticos', price: 490000, cotizar: true,

@@ -314,23 +314,6 @@ const LOGOS = {
     ital(150, 232, t(0, 0, 'OFF ROAD DEPT.', 26, INK, BLACK, mid + ' letter-spacing="1"')) +
     t(150, 258, '4X4 &amp; SPEED', 13, RED, COND, mid + ' ' + cond('letter-spacing="8"')),
 
-  // 26. Sol con rayos retro
-  'sunburst': () => {
-    let rays = '';
-    for (let k = 0; k < 24; k++) {
-      const a0 = k * Math.PI / 12, a1 = a0 + Math.PI / 24;
-      rays += `<path d="M150 140 L${r2(150 + 160 * Math.cos(a0))} ${r2(140 + 160 * Math.sin(a0))} L${r2(150 + 160 * Math.cos(a1))} ${r2(140 + 160 * Math.sin(a1))} Z" fill="${k % 2 ? ORANGE : MUST}"/>`;
-    }
-    return `<defs><clipPath id="sb"><circle cx="150" cy="140" r="112"/></clipPath></defs>` +
-      `<g clip-path="url(#sb)">${rays}</g>` +
-      `<circle cx="150" cy="140" r="112" fill="none" stroke="${INK}" stroke-width="5"/>` +
-      `<text x="150" y="166" text-anchor="middle" font-family="${BLACK}" font-size="76" fill="${INK}" stroke="${BG}" stroke-width="12" paint-order="stroke" stroke-linejoin="round">TWH</text>` +
-      `<rect x="70" y="232" width="160" height="34" fill="${INK}"/>` +
-      t(150, 256, 'OFF ROAD', 20, BG, BLACK, mid + ' letter-spacing="4"') +
-      t(150, 290, 'SINCE 2001 · CHILE', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
-  },
-
-
   // 17. LOGO OFICIAL: The White Hilux · CL Shop (versión cuadrada)
   'cl-shop': () => {
     const bars = (y0, x1) => [ORANGE, RED, DRED].map((c, k) => `<path d="M40 ${y0 + k * 9} H${x1 - k * 10} L${x1 - k * 10 - 6} ${y0 + k * 9 + 6} H40 Z" fill="${c}"/>`).join('');
@@ -378,33 +361,6 @@ const LOGOS = {
       t(48, 156, '★', 12, MUST, 'Arial', mid) + t(252, 156, '★', 12, MUST, 'Arial', mid) +
       L('T', 74, 98, 178, MUST) + L('H', 74, 204, 178, RED) + L('W', 80, 151, 182, INK) +
       `<path d="M92 196 H210" stroke="${INK}" stroke-width="2"/>` + t(151, 214, 'OFF ROAD', 11, INK, COND, mid + ' ' + cond('letter-spacing="5"'));
-  },
-
-  // 33. Varsity: TWH en arco, triple contorno con sombra
-  'twh-varsity': () => {
-    const letra = (ch, ang) => {
-      const a = (ang * Math.PI) / 180, R = 250, cx = 150 + R * Math.sin(a), cy = 400 - R * Math.cos(a);
-      const g = (fill, o) => pt('Graduate-Regular', ch, 82, 0, 0, fill, o);
-      return `<g transform="translate(${r2(cx)} ${r2(cy)}) rotate(${ang})">` +
-        `<g transform="translate(5 5)">${g(DRED, { stroke: DRED, sw: 14 })}</g>` +
-        g(INK, { stroke: INK, sw: 14 }) + g(BG, { stroke: BG, sw: 7 }) + g(RED) + `</g>`;
-    };
-    return letra('T', -17) + letra('W', 0) + letra('H', 17) +
-      pt('Graduate-Regular', 'OFF ROAD', 30, 150, 214, INK, { ls: 6 }) +
-      `<path d="M58 228 H242" stroke="${MUST}" stroke-width="3"/>` +
-      t(150, 252, 'DIVISION · EST. 2001', 13, MUST, COND, mid + ' ' + cond('letter-spacing="7"'));
-  },
-
-  // 34. TWH gigante en cursiva relleno con las franjas de rally + líneas de velocidad
-  'twh-stripe-fill': () => {
-    const G = ptGeo('Kanit-BlackItalic', 'TWH', 120, 160, 186, { fit: 214 });
-    const bands = [[96, MUST], [118, ORANGE], [140, RED], [162, DRED]].map(([y, c]) => `<rect x="30" y="${y}" width="250" height="24" fill="${c}"/>`).join('');
-    const speed = [[110, 52], [130, 70], [150, 44], [170, 60]].map(([y, w]) => `<rect x="${44 - w + 44}" y="${y}" width="${w}" height="5" rx="2.5" fill="${INK}"/>`).join('');
-    return `<defs><clipPath id="sfill"><path transform="${G.tr}" d="${G.d}"/></clipPath></defs>` +
-      `<g transform="${G.tr}"><path d="${G.d}" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/></g>` +
-      `<g clip-path="url(#sfill)">${bands}</g>` + speed +
-      t(150, 76, 'THE WHITE HILUX', 14, INK, COND, mid + ' ' + cond('letter-spacing="7"')) +
-      t(150, 226, 'SINCE 2001 · OFF ROAD CHILE', 13, INK, COND, mid + ' ' + cond('letter-spacing="5"'));
   },
 
   // 35. Caja de equipo militar: TWH esténcil, "Property of", lote y flechas

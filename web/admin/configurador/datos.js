@@ -192,19 +192,9 @@ window.TWH_CFG = {
    "b": 0.86
   },
   {
-   "id": "sunburst",
-   "name": "Sunburst",
-   "num": 20,
-   "aspect": 1,
-   "l": 0.1183,
-   "r": 0.8817,
-   "t": 0.085,
-   "b": 0.9667
-  },
-  {
    "id": "cl-shop",
    "name": "The White Hilux CL Shop",
-   "num": 21,
+   "num": 20,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.905,
@@ -214,7 +204,7 @@ window.TWH_CFG = {
   {
    "id": "race-dept-ops",
    "name": "4WD Race Dept. (oficial)",
-   "num": 22,
+   "num": 21,
    "aspect": 1,
    "l": 0.1,
    "r": 0.9,
@@ -224,7 +214,7 @@ window.TWH_CFG = {
   {
    "id": "stay-dirty",
    "name": "Stay Dirty",
-   "num": 23,
+   "num": 22,
    "aspect": 1,
    "l": 0.1283,
    "r": 0.9067,
@@ -234,7 +224,7 @@ window.TWH_CFG = {
   {
    "id": "winch-crew",
    "name": "Winch Crew",
-   "num": 24,
+   "num": 23,
    "aspect": 1,
    "l": 0.1333,
    "r": 0.8567,
@@ -244,7 +234,7 @@ window.TWH_CFG = {
   {
    "id": "twh-monogram",
    "name": "TWH Monograma",
-   "num": 25,
+   "num": 24,
    "aspect": 1,
    "l": 0.0667,
    "r": 0.9333,
@@ -252,29 +242,9 @@ window.TWH_CFG = {
    "b": 0.9333
   },
   {
-   "id": "twh-varsity",
-   "name": "TWH Varsity",
-   "num": 26,
-   "aspect": 1,
-   "l": 0.1017,
-   "r": 0.9217,
-   "t": 0.2717,
-   "b": 0.84
-  },
-  {
-   "id": "twh-stripe-fill",
-   "name": "TWH Franjas",
-   "num": 27,
-   "aspect": 1,
-   "l": 0.0317,
-   "r": 0.9517,
-   "t": 0.22,
-   "b": 0.7533
-  },
-  {
    "id": "twh-crate",
    "name": "TWH Caja militar",
-   "num": 28,
+   "num": 25,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -284,7 +254,7 @@ window.TWH_CFG = {
   {
    "id": "twh-echo",
    "name": "TWH Eco",
-   "num": 29,
+   "num": 26,
    "aspect": 1,
    "l": 0.0567,
    "r": 0.9233,
@@ -294,7 +264,7 @@ window.TWH_CFG = {
   {
    "id": "twh-split",
    "name": "TWH Split",
-   "num": 30,
+   "num": 27,
    "aspect": 1,
    "l": 0.1133,
    "r": 0.8683,
@@ -304,7 +274,7 @@ window.TWH_CFG = {
   {
    "id": "twh-spec",
    "name": "TWH Spec",
-   "num": 31,
+   "num": 28,
    "aspect": 1,
    "l": 0.0933,
    "r": 0.9383,
@@ -314,7 +284,7 @@ window.TWH_CFG = {
   {
    "id": "twh-pill",
    "name": "TWH Pill",
-   "num": 32,
+   "num": 29,
    "aspect": 1,
    "l": 0.12,
    "r": 0.88,
@@ -324,7 +294,7 @@ window.TWH_CFG = {
   {
    "id": "twh-vertical",
    "name": "TWH Vertical",
-   "num": 33,
+   "num": 30,
    "aspect": 1,
    "l": 0.2,
    "r": 0.8017,
@@ -334,7 +304,7 @@ window.TWH_CFG = {
   {
    "id": "twh-extrude",
    "name": "TWH 3D",
-   "num": 34,
+   "num": 31,
    "aspect": 1,
    "l": 0.0883,
    "r": 0.8933,
@@ -344,7 +314,7 @@ window.TWH_CFG = {
   {
    "id": "twh-knockout",
    "name": "TWH Calado",
-   "num": 35,
+   "num": 32,
    "aspect": 1,
    "l": 0.1117,
    "r": 0.8867,
@@ -354,7 +324,7 @@ window.TWH_CFG = {
   {
    "id": "mini-mountain",
    "name": "Montaña en círculo",
-   "num": 36,
+   "num": 33,
    "aspect": 1,
    "l": 0.165,
    "r": 0.815,
@@ -364,7 +334,7 @@ window.TWH_CFG = {
   {
    "id": "mini-horizon",
    "name": "Horizonte",
-   "num": 37,
+   "num": 34,
    "aspect": 1,
    "l": 0.2,
    "r": 0.8,
@@ -374,7 +344,7 @@ window.TWH_CFG = {
   {
    "id": "mini-outline",
    "name": "TWH Contorno",
-   "num": 38,
+   "num": 35,
    "aspect": 1,
    "l": 0.1167,
    "r": 0.8633,
@@ -384,7 +354,7 @@ window.TWH_CFG = {
   {
    "id": "mini-topo",
    "name": "Altitude Topo",
-   "num": 39,
+   "num": 36,
    "aspect": 1,
    "l": 0.2283,
    "r": 0.7717,
@@ -394,7 +364,7 @@ window.TWH_CFG = {
   {
    "id": "mini-trail",
    "name": "TWH Trails",
-   "num": 40,
+   "num": 37,
    "aspect": 1,
    "l": 0.1633,
    "r": 0.835,
@@ -404,7 +374,7 @@ window.TWH_CFG = {
   {
    "id": "mini-wordmark",
    "name": "twh.",
-   "num": 41,
+   "num": 38,
    "aspect": 1,
    "l": 0.1383,
    "r": 0.85,
@@ -414,7 +384,7 @@ window.TWH_CFG = {
   {
    "id": "shield-ops",
    "name": "Escudo Race Dept.",
-   "num": 42,
+   "num": 39,
    "aspect": 1,
    "l": 0.155,
    "r": 0.845,
@@ -424,7 +394,7 @@ window.TWH_CFG = {
   {
    "id": "stamp-checker",
    "name": "Placa Race Supply",
-   "num": 43,
+   "num": 40,
    "aspect": 1,
    "l": 0.0917,
    "r": 0.9083,
@@ -434,7 +404,7 @@ window.TWH_CFG = {
   {
    "id": "speed-round",
    "name": "Sello Speed Shop",
-   "num": 44,
+   "num": 41,
    "aspect": 1,
    "l": 0.065,
    "r": 0.935,
@@ -444,7 +414,7 @@ window.TWH_CFG = {
   {
    "id": "race-plate-ops",
    "name": "Placa de carrera",
-   "num": 45,
+   "num": 42,
    "aspect": 1,
    "l": 0.0717,
    "r": 0.9283,
@@ -454,7 +424,7 @@ window.TWH_CFG = {
   {
    "id": "crossed-flags",
    "name": "Banderas cruzadas",
-   "num": 46,
+   "num": 43,
    "aspect": 1,
    "l": 0.1833,
    "r": 0.7983,
@@ -464,7 +434,7 @@ window.TWH_CFG = {
   {
    "id": "shield-speed",
    "name": "Escudo Speed Shop",
-   "num": 47,
+   "num": 44,
    "aspect": 1,
    "l": 0.155,
    "r": 0.845,
@@ -474,7 +444,7 @@ window.TWH_CFG = {
   {
    "id": "stamp-ops",
    "name": "Placa Race Dept. Supply",
-   "num": 48,
+   "num": 45,
    "aspect": 1,
    "l": 0.065,
    "r": 0.935,
@@ -484,7 +454,7 @@ window.TWH_CFG = {
   {
    "id": "pit-pass",
    "name": "Pit Pass",
-   "num": 49,
+   "num": 46,
    "aspect": 1,
    "l": 0.2333,
    "r": 0.7667,
@@ -494,7 +464,7 @@ window.TWH_CFG = {
   {
    "id": "speed-banner",
    "name": "Banda Speed & 4X4",
-   "num": 50,
+   "num": 47,
    "aspect": 1,
    "l": 0.035,
    "r": 0.8733,
@@ -504,7 +474,7 @@ window.TWH_CFG = {
   {
    "id": "hex-badge",
    "name": "Hexágono Off Road Div.",
-   "num": 51,
+   "num": 48,
    "aspect": 1,
    "l": 0.1417,
    "r": 0.8583,
@@ -514,7 +484,7 @@ window.TWH_CFG = {
   {
    "id": "oval-gold",
    "name": "Óvalo Racing",
-   "num": 52,
+   "num": 49,
    "aspect": 1,
    "l": 0.0733,
    "r": 0.9267,
@@ -524,7 +494,7 @@ window.TWH_CFG = {
   {
    "id": "stripe-wings",
    "name": "TWH Motor Club",
-   "num": 53,
+   "num": 50,
    "aspect": 1,
    "l": 0.0067,
    "r": 0.9933,
@@ -534,7 +504,7 @@ window.TWH_CFG = {
   {
    "id": "stamp-tall",
    "name": "Placa Supply 4X4",
-   "num": 54,
+   "num": 51,
    "aspect": 1,
    "l": 0.225,
    "r": 0.775,
