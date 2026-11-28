@@ -176,8 +176,8 @@ window.TWH_CFG = {
    "name": "Speed Shop",
    "num": 18,
    "aspect": 1,
-   "l": 0.0883,
-   "r": 0.8917,
+   "l": 0.0983,
+   "r": 0.9017,
    "t": 0.19,
    "b": 0.8933
   },
@@ -426,10 +426,10 @@ window.TWH_CFG = {
    "name": "Banderas cruzadas",
    "num": 43,
    "aspect": 1,
-   "l": 0.1833,
-   "r": 0.7983,
-   "t": 0.1783,
-   "b": 0.92
+   "l": 0.16,
+   "r": 0.84,
+   "t": 0.1867,
+   "b": 0.93
   },
   {
    "id": "shield-speed",

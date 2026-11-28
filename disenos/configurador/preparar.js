@@ -65,7 +65,7 @@ const ids = ${JSON.stringify(ids)}, srcs = ${JSON.stringify(srcs)};
   document.getElementById('o').textContent = JSON.stringify(out);
 })();
 <\/script></body>`);
-const dom = execFileSync(edge, ['--headless=new', '--disable-gpu', '--virtual-time-budget=20000', '--dump-dom', 'file:///' + tmp.replace(/\\/g, '/')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const dom = execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--virtual-time-budget=20000', '--dump-dom', 'file:///' + tmp.replace(/\\/g, '/')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 fs.unlinkSync(tmp);
 const box = JSON.parse(dom.match(/<pre id="o">([^<]*)<\/pre>/)[1].replace(/&quot;/g, '"'));
 // Mismo orden y número que la hoja de todos los logos (disenos/logos/_todos.png = orden de LOGOS en generar.js);

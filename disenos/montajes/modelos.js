@@ -97,7 +97,7 @@ function render(baseKey, logoName, zona, outName) {
   const logo = logoName ? { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, logoName + '.svg'), 'utf8')), ...b[zona] } : null;
   const tmp = path.join(__dirname, '_tmp-modelo.html');
   fs.writeFileSync(tmp, pagina(W, H, foto, b.borrar, logo));
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000',
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000',
     `--window-size=${W},${H}`, '--screenshot=' + path.join(OUT, outName), 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
   fs.unlinkSync(tmp);
 }

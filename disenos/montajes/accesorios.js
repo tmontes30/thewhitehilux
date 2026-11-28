@@ -63,7 +63,7 @@ const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () =>
 function render(file, size, ops, out) {
   const tmp = path.join(__dirname, '_tmp-acc.html');
   fs.writeFileSync(tmp, pagina(size[0], size[1], png(file), ops));
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000',
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000',
     `--window-size=${size[0]},${size[1]}`, '--screenshot=' + path.join(OUT, out), 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
   fs.unlinkSync(tmp);
   console.log('ok', out);

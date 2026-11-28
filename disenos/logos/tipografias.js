@@ -78,7 +78,7 @@ sheet += '</svg>\n';
 fs.writeFileSync(path.join(OUT, '_opciones.svg'), sheet);
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find((p) => fs.existsSync(p));
 if (edge) {
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${cols * cell},${rows * (cell + lab)}`,
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', `--window-size=${cols * cell},${rows * (cell + lab)}`,
     '--screenshot=' + path.join(OUT, '_opciones.png'), 'file:///' + path.join(OUT, '_opciones.svg').replace(/\\/g, '/')], { stdio: 'ignore' });
 }
 console.log(`${OPCIONES.length} opciones en disenos/logos/tipografias/ (hoja: _opciones.png)`);

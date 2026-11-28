@@ -124,7 +124,7 @@ for (const [id, m] of Object.entries(MONTAJES)) {
   const items = m.items.map((it) => ({ ...it, logo: it.logo ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fs.readFileSync(path.join(LOGOS, it.logo + '.svg'), 'utf8')) : null }));
   const tmp = path.join(__dirname, `_tmp-${id}.html`);
   fs.writeFileSync(tmp, pagina(W, H, foto, items));
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=6000',
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=6000',
     `--window-size=${W},${H}`, '--screenshot=' + path.join(OUT, `foto-${id}.png`), 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
   fs.unlinkSync(tmp);
   console.log('ok foto', id);

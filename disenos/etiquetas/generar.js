@@ -29,7 +29,7 @@ fs.mkdirSync(tmpDir, { recursive: true });
 function png(html, out, w, h, transparent) {
   const f = path.join(tmpDir, 'pagina.html');
   fs.writeFileSync(f, html);
-  const args = ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(tmpDir, 'edge')}`, `--window-size=${w},${h}`, `--screenshot=${out}`];
+  const args = ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${path.join(tmpDir, 'edge')}`, `--window-size=${w},${h}`, `--screenshot=${out}`];
   if (transparent) args.push('--default-background-color=00000000');
   args.push('file:///' + f.replace(/\\/g, '/'));
   execFileSync(edge, args, { stdio: 'ignore' });

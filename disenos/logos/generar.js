@@ -154,12 +154,12 @@ const LOGOS = {
   // 6. Escudo con bandera a cuadros
   'checkered-shield': () => {
     let ch = '';
-    for (let r = 0; r < 3; r++) for (let k = 0; k < 16; k++) if ((r + k) % 2 === 0) ch += `<rect x="${70 + k * 10}" y="${88 + r * 10}" width="10" height="10" fill="${INK}"/>`;
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 16; k++) if ((r + k) % 2 === 0) ch += `<rect x="${70 + k * 10}" y="${84 + r * 10}" width="10" height="10" fill="${INK}"/>`;
     return `<path d="M150 36 L250 62 L250 168 Q250 236 150 268 Q50 236 50 168 L50 62 Z" fill="none" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>` +
       `<path d="M150 50 L238 73 L238 166 Q238 225 150 254 Q62 225 62 166 L62 73 Z" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>` + ch +
-      ital(150, 182, t(0, 0, 'TWH', 58, RED, BLACK, mid)) +
-      t(150, 210, '4X4 TEAM', 18, INK, BLACK, mid + ' letter-spacing="2"') +
-      t(150, 234, 'EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+      ital(144, 170, t(0, 0, 'TWH', 58, RED, BLACK, mid)) +
+      t(151, 196, '4X4 TEAM', 18, INK, BLACK, mid + ' letter-spacing="2"') +
+      t(153, 218, 'EST. 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   },
 
   // 7. Palanca de transferencia 2H-4H-N-4L
@@ -299,10 +299,10 @@ const LOGOS = {
     let ch = '';
     for (let r = 0; r < 4; r++) for (let k = 0; k < 10; k++) if ((r + k) % 2 === 0) ch += `<rect x="${k * 12}" y="${r * 12}" width="12" height="12" fill="${INK}"/>`;
     return `<g transform="translate(96 58) skewX(-14)">${ch}<rect width="120" height="48" fill="none" stroke="${INK}" stroke-width="2"/></g>` +
-      ital(150, 176, t(0, 0, 'TWH', 72, INK, BLACK, mid)) +
+      ital(143, 176, t(0, 0, 'TWH', 72, INK, BLACK, mid)) +
       ital(150, 214, t(0, 0, 'SPEED SHOP', 30, MUST, IMPACT, mid + ' letter-spacing="5"')) +
       `<path d="M60 228 H250 L246 233 H56 Z" fill="${ORANGE}"/><path d="M60 237 H244 L240 242 H56 Z" fill="${RED}"/>` +
-      t(150, 268, 'OFF ROAD · CHILE · 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
+      t(153, 268, 'OFF ROAD · CHILE · 2001', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"'));
   },
 
   // 24. Off Road Dept. estilo Troy Lee: letras altas con sombra roja desplazada
@@ -534,20 +534,32 @@ const LOGOS = {
   'race-plate-ops': () =>
     `<rect x="24" y="92" width="252" height="116" rx="16" fill="none" stroke="${INK}" stroke-width="5"/>` +
     `<rect x="33" y="101" width="234" height="98" rx="10" fill="none" stroke="${INK}" stroke-width="1.5"/>` +
-    t(46, 124, 'EST. 2001', 10, MUST, COND, cond('letter-spacing="5"')) +
-    pt('BlackOpsOne-Regular', 'TWH', 60, 46, 170, INK, { anchor: 'start', fit: 140 }) +
-    [[ORANGE, 0], [RED, 15], [DRED, 30]].map(([c, d]) => `<path d="M${206 + d} 190 L${230 + d} 110 L${241 + d} 110 L${217 + d} 190 Z" fill="${c}"/>`).join('') +
-    t(46, 190, '4X4 RACE DEPT.', 10, INK, COND, cond('letter-spacing="3"')),
+    t(54, 123, 'EST. 2001', 10, MUST, COND, cond('letter-spacing="5"')) +
+    pt('BlackOpsOne-Regular', 'TWH', 60, 54, 168, INK, { anchor: 'start', fit: 128 }) +
+    [[ORANGE, 0], [RED, 13], [DRED, 26]].map(([c, d]) => `<path d="M${190 + d} 186 L${210 + d} 114 L${220 + d} 114 L${200 + d} 186 Z" fill="${c}"/>`).join('') +
+    t(54, 186, '4X4 RACE DEPT.', 10, INK, COND, cond('letter-spacing="3"')),
 
   // 61. Banderas a cuadros cruzadas + TWH Racing Team
   'crossed-flags': () => {
-    // dos astas cruzadas en X, cada bandera hacia afuera
-    const bandera = (ang, izq) => `<g transform="rotate(${ang} 150 118)"><rect x="148" y="44" width="4" height="136" rx="2" fill="${INK}"/>` +
-      `<g transform="translate(${izq ? 90 : 152} 46)">${cuadros(0, 0, 6, 4, 9.6)}<rect width="57.6" height="38.4" fill="none" stroke="${INK}" stroke-width="1.5"/></g></g>`;
-    return bandera(-30, true) + bandera(30, false) +
-      ital(150, 228, t(0, 0, 'TWH', 48, RED, BLACK, mid)) +
-      t(150, 250, 'RACING TEAM · 4X4', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
-      franjas3(98, 260, 104, 4, 6);
+    // dos astas cruzadas en X; cada bandera flamea hacia afuera (cuadros deformados por una onda)
+    const W = 70, H = 46, C = 7, R = 5, sz = W / C, szy = H / R;
+    const onda = (x, y) => [x, y + 5 * Math.sin((x / W) * Math.PI * 1.6) * (0.35 + 0.65 * x / W) - 3 * (x / W)];
+    const pto = (x, y, izq) => { const [a, b] = onda(x, y); return r2(izq ? -a : a) + ' ' + r2(b); };
+    const celda = (x0, y0, x1, y1, izq) => {
+      const top = [], bot = [];
+      for (let k = 0; k <= 4; k++) { const x = x0 + (x1 - x0) * k / 4; top.push(pto(x, y0, izq)); bot.unshift(pto(x, y1, izq)); }
+      return 'M' + top.join(' L') + ' L' + bot.join(' L') + ' Z';
+    };
+    const bandera = (ang, izq) => {
+      let cuad = '';
+      for (let r = 0; r < R; r++) for (let k = 0; k < C; k++) if ((r + k) % 2 === 0) cuad += celda(k * sz, r * szy, (k + 1) * sz, (r + 1) * szy, izq) + ' ';
+      return `<g transform="rotate(${ang} 150 128)"><rect x="148" y="52" width="4" height="132" rx="2" fill="${INK}"/><circle cx="150" cy="51" r="4" fill="${INK}"/>` +
+        `<g transform="translate(${izq ? 148 : 152} 56)"><path d="${cuad}" fill="${INK}"/><path d="${celda(0, 0, W, H, izq)}" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/></g></g>`;
+    };
+    return bandera(-28, true) + bandera(28, false) +
+      ital(146, 232, t(0, 0, 'TWH', 48, RED, BLACK, mid)) +
+      t(153, 254, 'RACING TEAM · 4X4', 12, INK, COND, mid + ' ' + cond('letter-spacing="6"')) +
+      franjas3(98, 263, 104, 4, 6);
   },
 
   // 62. Escudo con franjas diagonales por dentro + Speed Shop
@@ -662,7 +674,7 @@ for (const n of names) {
   // versión para prendas claras (blanco/arena): tinta oscura
   fs.writeFileSync(path.join(webDir, n + '-claro.svg'), doc(inner.split(INK).join('#1C1D1A').split(BG).join('#F2F1EC'), false));
   if (edge) {
-    execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=1000,1000',
+    execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', '--window-size=1000,1000',
       '--screenshot=' + path.join(pngDir, n + '.png'), 'file:///' + path.join(svgDir, n + '.svg').replace(/\\/g, '/')], { stdio: 'ignore' });
   }
   console.log('ok', n);
@@ -702,7 +714,7 @@ all.forEach((n, i) => {
 sheet += '</svg>\n';
 fs.writeFileSync(path.join(here, '_todos.svg'), sheet);
 if (edge) {
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--window-size=${cols * cell},${rows * (cell + 30)}`,
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', `--window-size=${cols * cell},${rows * (cell + 30)}`,
     '--screenshot=' + path.join(here, '_todos.png'), 'file:///' + path.join(here, '_todos.svg').replace(/\\/g, '/')], { stdio: 'ignore' });
 }
 console.log('Hoja de contacto: disenos/logos/_todos.png');

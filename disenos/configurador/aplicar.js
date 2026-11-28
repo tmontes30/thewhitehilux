@@ -81,7 +81,7 @@ const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () =>
   const dest = path.join(OUT, outFile);
   fs.writeFileSync(tmp, html);
   if (fs.existsSync(dest)) fs.unlinkSync(dest);
-  execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000', `--window-size=${W},${H}`,
+  execFileSync(edge, ['--headless=new', '--edge-skip-compat-layer-relaunch', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000', `--window-size=${W},${H}`,
     '--screenshot=' + dest, 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
   const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   let last = -1;
