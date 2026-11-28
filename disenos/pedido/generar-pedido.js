@@ -8,16 +8,16 @@
 //   - Curva por modelo y color: CURVA (general) o CURVA_MODELO (para modelos puntuales)
 // Medidas de estampado (ancho de lo impreso, referenciales; confirmar con el proveedor):
 const CURVA = { M: 1, L: 2, XL: 3, XXL: 3 };
-// Modelos con otra curva (id del producto → curva). Pedido 2026-11-18: estos 6 solo en L, XL y XXL
+// Modelos con otra curva (id del producto → curva). Pedido 2026-11-18 (y su rediseño 2026-11-28): estos 7 solo en L, XL y XXL
 const CURVA_SIN_M = { M: 0, L: 2, XL: 2, XXL: 2 };
 const CURVA_MODELO = {
   'polera-twh-4x4-rally-team-algodon': CURVA_SIN_M,     // White Hilux Script
   'polera-mud-terrain-twh-algodon': CURVA_SIN_M,        // Race Shop
-  'polera-low-range-club-4wd': CURVA_SIN_M,             // Low Range Club
+  'polera-low-range-club-4wd': CURVA_SIN_M,             // TWH Spec (antes Low Range Club)
   'polera-twh-cruz-white-hilux-algodon': CURVA_SIN_M,   // Sunset
   'polera-twh-recovery': CURVA_SIN_M,                   // Recovery Crew
   'polera-twh': CURVA_SIN_M,                            // Warp
-  'polera-twh-aired-down': CURVA_SIN_M,                 // Aired Down
+  'polera-twh-aired-down': CURVA_SIN_M,                 // 4WD Race Dept. (antes Aired Down)
 };
 const curvaDe = (m) => CURVA_MODELO[m.p.id] || CURVA;
 // Anchos de estampado: posiciones.js (CM para Chico/Mediano/Grande, o el ancho exacto que se eligió en el configurador)
@@ -254,7 +254,7 @@ fs.writeFileSync(path.join(OUT, '_pedido-pdf.html'), construir('pdf'));
 // ---------- PDF ----------
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(fs.existsSync);
 (async () => {
-  const browser = await puppeteer.launch({ executablePath: edge, headless: true, args: ['--allow-file-access-from-files'] });
+  const browser = await puppeteer.launch({ executablePath: edge, headless: true, args: ['--allow-file-access-from-files', '--edge-skip-compat-layer-relaunch'] });
   const page = await browser.newPage();
   await page.goto('file:///' + path.join(OUT, '_pedido-pdf.html').replace(/\\/g, '/'), { waitUntil: 'load' });
   await page.pdf({ path: path.join(OUT, 'pedido.pdf'), format: 'A4', printBackground: true, margin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' } });

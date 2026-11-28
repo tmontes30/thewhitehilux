@@ -30,7 +30,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const base = `${logo}-${cm}cm-tinta-${tinta}`;
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(fs.existsSync);
 (async () => {
-  const browser = await puppeteer.launch({ executablePath: edge, headless: true, args: ['--allow-file-access-from-files'] });
+  const browser = await puppeteer.launch({ executablePath: edge, headless: true, args: ['--allow-file-access-from-files', '--edge-skip-compat-layer-relaunch'] });
   const page = await browser.newPage();
   const r = await contornos(page, svg0);
   if (r.avisos.length) console.log('⚠', r.avisos.join('; '));
