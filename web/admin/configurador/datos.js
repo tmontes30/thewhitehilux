@@ -544,12 +544,13 @@ window.TWH_CFG = {
    "frente": {
     "logo": "checkered-shield",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "cm": 7
    },
    "espalda": {
-    "logo": "script-checker",
     "tam": "m",
-    "alto": 0
+    "alto": 0,
+    "logo": "script-checker"
    }
   },
   {
@@ -561,9 +562,10 @@ window.TWH_CFG = {
     "blanco"
    ],
    "frente": {
-    "logo": "round-stamp",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "logo": "stamp-checker",
+    "cm": 7
    },
    "espalda": {
     "logo": "mountain-patch",
@@ -574,20 +576,20 @@ window.TWH_CFG = {
   {
    "id": "polera-low-range-club-4wd",
    "tipo": "polera",
-   "nombre": "Polera Low Range Club",
+   "nombre": "Polera TWH Spec",
    "colores": [
     "negro",
     "blanco"
    ],
    "frente": {
-    "logo": "speed-shop",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "logo": "mini-horizon"
    },
    "espalda": {
-    "logo": "low-range",
-    "tam": "m",
-    "alto": 0
+    "tam": "s",
+    "alto": 0,
+    "logo": "twh-spec"
    }
   },
   {
@@ -599,13 +601,14 @@ window.TWH_CFG = {
     "blanco"
    ],
    "frente": {
-    "logo": "supply-co",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "logo": "stamp-checker",
+    "cm": 7
    },
    "espalda": {
     "logo": "sunset",
-    "tam": "m",
+    "tam": "s",
     "alto": 0
    }
   },
@@ -620,11 +623,12 @@ window.TWH_CFG = {
    "frente": {
     "logo": "race-dept",
     "pos": "pecho",
-    "tam": "s"
+    "tam": "s",
+    "cm": 7
    },
    "espalda": {
     "logo": "recovery-crew",
-    "tam": "m",
+    "tam": "s",
     "alto": 0
    }
   },
@@ -639,31 +643,32 @@ window.TWH_CFG = {
    "frente": {
     "logo": "coordenadas",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "cm": 7
    },
    "espalda": {
     "logo": "warp-text",
-    "tam": "m",
+    "tam": "s",
     "alto": 0
    }
   },
   {
    "id": "polera-twh-aired-down",
    "tipo": "polera",
-   "nombre": "Polera Aired Down",
+   "nombre": "Polera 4WD Race Dept.",
    "colores": [
     "negro",
     "blanco"
    ],
    "frente": {
-    "logo": "script-checker",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s",
+    "logo": "stripe-wings"
    },
    "espalda": {
-    "logo": "aired-down",
     "tam": "m",
-    "alto": 0
+    "alto": 0,
+    "logo": "race-dept-ops"
    }
   },
   {
@@ -677,7 +682,7 @@ window.TWH_CFG = {
    "frente": {
     "logo": "script-checker",
     "pos": "pecho",
-    "tam": "m"
+    "tam": "s"
    },
    "espalda": null
   },
@@ -692,7 +697,8 @@ window.TWH_CFG = {
    "frente": {
     "logo": "checkered-shield",
     "pos": "pecho",
-    "tam": "s"
+    "tam": "s",
+    "cm": 7
    },
    "espalda": null
   },
@@ -707,7 +713,8 @@ window.TWH_CFG = {
    "frente": {
     "logo": "race-dept",
     "pos": "pecho",
-    "tam": "s"
+    "tam": "s",
+    "cm": 7
    },
    "espalda": null
   },
