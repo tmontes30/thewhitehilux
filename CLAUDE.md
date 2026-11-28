@@ -186,6 +186,7 @@ Desde 2026-11-24 crea productos nuevos sin tocar los existentes. Desde 2026-11-2
 ## 10. Cómo trabajar y publicar
 
 - **Pruebas:** `cd web && npm test` (25). Flujo completo: `firebase emulators:start --project the-white-hilux` + `node functions/test/e2e.js` (repetir si la primera vez falla con "Function s…"); panel de prueba en `http://127.0.0.1:5500/admin/?emu-login` (servidor estático propio en el puerto 5500). Para probar visitas con puppeteer: sobrescribir `navigator.webdriver` y usar un user agent normal (el filtro de robots descarta "Headless").
+- **Edge por línea de comandos**: siempre con `--edge-skip-compat-layer-relaunch` (ya está en todos los scripts de `disenos/`). Sin esa opción, con una actualización de Edge pendiente, msedge.exe termina al tiro y la captura/`--dump-dom` llega tarde o vacía (2026-11-28). Si puppeteer no abre Edge, cerrar procesos `msedge --headless` colgados.
 - **Verificar visualmente** con capturas de Edge headless (computador y 390 px de iPhone) antes de entregar.
 - **Publicar tienda:** `git push` → GitHub Actions (`.github/workflows/pages.yml`) corre pruebas, agrega versión `?v=<commit>` a los `.js/.css` (sin caché vieja) y publica `web/` con `upload-pages-artifact@v5` + `deploy-pages@v5` (reintento automático si GitHub no encuentra el artefacto). Vigilar con `gh run watch`.
 - **Publicar funciones:** `firebase deploy --only functions[:nombre]` (corre `sync.js`). Hacerlo cuando cambie `lib/order.js`, `core.js` o `catalog.js` en algo que valide el servidor (precios, productos, diseños, puntos de retiro).
@@ -238,6 +239,7 @@ Desde 2026-11-24 crea productos nuevos sin tocar los existentes. Desde 2026-11-2
 
 **2026-11-28 — Medidas de estampado**
 - Llegaron las 2 primeras muestras (Race Shop y White Hilux Script, pecho a 10 cm) y el logo del pecho se ve grande. Configurador: **ajustar productos de la tienda** (cambiar logos, ancho exacto en cm, medidas reales ancho × alto); `aplicar.js` espera cada foto de Edge.
+- Logos: 5 (escudo) con todo más arriba (EST. 2001 quedaba cortado por la curva), 18 y 42 centrados, 43 con banderas a cuadros onduladas. Se regeneraron las fotos de las prendas con el 5 y el 18 y el logo de los correos (`logo-escudo.png`). La foto del jockey Escudo no se rehízo (cambio mínimo).
 - Detalle del pedido 18-11 (para repetir curvas): 7 modelos negros con frente y espalda × (2 L, 2 XL, 2 XXL) = 42; 3 básicas × negro y blanco × (1 M, 2 L, 3 XL, 3 XXL) = 54; total 96 (6 M, 26 L, 32 XL, 32 XXL).
 
 **Pendientes / ideas**
