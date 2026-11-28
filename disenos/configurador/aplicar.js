@@ -1,8 +1,8 @@
 // Pasa lo creado en el configurador a la tienda.
 //  - Modo "agregar" (el que exporta el configurador desde 2026-11-24): genera las fotos y SUMA los productos nuevos
 //    al catálogo como Próximamente (los stickers se suman como diseño nuevo del sticker). No toca nada de lo que ya existe.
-//    Los "ajustes" (d.origen = id de un producto de la tienda) solo cambian el tamaño/posición de sus logos (cfg) y regeneran
-//    sus fotos con el mismo nombre de archivo; nombre, precio, estado, stock y ventas quedan igual.
+//    Los "ajustes" (d.origen = id de un producto de la tienda) cambian sus logos (cfg), tamaño/posición, nombre, vistas,
+//    descripción, "Estampado" y fotos; el id no cambia, así que SKU, precio, colores, estado, stock y ventas quedan igual.
 //  - Modo antiguo "reemplazar" (archivo sin modo): reemplaza todas las poleras, polerones y jockeys. Solo con --reemplazar.
 // Uso: node disenos/configurador/aplicar.js [ruta/a/twh-coleccion.json] [--reemplazar]
 const fs = require('fs');
@@ -94,7 +94,7 @@ const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () =>
   if (!fs.existsSync(dest)) throw new Error('Edge no generó la foto ' + outFile + '. Cierra Edge, ábrelo de nuevo (termina su actualización) y vuelve a intentar.');
 }
 
-const nameOf = (id) => (LMETA[id] ? LMETA[id].name : id);
+const nameOf = (id) => (LMETA[id] ? LMETA[id].name.replace(/\s*\([^)]*\)$/, '') : id); // sin "(oficial)"
 const q = (s) => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 const arr = (a) => '[' + a.map(q).join(', ') + ']';
 // Diseño completo tal como se armó en el configurador (logos, tamaños, posición, altura, estilo del jockey).
@@ -185,25 +185,44 @@ if (AGREGAR) {
   for (const d of ajustes) {
     const p = prods.get(d.origen);
     if (!p || !p.cfg) { console.log('ajuste ignorado (no está en la tienda):', d.origen); continue; }
-    const cfg = { ...p.cfg, frente: p.cfg.frente ? { ...p.cfg.frente, ...(d.frente || {}), logo: p.cfg.frente.logo } : null,
-      espalda: p.cfg.espalda ? { ...p.cfg.espalda, ...(d.espalda || {}), logo: p.cfg.espalda.logo } : null };
-    ['frente', 'espalda'].forEach((k) => { if (cfg[k] && d[k] && d[k].cm == null) delete cfg[k].cm; });
-    const i0 = cat.indexOf(`id: ${q(p.id)},`), c0 = cat.indexOf('cfg: {', i0), c1 = cat.indexOf('\n', c0);
-    if (i0 < 0 || c0 < 0) { console.log('ajuste ignorado (no encontré su cfg):', p.id); continue; }
-    const line = cat.slice(c0, c1), fin = line.endsWith(',') ? ',' : '';
-    cat = cat.slice(0, c0) + 'cfg: ' + JSON.stringify(cfg) + fin + cat.slice(c1);
+    const limpio = (x) => (x && x.logo && LMETA[x.logo] ? JSON.parse(JSON.stringify(x)) : null);
+    const frente = limpio(d.frente), espalda = limpio(d.espalda);
+    if (!frente && !espalda) { console.log('ajuste ignorado (sin logos):', p.id); continue; }
+    const nombre = String(d.nombre || p.name).trim() || p.name;
+    const cfg = { ...p.cfg, nombre, frente, espalda };
+    const i0 = cat.indexOf(`id: ${q(p.id)},`), i1 = cat.indexOf('\n      },\n', i0);
+    if (i0 < 0 || i1 < 0 || cat.indexOf('cfg: {', i0) > i1) { console.log('ajuste ignorado (no encontré el producto):', p.id); continue; }
+    // fotos (mismo nombre de archivo; si se agrega o quita la espalda cambia la lista)
     const dd = { ...cfg, tipo: p.type };
+    const byColor = {};
     for (const c of p.colors) {
-      for (const v of P.viewsFor(dd, c)) {
+      byColor[c] = P.viewsFor(dd, c).map((v) => {
         const kind = v.replace(/^(polera|poleron)-(negro|blanco)-/, '');
         renderView(dd, v, `${p.id}-${c}-${kind}.png`);
-      }
+        return `assets/img/productos/${p.id}-${c}-${kind}.png`;
+      });
     }
+    const tee = p.type === 'polera';
+    const views = '[' + [espalda ? `{ shape: '${tee ? 'tee-back' : 'hoodie-back'}', logo: ${q(espalda.logo)} }` : null,
+      frente ? `{ shape: '${tee ? 'tee-front' : 'hoodie-front'}', logo: ${q(frente.logo)} }` : null].filter(Boolean).join(', ') + ']';
+    const partes = [];
+    if (espalda) partes.push(`${nameOf(espalda.logo)} en la espalda`);
+    if (frente) partes.push(`${nameOf(frente.logo)} ${frente.pos === 'centro' ? 'al centro del pecho' : 'chico en el pecho'}`);
+    const desc = `${tee ? 'Polera' : 'Polerón con capucha'} con ${partes.join(' y ')}.`;
+    const est = espalda && frente ? 'DTF espalda y pecho' : espalda ? 'DTF espalda' : 'DTF pecho';
+    let blk = cat.slice(i0, i1);
+    blk = blk.replace(/name: '(?:[^'\\]|\\.)*'/, 'name: ' + q(nombre))
+      .replace(/views: \[.*\],/, 'views: ' + views + ',')
+      .replace(/imagesByColor: \{[^}]*\}/, 'imagesByColor: { ' + Object.entries(byColor).map(([c, l]) => c + ': ' + arr(l)).join(', ') + ' }')
+      .replace(/desc: '(?:[^'\\]|\\.)*'/, 'desc: ' + q(desc))
+      .replace(/\['Estampado', '[^']*'\]/, `['Estampado', ${q(est)}]`)
+      .replace(/cfg: \{.*\}/, 'cfg: ' + JSON.stringify(cfg));
+    cat = cat.slice(0, i0) + blk + cat.slice(i1);
     ajustados++;
-    console.log('ajustado', p.id, P.medidas(cfg, LMETA).map((m) => `${m.lugar} ${m.ancho}x${m.alto} cm`).join(' · '));
+    console.log('ajustado', p.id, '→', nombre, '|', P.medidas(cfg, LMETA).map((m) => `${m.lugar} ${nameOf(m.logo)} ${m.ancho}x${m.alto} cm`).join(' · '));
   }
   fs.writeFileSync(CATALOG, cat);
-  if (ajustes.length) console.log(`Ajustes: ${ajustados} productos de la tienda con logos de otro tamaño (fotos regeneradas).`);
+  if (ajustes.length) console.log(`Ajustes: ${ajustados} productos de la tienda con logos nuevos o de otro tamaño (fotos regeneradas).`);
   console.log(`Listo: ${items.length} productos nuevos agregados como Próximamente (${keep.size} fotos) y ${nuevos} diseños de sticker nuevos. Lo que ya estaba en la tienda no se tocó.`);
 } else {
   // ---------- reemplazar (modo antiguo, solo con --reemplazar): poleras, polerones y jockeys = la colección ----------

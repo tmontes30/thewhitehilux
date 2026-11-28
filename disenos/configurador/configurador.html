@@ -134,7 +134,7 @@
   <img src="../../web/assets/logos/logo-oficial.svg" alt="The White Hilux">
   <h1>Configurador</h1>
   <span class="sp"></span>
-  <span class="help" style="font-size:12.5px;color:rgba(242,240,232,.7)">Crea productos nuevos o ajusta el tamaño de los logos de uno de la tienda.</span>
+  <span class="help" style="font-size:12.5px;color:rgba(242,240,232,.7)">Crea productos nuevos o cambia los logos y su tamaño en uno de la tienda.</span>
 </header>
 
 <!-- ============ INICIO ============ -->
@@ -147,7 +147,7 @@
 
   <section class="tray">
     <div class="tray-head">
-      <h3>Ajustar un producto de la tienda <small>(tamaño y posición de los logos · medidas reales en cm)</small></h3>
+      <h3>Ajustar un producto de la tienda <small>(logos, tamaño y posición · medidas reales en cm)</small></h3>
     </div>
     <div class="store" id="store"></div>
   </section>
@@ -206,6 +206,7 @@
   var STORE_BY = {}; STORE.forEach(function (p) { STORE_BY[p.id] = p; });
   var LUGAR = { pecho: 'Pecho', centro: 'Centro', espalda: 'Espalda' };
   var cm1 = function (n) { return String(Math.round(n * 10) / 10).replace('.', ','); };
+  function logosTxt(d) { return ['frente', 'espalda'].filter(function (k) { return d[k] && d[k].logo; }).map(function (k) { var l = LOGOS[d[k].logo]; return (k === 'frente' ? 'Frente' : 'Espalda') + ': ' + (l && l.num ? l.num + '. ' : '') + esc(nameOf(d[k].logo)); }).join(' · '); }
   function medTxt(d) { return P.medidas(d, LOGOS).map(function (m) { return '<i>' + LUGAR[m.lugar] + '</i> ' + cm1(m.ancho) + ' × ' + cm1(m.alto) + ' cm'; }).join(' · '); }
   function ajusteDe(p) {
     var d = JSON.parse(JSON.stringify(p.cfg));
@@ -220,7 +221,7 @@
   var draft = null, editIdx = null, original = '', color = 'negro', etTalla = 'M', search = {};
 
   function toast(t, err) { var el = $('toast'); el.textContent = t; el.className = 'toast' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { el.className = 'toast hidden'; }, 2600); }
-  function nameOf(id) { return id && LOGOS[id] ? LOGOS[id].name : ''; }
+  function nameOf(id) { return id && LOGOS[id] ? LOGOS[id].name.replace(/\s*\([^)]*\)$/, '') : ''; } // sin "(oficial)"
   function cap(s) { return s.replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }); }
   function autoName(d) {
     if (d.tipo === 'sticker') return d.logo ? 'Sticker ' + nameOf(d.logo) : 'Sticker';
@@ -281,7 +282,7 @@
     }).join('') : '<div class="empty">No encontré los productos de la tienda (data/catalog.js).</div>';
     $('tray-count').textContent = sesion.length ? '(' + sesion.length + (sesion.length === 1 ? ' producto' : ' productos') + ')' : '';
     $('saved').innerHTML = sesion.length ? '<div class="saved">' + sesion.map(function (d, i) {
-      return '<div class="sv"><div class="thumb">' + thumb(d) + '</div><div class="meta"><span class="pill"' + (d.origen ? ' style="background:#FFF1D6;color:#A86500"' : '') + '>' + (d.origen ? 'Ajuste · ' : '') + TIPOS[d.tipo] + '</span><b>' + esc(d.nombre) + '</b><span>' + (d.origen ? 'producto de la tienda' : clp(PRICES[d.tipo]) + (d.colores && d.tipo === 'polera' ? ' · ' + d.colores.join(' y ') : '')) + '</span>' + (d.tipo !== 'sticker' && d.tipo !== 'jockey' ? '<span class="med">' + medTxt(d) + '</span>' : '') + '</div>' +
+      return '<div class="sv"><div class="thumb">' + thumb(d) + '</div><div class="meta"><span class="pill"' + (d.origen ? ' style="background:#FFF1D6;color:#A86500"' : '') + '>' + (d.origen ? 'Ajuste · ' : '') + TIPOS[d.tipo] + '</span><b>' + esc(d.nombre) + '</b><span>' + (d.origen ? 'producto de la tienda' : clp(PRICES[d.tipo]) + (d.colores && d.tipo === 'polera' ? ' · ' + d.colores.join(' y ') : '')) + '</span>' + (d.tipo !== 'sticker' && d.tipo !== 'jockey' ? '<span class="med">' + (d.origen ? logosTxt(d) + '<br>' : '') + medTxt(d) + '</span>' : '') + '</div>' +
         '<div class="acts"><button data-act="edit" data-i="' + i + '">Editar</button>' + (d.origen ? '' : '<button data-act="dup" data-i="' + i + '">Duplicar</button>') + '<button class="del" data-act="del" data-i="' + i + '">Borrar</button></div></div>';
     }).join('') + '</div>'
       : '<div class="empty">Todavía no has guardado nada en esta sesión. Elige arriba qué quieres crear.</div>';
@@ -316,7 +317,7 @@
     $('done').innerHTML = '<b>✓ Exportado: ' + [nNu ? nNu + (nNu === 1 ? ' producto nuevo' : ' productos nuevos') : '', nAj ? nAj + (nAj === 1 ? ' ajuste' : ' ajustes') + ' de tamaño' : ''].filter(Boolean).join(' y ') + '</b> (quedó en Descargas).' +
       '<ol><li>En el computador, haz doble clic en <b>APLICAR-COLECCION.bat</b> (carpeta disenos/configurador).</li>' +
       (nNu ? '<li>Los nuevos se <b>agregan</b> a la tienda como <b>Próximamente</b>.</li>' : '') +
-      (nAj ? '<li>En los ajustados solo cambian el tamaño/posición de los logos y sus fotos (nombre, precio, stock y ventas quedan igual). Para el proveedor, vuelve a generar el pedido o el logo suelto con las medidas nuevas.</li>' : '') +
+      (nAj ? '<li>En los ajustados cambian los logos, su tamaño/posición, sus fotos, el nombre y la descripción (precio, stock y ventas quedan igual). Para el proveedor, vuelve a generar el pedido o el logo suelto con las medidas nuevas.</li>' : '') +
       '<li>En el panel → Productos, carga stock y pasa a <b>Disponible</b> lo nuevo cuando quieras venderlo.</li></ol>';
   };
 
@@ -366,13 +367,16 @@
     var d = draft, n = 1, h = '';
     $('ed-title').textContent = d.origen ? 'Ajustar: ' + d.nombre : (editIdx == null ? (d.tipo === 'polera' ? 'Nueva ' : 'Nuevo ') : 'Editar ') + TIPOS[d.tipo].toLowerCase();
     if (d.origen) {
-      var antes = STORE_BY[d.origen] ? medTxt(STORE_BY[d.origen].cfg) : '';
-      h += '<div class="aj-note">Estás ajustando un producto de la tienda: solo cambia el <b>tamaño y la posición</b> de los logos (y sus fotos). Nombre, precio, stock y ventas no se tocan.<span class="med">Hoy (lo que se mandó al proveedor): ' + antes + '</span></div>';
-      if (d.frente) h += step(n++, 'Logo del frente', '<b>' + esc(nameOf(d.frente.logo)) + '</b>',
-        '<div class="opt" style="margin-top:0"><label>Posición</label>' + seg('f-pos', [['pecho', 'Pecho (corazón)'], ['centro', 'Centro']], d.frente.pos) + '</div>' + tamCtl('f', d.frente, P.lugarDe(d.frente, 'frente')));
-      if (d.espalda) h += step(n++, 'Logo de la espalda', '<b>' + esc(nameOf(d.espalda.logo)) + '</b>',
-        tamCtl('e', d.espalda, 'espalda') +
-        '<div class="opt"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1" value="' + (d.espalda.alto || 0) + '"><span class="hint" style="margin:0">' + (d.espalda.alto > 0 ? 'más abajo' : d.espalda.alto < 0 ? 'más arriba' : 'normal') + '</span></div>');
+      var orig = STORE_BY[d.origen] ? STORE_BY[d.origen].cfg : null;
+      h += '<div class="aj-note">Estás ajustando un producto de la tienda: puedes cambiar los <b>logos, su tamaño y su posición</b> (se rehacen sus fotos y su descripción). Precio, colores, stock y ventas no se tocan.' +
+        (orig ? '<span class="med">Hoy (lo que se mandó al proveedor): ' + logosTxt(orig) + '<br>' + medTxt(orig) + '</span>' : '') + '</div>';
+      h += step(n++, 'Logo del frente', d.frente ? '<b>' + esc(nameOf(d.frente.logo)) + '</b>' : 'sin logo',
+        picker('frente', d.frente && d.frente.logo, !!d.espalda) +
+        (d.frente ? '<div class="opt"><label>Posición</label>' + seg('f-pos', [['pecho', 'Pecho (corazón)'], ['centro', 'Centro']], d.frente.pos) + '</div>' + tamCtl('f', d.frente, P.lugarDe(d.frente, 'frente')) : ''));
+      h += step(n++, 'Logo de la espalda', d.espalda ? '<b>' + esc(nameOf(d.espalda.logo)) + '</b>' : 'espalda lisa',
+        picker('espalda', d.espalda && d.espalda.logo, !!d.frente) +
+        (d.espalda ? tamCtl('e', d.espalda, 'espalda') +
+          '<div class="opt"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1" value="' + (d.espalda.alto || 0) + '"><span class="hint" style="margin:0">' + (d.espalda.alto > 0 ? 'más abajo' : d.espalda.alto < 0 ? 'más arriba' : 'normal') + '</span></div>' : ''));
     } else if (d.tipo === 'polera' || d.tipo === 'poleron') {
       h += step(n++, 'Logo del frente', d.frente ? '<b>' + esc(nameOf(d.frente.logo)) + '</b>' : 'sin logo',
         picker('frente', d.frente && d.frente.logo, true) +
@@ -394,7 +398,8 @@
     } else {
       h += step(n++, 'Logo del sticker', d.logo ? '<b>' + esc(nameOf(d.logo)) + '</b>' : 'elige uno', picker('sticker', d.logo, false) + '<p class="hint">Se suma como diseño nuevo del sticker (el cliente lo elige en la ficha del sticker).</p>');
     }
-    if (!d.origen) h += step(n++, 'Nombre', '', '<input class="name-in" id="nombre" value="' + esc(d.nombre) + '" maxlength="80"><p class="hint">' + (d.auto ? 'Se arma solo con los logos. Puedes cambiarlo.' : 'Nombre personalizado.') + '</p>');
+    h += step(n++, 'Nombre', '', '<input class="name-in" id="nombre" value="' + esc(d.nombre) + '" maxlength="80"><p class="hint">' +
+      (d.origen && !d.auto ? 'Nombre actual en la tienda. Si cambias un logo, se arma solo con el logo nuevo (puedes escribir otro).' : d.auto ? 'Se arma solo con los logos. Puedes cambiarlo.' : 'Nombre personalizado.') + '</p>');
     $('steps').innerHTML = h;
     renderPreview();
   }
@@ -422,6 +427,7 @@
     var t = e.target.closest('.tile');
     if (t) {
       var key = t.parentNode.getAttribute('data-pick'), id = t.getAttribute('data-id') || null;
+      if (draft.origen && !draft.nombreManual && (key === 'frente' || key === 'espalda')) draft.auto = true;
       upd(function (x) {
         if (key === 'frente') x.frente = id ? Object.assign({ pos: 'pecho', tam: 'm' }, x.frente || {}, { logo: id }) : null;
         if (key === 'espalda') x.espalda = id ? Object.assign({ tam: 'm', alto: 0 }, x.espalda || {}, { logo: id }) : null;
@@ -457,7 +463,7 @@
       var pos = e.target.selectionStart; renderEditor();
       var inp = document.querySelector('[data-search="' + key + '"]'); inp.focus(); inp.setSelectionRange(pos, pos);
     }
-    if (e.target.id === 'nombre') { draft.nombre = e.target.value; draft.auto = false; $('pv-name').textContent = draft.nombre; }
+    if (e.target.id === 'nombre') { draft.nombre = e.target.value; draft.auto = false; draft.nombreManual = true; $('pv-name').textContent = draft.nombre; }
     if (e.target.id === 'f-cm' || e.target.id === 'e-cm') {
       var fr = e.target.id === 'f-cm', part = fr ? draft.frente : draft.espalda, lugar = fr ? P.lugarDe(part, 'frente') : 'espalda';
       setCm(part, lugar, +e.target.value);
