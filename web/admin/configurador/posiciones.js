@@ -18,6 +18,27 @@
     espalda: { s: 24, m: 30, l: 37 },
     jockey: { s: 7, m: 8.5, l: 10.5 }
   };
+  // Medida real del estampado (ancho de lo impreso, en cm). Es lo que va al pedido del proveedor (generar-pedido.js).
+  // Chico/Mediano/Grande = estos valores; desde 2026-11-28 también se puede elegir un ancho exacto (part.cm).
+  var CM = { pecho: { s: 8, m: 10, l: 12 }, centro: { s: 10, m: 14, l: 18 }, espalda: { s: 22, m: 26, l: 30 } };
+  var CM_RANGO = { pecho: [5, 13], centro: [8, 22], espalda: [14, 34] };
+  // % del ancho de la foto por cada cm (para dibujar un ancho exacto; con Chico/Mediano/Grande se usa SIZES tal cual)
+  var PCT_CM = { pecho: SIZES.pecho.m / CM.pecho.m, centro: SIZES.centro.m / CM.centro.m, espalda: SIZES.espalda.m / CM.espalda.m };
+  function lugarDe(part, cual) { return cual === 'espalda' ? 'espalda' : (part.pos === 'centro' ? 'centro' : 'pecho'); }
+  function cmOf(part, lugar) { return part && part.cm ? +part.cm : CM[lugar][(part && part.tam) || 'm']; }
+  function anchoPct(part, lugar) { return part.cm ? part.cm * PCT_CM[lugar] : SIZES[lugar][part.tam || 'm']; }
+  // Alto real (cm) de un logo impreso a cierto ancho: proporción de lo dibujado (datos.js: aspect, l, r, t, b)
+  function altoCm(meta, ancho) { return meta ? Math.round(ancho * (meta.b - meta.t) * meta.aspect / (meta.r - meta.l) * 10) / 10 : null; }
+  // Medidas de un diseño: [{ cual: 'frente'|'espalda', lugar, logo, ancho, alto }]
+  function medidas(d, LMETA) {
+    var out = [];
+    ['frente', 'espalda'].forEach(function (cual) {
+      var part = d[cual]; if (!part || !part.logo) return;
+      var lugar = lugarDe(part, cual), w = cmOf(part, lugar);
+      out.push({ cual: cual, lugar: lugar, logo: part.logo, ancho: w, alto: altoCm(LMETA[part.logo], w) });
+    });
+    return out;
+  }
   var PRICES = { polera: 19990, poleron: 34990, jockey: 15990 };
   var COLORS = { polera: ['negro', 'blanco'], poleron: ['negro'], jockey: ['negro'] };
 
@@ -42,10 +63,10 @@
     }
     if (V.pecho && d.frente) {
       var pos = d.frente.pos === 'centro' ? 'centro' : 'pecho';
-      out.push({ logo: d.frente.logo, claro: light, x: V[pos][0], y: V[pos][1], w: SIZES[pos][d.frente.tam || 'm'] * V.f });
+      out.push({ logo: d.frente.logo, claro: light, x: V[pos][0], y: V[pos][1], w: anchoPct(d.frente, pos) * V.f });
     }
     if (V.espalda && d.espalda) {
-      out.push({ logo: d.espalda.logo, claro: light, x: V.espalda[0], y: V.espalda[1] + (+d.espalda.alto || 0), w: SIZES.espalda[d.espalda.tam || 'm'] * V.f });
+      out.push({ logo: d.espalda.logo, claro: light, x: V.espalda[0], y: V.espalda[1] + (+d.espalda.alto || 0), w: anchoPct(d.espalda, 'espalda') * V.f });
     }
     return out;
   }
@@ -65,6 +86,6 @@
     };
   }
 
-  root.TWHPos = { VIEWS: VIEWS, SIZES: SIZES, PRICES: PRICES, COLORS: COLORS, viewsFor: viewsFor, placementsFor: placementsFor, rect: rect };
+  root.TWHPos = { VIEWS: VIEWS, SIZES: SIZES, CM: CM, CM_RANGO: CM_RANGO, cmOf: cmOf, altoCm: altoCm, medidas: medidas, lugarDe: lugarDe, PRICES: PRICES, COLORS: COLORS, viewsFor: viewsFor, placementsFor: placementsFor, rect: rect };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.TWHPos;
 })(typeof window !== 'undefined' ? window : globalThis);

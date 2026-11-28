@@ -1,6 +1,8 @@
 // Pasa lo creado en el configurador a la tienda.
 //  - Modo "agregar" (el que exporta el configurador desde 2026-11-24): genera las fotos y SUMA los productos nuevos
 //    al catálogo como Próximamente (los stickers se suman como diseño nuevo del sticker). No toca nada de lo que ya existe.
+//    Los "ajustes" (d.origen = id de un producto de la tienda) solo cambian el tamaño/posición de sus logos (cfg) y regeneran
+//    sus fotos con el mismo nombre de archivo; nombre, precio, estado, stock y ventas quedan igual.
 //  - Modo antiguo "reemplazar" (archivo sin modo): reemplaza todas las poleras, polerones y jockeys. Solo con --reemplazar.
 // Uso: node disenos/configurador/aplicar.js [ruta/a/twh-coleccion.json] [--reemplazar]
 const fs = require('fs');
@@ -25,7 +27,8 @@ if (!AGREGAR && !process.argv.includes('--reemplazar')) {
 }
 const todos = raw.productos || raw;
 const stickers = todos.filter((d) => d.tipo === 'sticker');
-const items = todos.filter((d) => d.tipo !== 'sticker');
+const ajustes = AGREGAR ? todos.filter((d) => d.tipo !== 'sticker' && d.origen) : [];
+const items = todos.filter((d) => d.tipo !== 'sticker' && !(AGREGAR && d.origen));
 global.window = {}; require('./datos.js'); const LMETA = {}; window.TWH_CFG.logos.forEach((l) => { LMETA[l.id] = l; });
 
 // ---------- ids únicos a partir del nombre ----------
@@ -72,11 +75,23 @@ const load = (s) => new Promise((r) => { const i = new Image(); i.onload = () =>
   document.title = 'listo';
 })();
 <\/script></body>`;
-  const tmp = path.join(HERE, '_tmp-aplicar.html');
+  // Un HTML temporal por foto y se espera a que la foto quede escrita: con una actualización de Edge pendiente,
+  // msedge.exe termina de inmediato y saca la captura unos segundos después (2026-11-28 las fotos salían cruzadas).
+  const tmp = path.join(HERE, `_tmp-aplicar-${outFile.replace(/\.png$/, '')}.html`);
+  const dest = path.join(OUT, outFile);
   fs.writeFileSync(tmp, html);
+  if (fs.existsSync(dest)) fs.unlinkSync(dest);
   execFileSync(edge, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=5000', `--window-size=${W},${H}`,
-    '--screenshot=' + path.join(OUT, outFile), 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
+    '--screenshot=' + dest, 'file:///' + tmp.replace(/\\/g, '/')], { stdio: 'ignore' });
+  const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  let last = -1;
+  for (let i = 0; i < 120; i++) { // hasta 60 s
+    const size = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
+    if (size > 0 && size === last) break;
+    last = size; sleep(500);
+  }
   fs.unlinkSync(tmp);
+  if (!fs.existsSync(dest)) throw new Error('Edge no generó la foto ' + outFile + '. Cierra Edge, ábrelo de nuevo (termina su actualización) y vuelve a intentar.');
 }
 
 const nameOf = (id) => (LMETA[id] ? LMETA[id].name : id);
@@ -164,7 +179,31 @@ if (AGREGAR) {
   const [d0, d1] = lista();
   const total = (cat.slice(d0, d1).match(/\{ id: /g) || []).length;
   cat = cat.replace(/\['Diseños', '\d+ a elección'\]/, `['Diseños', '${total} a elección']`);
+  // ajustes de productos existentes: cfg nuevo (solo logos frente/espalda) + fotos regeneradas
+  const prods = new Map(require(CATALOG).products.map((p) => [p.id, p]));
+  let ajustados = 0;
+  for (const d of ajustes) {
+    const p = prods.get(d.origen);
+    if (!p || !p.cfg) { console.log('ajuste ignorado (no está en la tienda):', d.origen); continue; }
+    const cfg = { ...p.cfg, frente: p.cfg.frente ? { ...p.cfg.frente, ...(d.frente || {}), logo: p.cfg.frente.logo } : null,
+      espalda: p.cfg.espalda ? { ...p.cfg.espalda, ...(d.espalda || {}), logo: p.cfg.espalda.logo } : null };
+    ['frente', 'espalda'].forEach((k) => { if (cfg[k] && d[k] && d[k].cm == null) delete cfg[k].cm; });
+    const i0 = cat.indexOf(`id: ${q(p.id)},`), c0 = cat.indexOf('cfg: {', i0), c1 = cat.indexOf('\n', c0);
+    if (i0 < 0 || c0 < 0) { console.log('ajuste ignorado (no encontré su cfg):', p.id); continue; }
+    const line = cat.slice(c0, c1), fin = line.endsWith(',') ? ',' : '';
+    cat = cat.slice(0, c0) + 'cfg: ' + JSON.stringify(cfg) + fin + cat.slice(c1);
+    const dd = { ...cfg, tipo: p.type };
+    for (const c of p.colors) {
+      for (const v of P.viewsFor(dd, c)) {
+        const kind = v.replace(/^(polera|poleron)-(negro|blanco)-/, '');
+        renderView(dd, v, `${p.id}-${c}-${kind}.png`);
+      }
+    }
+    ajustados++;
+    console.log('ajustado', p.id, P.medidas(cfg, LMETA).map((m) => `${m.lugar} ${m.ancho}x${m.alto} cm`).join(' · '));
+  }
   fs.writeFileSync(CATALOG, cat);
+  if (ajustes.length) console.log(`Ajustes: ${ajustados} productos de la tienda con logos de otro tamaño (fotos regeneradas).`);
   console.log(`Listo: ${items.length} productos nuevos agregados como Próximamente (${keep.size} fotos) y ${nuevos} diseños de sticker nuevos. Lo que ya estaba en la tienda no se tocó.`);
 } else {
   // ---------- reemplazar (modo antiguo, solo con --reemplazar): poleras, polerones y jockeys = la colección ----------

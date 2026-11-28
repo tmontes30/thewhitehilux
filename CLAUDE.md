@@ -139,11 +139,14 @@ Push: clave VAPID pública en `firebase-config.js` y `functions/.env`; privada e
 - **No recrear ilustraciones complejas a mano** (se probaron y se descartaron, 2026-11-18). Para ilustraciones: con licencia comercial, ilustrador o IA, y Claude las adapta a TWH. **Nunca copiar diseños de otras marcas o artistas** (ej. Loose & Lost / Nick Sawyers, TLD, Greenish), aunque sea "parecido con mi Hilux".
 
 ### Configurador (crear productos nuevos)
-Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
+Desde 2026-11-24 crea productos nuevos sin tocar los existentes. Desde 2026-11-28 también **ajusta el tamaño/posición de los logos** de una prenda de la tienda (sección "Ajustar un producto de la tienda").
 1. `disenos/configurador/configurador.html` (doble clic) o panel → Configurador. Parte **vacío**: "¿Qué quieres crear?" (Polera / Polerón / Jockey / Sticker). Editor por pasos con vista previa: logo frente/espalda (buscador por nombre o **número**, tiles con número), posición, tamaño, altura, colores, etiqueta, nombre automático editable. **Guardar**.
 2. Lo guardado queda en **la sesión** (sessionStorage `twh-cfg-sesion`): bandeja con Editar / Duplicar / Borrar. **Exportar productos nuevos** → `twh-coleccion-nuevos-<fecha>.json` con `modo: "agregar"`.
 3. Doble clic en `APLICAR-COLECCION.bat`: toma el `twh-coleccion*.json` más reciente de Descargas, corre `aplicar.js` (genera las fotos con modelo, **agrega** las prendas al final de la ropa en `catalog.js` con `status: 'proximamente'`, suma stickers como diseño nuevo; no toca lo existente) y las pruebas; si pasan, publica (git add solo de catalog.js, fotos de productos, copia del panel y datos.js) y **actualiza las funciones de pago** (`crearPreferencia`, `validarCupon`, `webhook`, `guardarCarrito`: el servidor tiene su copia del catálogo y sin esto rechaza pagar los productos nuevos).
 4. Después, en el panel: stock y pasar a Disponible.
+- **Medidas reales en cm**: `posiciones.js` → `CM` (Chico/Mediano/Grande: pecho 8/10/12, centro 10/14/18, espalda 22/26/30; las mismas del pedido al proveedor), `cmOf`, `altoCm`, `medidas`. Cada logo puede tener un ancho exacto `part.cm` (barra de 0,5 cm); el editor muestra ancho × alto impreso y cada foto de la vista previa su medida. `generar-pedido.js` usa `cmOf` (respeta `cm`).
+- **Ajustes**: al tocar una prenda de la tienda se abre con su `cfg` (catalog.js) y solo deja cambiar posición, tamaño y altura; se guarda en la sesión con `origen: <id>` y se exporta junto con lo nuevo. `aplicar.js` reemplaza el `cfg` de ese producto (solo frente/espalda) y regenera sus fotos con el mismo nombre; nombre, precio, estado, stock y ventas no cambian. Para el proveedor: volver a generar el pedido o `logo-suelto.js <logo> <cm>`.
+- Las fotos se sacan con Edge por línea de comandos: `aplicar.js` usa un HTML temporal por foto y **espera** a que la foto quede escrita (con una actualización de Edge pendiente, msedge.exe termina al tiro y la captura llega segundos después; 2026-11-28 salieron fotos cruzadas). Si quedan procesos `msedge --headless` colgados de pruebas, cerrarlos.
 - Un JSON antiguo (sin `modo`) reemplazaba toda la colección: `aplicar.js` lo rechaza salvo `--reemplazar`.
 - La copia del panel (`web/admin/configurador/`) la genera `copiar-al-panel.js`: editar siempre el original. Logos y números: `preparar.js --sin-bases` (orden = `LOGOS` de generar.js; los que no están en la hoja van al final sin número). Posiciones: `posiciones.js`. Fotos base: `bases/` (`preparar.js` sin `--sin-bases` las regenera).
 
@@ -232,6 +235,9 @@ Desde 2026-11-24 **solo crea productos nuevos** y nunca modifica los existentes.
 **2026-11-27 — Carrito abandonado y Contactos**
 - Se eliminan los logos Sunburst, TWH Varsity y TWH Franjas relleno (quedan 51; sticker y configurador renumerados).
 - Carrito guarda el correo; recordatorio a las 12 h para retomar la compra; pestaña **Contactos** en el panel. Se probó con código TWHCV10 (10%) y el dueño lo **desactivó**: el correo va sin descuento.
+
+**2026-11-28 — Medidas de estampado**
+- Llegaron las 2 primeras muestras (Race Shop y White Hilux Script, pecho a 10 cm) y el logo del pecho se ve grande. Configurador: **ajustar productos de la tienda** con medidas reales en cm (ancho × alto) y ancho exacto; `aplicar.js` espera cada foto de Edge.
 
 **Pendientes / ideas**
 - Backups automáticos de Firestore (diario 7 días + semanal 14 semanas): quedó pendiente de aprobación del dueño.

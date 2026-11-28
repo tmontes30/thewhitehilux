@@ -104,6 +104,20 @@
   .sticker-bg { aspect-ratio: 1; background: repeating-linear-gradient(45deg, #DADAD5 0 12px, #E3E3DF 12px 24px); display: grid; place-items: center; }
   .sticker { width: 64%; aspect-ratio: 1; background: #fff; border-radius: 18%; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.22); padding: 7%; }
   .sticker img { width: 100%; height: 100%; object-fit: contain; }
+  .store { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .st { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; cursor: pointer; padding: 0; text-align: left; display: flex; flex-direction: column; }
+  .st:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+  .st .thumb { aspect-ratio: 1; background: #E6E6E2; overflow: hidden; }
+  .st .meta { padding: 8px 10px 10px; }
+  .st .meta b { display: block; font-size: 13px; line-height: 1.25; }
+  .med { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.35; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .med i { font-style: normal; color: var(--accent2); font-weight: 700; }
+  .cmrow { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .cmrow input[type=range] { flex: 1; min-width: 140px; }
+  .cmval { font-weight: 800; font-size: 15px; min-width: 118px; font-variant-numeric: tabular-nums; }
+  .cmval small { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); }
+  .view .cap .cm { float: right; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .aj-note { background: #FFF8EC; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 12px; }
   .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 12px; font-weight: 600; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
   .toast.err { background: var(--red); }
 
@@ -122,7 +136,7 @@
   <img src="../../assets/logos/logo-oficial.svg" alt="The White Hilux">
   <h1>Configurador</h1>
   <span class="sp"></span>
-  <span class="help" style="font-size:12.5px;color:rgba(242,240,232,.7)">Crea productos nuevos. No modifica nada de lo que ya está en la tienda.</span>
+  <span class="help" style="font-size:12.5px;color:rgba(242,240,232,.7)">Crea productos nuevos o ajusta el tamaño de los logos de uno de la tienda.</span>
 </header>
 
 <!-- ============ INICIO ============ -->
@@ -132,6 +146,13 @@
     <p>Elige el tipo de producto. Lo armas, lo guardas en tu sesión y puedes crear todos los que quieras antes de exportar.</p>
   </section>
   <div class="types" id="types"></div>
+
+  <section class="tray">
+    <div class="tray-head">
+      <h3>Ajustar un producto de la tienda <small>(tamaño y posición de los logos · medidas reales en cm)</small></h3>
+    </div>
+    <div class="store" id="store"></div>
+  </section>
 
   <section class="tray">
     <div class="tray-head">
@@ -165,9 +186,10 @@
 
 <div class="toast hidden" id="toast"></div>
 
-<script src="posiciones.js?v=mwyy52m7"></script>
-<script src="datos.js?v=mwyy52m7"></script>
-<script src="etiqueta.js?v=mwyy52m7"></script>
+<script src="posiciones.js?v=mwzzn20i"></script>
+<script src="datos.js?v=mwzzn20i"></script>
+<script src="etiqueta.js?v=mwzzn20i"></script>
+<script src="../../data/catalog.js"></script>
 <script>
 (function () {
   // Configurador de productos NUEVOS. Parte vacío cada vez; lo guardado queda en la sesión de esta pestaña
@@ -180,6 +202,19 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var clp = function (n) { return '$' + Number(n).toLocaleString('es-CL'); };
+
+  // Prendas de la tienda que se pueden ajustar (las que tienen su diseño guardado en catalog.js → cfg)
+  var STORE = ((window.TWH_DATA && TWH_DATA.products) || []).filter(function (p) { return p.cfg && (p.type === 'polera' || p.type === 'poleron'); });
+  var STORE_BY = {}; STORE.forEach(function (p) { STORE_BY[p.id] = p; });
+  var LUGAR = { pecho: 'Pecho', centro: 'Centro', espalda: 'Espalda' };
+  var cm1 = function (n) { return String(Math.round(n * 10) / 10).replace('.', ','); };
+  function medTxt(d) { return P.medidas(d, LOGOS).map(function (m) { return '<i>' + LUGAR[m.lugar] + '</i> ' + cm1(m.ancho) + ' × ' + cm1(m.alto) + ' cm'; }).join(' · '); }
+  function ajusteDe(p) {
+    var d = JSON.parse(JSON.stringify(p.cfg));
+    d.id = 'ajuste-' + p.id; d.origen = p.id; d.tipo = p.type; d.nombre = p.name; d.auto = false;
+    d.colores = d.colores || p.colors; d.etiqueta = d.etiqueta !== false;
+    return d;
+  }
 
   var sesion = [];
   try { sesion = JSON.parse(sessionStorage.getItem(KEY) || '[]') || []; } catch (e) { sesion = []; }
@@ -242,10 +277,14 @@
     $('types').innerHTML = ['polera', 'poleron', 'jockey', 'sticker'].map(function (t) {
       return '<button class="type" data-t="' + t + '"><div class="pic">' + pics[t] + '</div><div class="txt"><b>' + TIPOS[t] + '</b><span>' + clp(PRICES[t]) + ' · ' + sub[t] + '</span></div></button>';
     }).join('');
+    $('store').innerHTML = STORE.length ? STORE.map(function (p) {
+      var d = ajusteDe(p), ya = sesion.some(function (x) { return x.origen === p.id; });
+      return '<button class="st" data-origen="' + p.id + '"><div class="thumb">' + thumb(d) + '</div><div class="meta"><b>' + esc(p.name) + '</b><span class="med">' + medTxt(d) + '</span>' + (ya ? '<span class="pill" style="margin-top:4px">ajuste en tu sesión</span>' : '') + '</div></button>';
+    }).join('') : '<div class="empty">No encontré los productos de la tienda (data/catalog.js).</div>';
     $('tray-count').textContent = sesion.length ? '(' + sesion.length + (sesion.length === 1 ? ' producto' : ' productos') + ')' : '';
     $('saved').innerHTML = sesion.length ? '<div class="saved">' + sesion.map(function (d, i) {
-      return '<div class="sv"><div class="thumb">' + thumb(d) + '</div><div class="meta"><span class="pill">' + TIPOS[d.tipo] + '</span><b>' + esc(d.nombre) + '</b><span>' + clp(PRICES[d.tipo]) + (d.colores && d.tipo === 'polera' ? ' · ' + d.colores.join(' y ') : '') + '</span></div>' +
-        '<div class="acts"><button data-act="edit" data-i="' + i + '">Editar</button><button data-act="dup" data-i="' + i + '">Duplicar</button><button class="del" data-act="del" data-i="' + i + '">Borrar</button></div></div>';
+      return '<div class="sv"><div class="thumb">' + thumb(d) + '</div><div class="meta"><span class="pill"' + (d.origen ? ' style="background:#FFF1D6;color:#A86500"' : '') + '>' + (d.origen ? 'Ajuste · ' : '') + TIPOS[d.tipo] + '</span><b>' + esc(d.nombre) + '</b><span>' + (d.origen ? 'producto de la tienda' : clp(PRICES[d.tipo]) + (d.colores && d.tipo === 'polera' ? ' · ' + d.colores.join(' y ') : '')) + '</span>' + (d.tipo !== 'sticker' && d.tipo !== 'jockey' ? '<span class="med">' + medTxt(d) + '</span>' : '') + '</div>' +
+        '<div class="acts"><button data-act="edit" data-i="' + i + '">Editar</button>' + (d.origen ? '' : '<button data-act="dup" data-i="' + i + '">Duplicar</button>') + '<button class="del" data-act="del" data-i="' + i + '">Borrar</button></div></div>';
     }).join('') + '</div>'
       : '<div class="empty">Todavía no has guardado nada en esta sesión. Elige arriba qué quieres crear.</div>';
     $('export').disabled = !sesion.length;
@@ -253,6 +292,12 @@
     window.scrollTo(0, 0);
   }
   $('types').onclick = function (e) { var b = e.target.closest('.type'); if (b) abrir(blank(b.getAttribute('data-t')), null); };
+  $('store').onclick = function (e) {
+    var b = e.target.closest('.st'); if (!b) return;
+    var id = b.getAttribute('data-origen'), i = -1;
+    sesion.forEach(function (x, k) { if (x.origen === id) i = k; });
+    if (i >= 0) abrir(JSON.parse(JSON.stringify(sesion[i])), i); else abrir(ajusteDe(STORE_BY[id]), null);
+  };
   $('saved').onclick = function (e) {
     var b = e.target.closest('button[data-act]'); if (!b) return;
     var i = +b.getAttribute('data-i'), act = b.getAttribute('data-act');
@@ -268,11 +313,13 @@
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
     a.download = 'twh-coleccion-nuevos-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
+    var nAj = sesion.filter(function (x) { return x.origen; }).length, nNu = sesion.length - nAj;
     $('done').classList.remove('hidden');
-    $('done').innerHTML = '<b>✓ Exportado: ' + sesion.length + (sesion.length === 1 ? ' producto nuevo' : ' productos nuevos') + '</b> (quedó en Descargas).' +
+    $('done').innerHTML = '<b>✓ Exportado: ' + [nNu ? nNu + (nNu === 1 ? ' producto nuevo' : ' productos nuevos') : '', nAj ? nAj + (nAj === 1 ? ' ajuste' : ' ajustes') + ' de tamaño' : ''].filter(Boolean).join(' y ') + '</b> (quedó en Descargas).' +
       '<ol><li>En el computador, haz doble clic en <b>APLICAR-COLECCION.bat</b> (carpeta disenos/configurador).</li>' +
-      '<li>Genera las fotos, <b>agrega</b> estos productos a la tienda como <b>Próximamente</b> y publica. Lo que ya estaba no se toca.</li>' +
-      '<li>En el panel → Productos, cárgales stock y pásalos a <b>Disponible</b> cuando quieras venderlos.</li></ol>';
+      (nNu ? '<li>Los nuevos se <b>agregan</b> a la tienda como <b>Próximamente</b>.</li>' : '') +
+      (nAj ? '<li>En los ajustados solo cambian el tamaño/posición de los logos y sus fotos (nombre, precio, stock y ventas quedan igual). Para el proveedor, vuelve a generar el pedido o el logo suelto con las medidas nuevas.</li>' : '') +
+      '<li>En el panel → Productos, carga stock y pasa a <b>Disponible</b> lo nuevo cuando quieras venderlo.</li></ol>';
   };
 
   // ---------- Editor ----------
@@ -304,18 +351,38 @@
   }
   function step(n, title, val, body) { return '<section class="step"><div class="step-h"><span class="n">' + n + '</span><h3>' + title + '</h3><span class="val">' + val + '</span></div>' + body + '</section>'; }
   var TAM = [['s', 'Chico'], ['m', 'Mediano'], ['l', 'Grande']];
+  // Tamaño: Chico/Mediano/Grande o un ancho exacto en cm (part.cm). Muestra ancho × alto reales del estampado.
+  function tamCtl(k, part, lugar) {
+    var w = P.cmOf(part, lugar), r = P.CM_RANGO[lugar], h = P.altoCm(LOGOS[part.logo], w);
+    var tams = TAM.map(function (t) { return [t[0], t[1] + ' ' + cm1(P.CM[lugar][t[0]])]; });
+    return '<div class="opt"><label>Tamaño</label>' + seg(k + '-tam', tams, part.cm ? '' : (part.tam || 'm')) + '</div>' +
+      '<div class="cmrow"><input type="range" id="' + k + '-cm" min="' + r[0] + '" max="' + r[1] + '" step="0.5" value="' + w + '" aria-label="Ancho en cm">' +
+      '<span class="cmval" id="' + k + '-cmval">' + cm1(w) + ' × ' + cm1(h) + ' cm<small>ancho × alto impreso</small></span></div>';
+  }
+  function setCm(part, lugar, v) {
+    var tam = null; Object.keys(P.CM[lugar]).forEach(function (t) { if (P.CM[lugar][t] === v) tam = t; });
+    if (tam) { part.tam = tam; delete part.cm; } else part.cm = v;
+  }
 
   function renderEditor() {
     var d = draft, n = 1, h = '';
-    $('ed-title').textContent = (editIdx == null ? (d.tipo === 'polera' ? 'Nueva ' : 'Nuevo ') : 'Editar ') + TIPOS[d.tipo].toLowerCase();
-    if (d.tipo === 'polera' || d.tipo === 'poleron') {
+    $('ed-title').textContent = d.origen ? 'Ajustar: ' + d.nombre : (editIdx == null ? (d.tipo === 'polera' ? 'Nueva ' : 'Nuevo ') : 'Editar ') + TIPOS[d.tipo].toLowerCase();
+    if (d.origen) {
+      var antes = STORE_BY[d.origen] ? medTxt(STORE_BY[d.origen].cfg) : '';
+      h += '<div class="aj-note">Estás ajustando un producto de la tienda: solo cambia el <b>tamaño y la posición</b> de los logos (y sus fotos). Nombre, precio, stock y ventas no se tocan.<span class="med">Hoy (lo que se mandó al proveedor): ' + antes + '</span></div>';
+      if (d.frente) h += step(n++, 'Logo del frente', '<b>' + esc(nameOf(d.frente.logo)) + '</b>',
+        '<div class="opt" style="margin-top:0"><label>Posición</label>' + seg('f-pos', [['pecho', 'Pecho (corazón)'], ['centro', 'Centro']], d.frente.pos) + '</div>' + tamCtl('f', d.frente, P.lugarDe(d.frente, 'frente')));
+      if (d.espalda) h += step(n++, 'Logo de la espalda', '<b>' + esc(nameOf(d.espalda.logo)) + '</b>',
+        tamCtl('e', d.espalda, 'espalda') +
+        '<div class="opt"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1" value="' + (d.espalda.alto || 0) + '"><span class="hint" style="margin:0">' + (d.espalda.alto > 0 ? 'más abajo' : d.espalda.alto < 0 ? 'más arriba' : 'normal') + '</span></div>');
+    } else if (d.tipo === 'polera' || d.tipo === 'poleron') {
       h += step(n++, 'Logo del frente', d.frente ? '<b>' + esc(nameOf(d.frente.logo)) + '</b>' : 'sin logo',
         picker('frente', d.frente && d.frente.logo, true) +
         (d.frente ? '<div class="opt"><label>Posición</label>' + seg('f-pos', [['pecho', 'Pecho (corazón)'], ['centro', 'Centro']], d.frente.pos) + '</div>' +
-          '<div class="opt"><label>Tamaño</label>' + seg('f-tam', TAM, d.frente.tam) + '</div>' : ''));
+          tamCtl('f', d.frente, P.lugarDe(d.frente, 'frente')) : ''));
       h += step(n++, 'Logo de la espalda', d.espalda ? '<b>' + esc(nameOf(d.espalda.logo)) + '</b>' : 'espalda lisa',
         picker('espalda', d.espalda && d.espalda.logo, true) +
-        (d.espalda ? '<div class="opt"><label>Tamaño</label>' + seg('e-tam', TAM, d.espalda.tam) + '</div>' +
+        (d.espalda ? tamCtl('e', d.espalda, 'espalda') +
           '<div class="opt"><label>Altura</label><input type="range" id="e-alto" min="-6" max="12" step="1" value="' + (d.espalda.alto || 0) + '"><span class="hint" style="margin:0">' + (d.espalda.alto > 0 ? 'más abajo' : d.espalda.alto < 0 ? 'más arriba' : 'normal') + '</span></div>' : ''));
       if (d.tipo === 'polera') h += step(n++, 'Colores', '<b>' + d.colores.join(' y ') + '</b>',
         '<div class="colors">' + [['negro', 'Negro', '#1B1C1A'], ['blanco', 'Blanco', '#F4F3EF']].map(function (c) { return '<button class="color" data-color="' + c[0] + '" aria-pressed="' + (d.colores.indexOf(c[0]) >= 0) + '"><i style="background:' + c[2] + '"></i>' + c[1] + '</button>'; }).join('') + '</div><p class="hint">Puedes ofrecerla en uno o en los dos colores.</p>');
@@ -329,7 +396,7 @@
     } else {
       h += step(n++, 'Logo del sticker', d.logo ? '<b>' + esc(nameOf(d.logo)) + '</b>' : 'elige uno', picker('sticker', d.logo, false) + '<p class="hint">Se suma como diseño nuevo del sticker (el cliente lo elige en la ficha del sticker).</p>');
     }
-    h += step(n++, 'Nombre', '', '<input class="name-in" id="nombre" value="' + esc(d.nombre) + '" maxlength="80"><p class="hint">' + (d.auto ? 'Se arma solo con los logos. Puedes cambiarlo.' : 'Nombre personalizado.') + '</p>');
+    if (!d.origen) h += step(n++, 'Nombre', '', '<input class="name-in" id="nombre" value="' + esc(d.nombre) + '" maxlength="80"><p class="hint">' + (d.auto ? 'Se arma solo con los logos. Puedes cambiarlo.' : 'Nombre personalizado.') + '</p>');
     $('steps').innerHTML = h;
     renderPreview();
   }
@@ -341,9 +408,11 @@
     if (d.colores.indexOf(color) < 0) color = d.colores[0];
     $('pv-color').innerHTML = d.colores.length > 1 ? d.colores.map(function (c) { return '<button data-v="' + c + '" aria-pressed="' + (c === color) + '">' + (c === 'negro' ? 'Negro' : 'Blanco') + '</button>'; }).join('') : '';
     var LBL = { frente: 'Frente', 'frente-2': 'Frente (otra pose)', espalda: 'Espalda' };
+    var MED = {}; P.medidas(d, LOGOS).forEach(function (m) { MED[m.cual] = cm1(m.ancho) + ' × ' + cm1(m.alto) + ' cm'; });
     $('views').innerHTML = P.viewsFor(d, color).map(function (v) {
       var k = v.replace(/^(polera|poleron)-(negro|blanco)-/, '').replace('jockey-negro', 'jockey');
-      return '<div class="view">' + stage(d, v) + '<div class="cap">' + (LBL[k] || 'Jockey') + '</div></div>';
+      var mk = k === 'espalda' ? MED.espalda : /^frente/.test(k) ? MED.frente : '';
+      return '<div class="view">' + stage(d, v) + '<div class="cap">' + (LBL[k] || 'Jockey') + (mk ? '<span class="cm">' + mk + '</span>' : '') + '</div></div>';
     }).join('') + (d.tipo !== 'jockey' && d.etiqueta !== false && E ? (function () {
       var ver = E.versionPara(color);
       return '<div class="view"><div class="et-stage" style="background:' + E.VERSIONES[ver].fondo + '">' + E.svg(etTalla, ver, { width: '100%', height: 'auto' }) + '</div><div class="cap">Etiqueta cuello · talla ' + etTalla + '</div></div>';
@@ -367,7 +436,9 @@
     if (b) {
       var s = b.parentNode.getAttribute('data-seg'), v = b.getAttribute('data-v');
       upd(function (x) {
-        if (s === 'f-pos') x.frente.pos = v; if (s === 'f-tam') x.frente.tam = v; if (s === 'e-tam') x.espalda.tam = v;
+        if (s === 'f-pos') x.frente.pos = v;
+        if (s === 'f-tam') { x.frente.tam = v; delete x.frente.cm; }
+        if (s === 'e-tam') { x.espalda.tam = v; delete x.espalda.cm; }
         if (s === 'j-est') x.jockey.estilo = v; if (s === 'j-tam') x.jockey.tam = v;
       });
       return;
@@ -389,6 +460,15 @@
       var inp = document.querySelector('[data-search="' + key + '"]'); inp.focus(); inp.setSelectionRange(pos, pos);
     }
     if (e.target.id === 'nombre') { draft.nombre = e.target.value; draft.auto = false; $('pv-name').textContent = draft.nombre; }
+    if (e.target.id === 'f-cm' || e.target.id === 'e-cm') {
+      var fr = e.target.id === 'f-cm', part = fr ? draft.frente : draft.espalda, lugar = fr ? P.lugarDe(part, 'frente') : 'espalda';
+      setCm(part, lugar, +e.target.value);
+      var w = P.cmOf(part, lugar);
+      $(e.target.id + 'val').innerHTML = cm1(w) + ' × ' + cm1(P.altoCm(LOGOS[part.logo], w)) + ' cm<small>ancho × alto impreso</small>';
+      var sg = document.querySelector('[data-seg="' + (fr ? 'f' : 'e') + '-tam"]');
+      if (sg) Array.prototype.forEach.call(sg.children, function (b) { b.setAttribute('aria-pressed', !part.cm && b.getAttribute('data-v') === part.tam ? 'true' : 'false'); });
+      renderPreview();
+    }
     if (e.target.id === 'e-alto') { draft.espalda.alto = +e.target.value; renderPreview(); e.target.nextSibling.textContent = draft.espalda.alto > 0 ? 'más abajo' : draft.espalda.alto < 0 ? 'más arriba' : 'normal'; }
   });
   $('steps').addEventListener('change', function (e) {

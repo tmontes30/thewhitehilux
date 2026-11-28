@@ -20,7 +20,8 @@ const CURVA_MODELO = {
   'polera-twh-aired-down': CURVA_SIN_M,                 // Aired Down
 };
 const curvaDe = (m) => CURVA_MODELO[m.p.id] || CURVA;
-const ANCHO_CM = { pecho: { s: 8, m: 10, l: 12 }, centro: { s: 10, m: 14, l: 18 }, espalda: { s: 22, m: 26, l: 30 } };
+// Anchos de estampado: posiciones.js (CM para Chico/Mediano/Grande, o el ancho exacto que se eligió en el configurador)
+const POS = require('../configurador/posiciones.js');
 const UBICACION = {
   pecho: 'Pecho izquierdo (lado del corazón), centro del logo a ~9 cm de la costura del cuello y ~9 cm del centro de la polera',
   centro: 'Centro del pecho, borde superior a ~8 cm de la costura del cuello',
@@ -64,8 +65,8 @@ const modelos = cat.products.filter((p) => p.type === 'polera' && p.cfg).map((p,
 
 // ---------- archivos de logos (uno por logo + ubicación + tamaño + tinta) ----------
 const archivos = new Map(); // clave → { file, logo, lugar, cm, tinta, usos: [] }
-function archivoLogo(logoId, lugar, tam, color) {
-  const cm = ANCHO_CM[lugar][tam || 'm'];
+function archivoLogo(logoId, lugar, part, color) {
+  const cm = POS.cmOf(part, lugar);
   const tinta = color === 'blanco' ? 'oscura' : 'clara';
   const key = [logoId, lugar, cm, tinta].join('|');
   if (!archivos.has(key)) {
@@ -78,8 +79,8 @@ function archivoLogo(logoId, lugar, tam, color) {
 modelos.forEach((m) => m.colores.forEach((col) => {
   const lugarF = m.c.frente && (m.c.frente.pos === 'centro' ? 'centro' : 'pecho');
   m[col] = {
-    frente: m.c.frente ? archivoLogo(m.c.frente.logo, lugarF, m.c.frente.tam, col) : null,
-    espalda: m.c.espalda ? archivoLogo(m.c.espalda.logo, 'espalda', m.c.espalda.tam, col) : null,
+    frente: m.c.frente ? archivoLogo(m.c.frente.logo, lugarF, m.c.frente, col) : null,
+    espalda: m.c.espalda ? archivoLogo(m.c.espalda.logo, 'espalda', m.c.espalda, col) : null,
   };
   if (m[col].frente) m[col].frente.usos.push(`${m.p.name} · ${COLOR[col]}`);
   if (m[col].espalda) m[col].espalda.usos.push(`${m.p.name} · ${COLOR[col]}`);
